@@ -1,0 +1,22 @@
+# 相依套件庫（每個人 clone 下來後透過 npm install 安裝，絕對不要上傳至 GitHub）
+node_modules/
+
+# 本地環境變數設定檔（內含機密如資料庫連線字串、金鑰，不要上傳）
+.env
+.env.local
+
+# 本地 SQLite 資料庫檔案（避免組員互相覆蓋各自的測試資料）
+*.db
+*.sqlite
+*.sqlite3
+
+# 系統與編輯器快取
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 日誌
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

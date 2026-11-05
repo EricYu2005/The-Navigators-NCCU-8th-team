@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>創創入門團隊專案 - 記憶看板</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="badge">GitHub 團隊協作專案範本</div>
+      <h1>💡 專案靈感與任務記憶板</h1>
+      <p class="subtitle">
+        這是一個串接了 <strong>SQLite 資料庫</strong> 的全端網頁。在此留下的每一筆紀錄都會永久儲存在資料庫中，即使重整頁面或重開伺服器，資料都不會消失！
+      </p>
+    </header>
+
+    <main class="main-content">
+      <!-- 表單區塊：新增資料 -->
+      <section class="card form-card">
+        <h2>✏️ 新增一則靈感或任務</h2>
+        <form id="note-form">
+          <div class="form-group">
+            <label for="title">標題 <span class="required">*</span></label>
+            <input type="text" id="title" placeholder="例：確定專案方向、首頁視覺設計" required>
+          </div>
+
+          <div class="form-group">
+            <label for="author">填寫人 / 組員名稱</label>
+            <input type="text" id="author" placeholder="例：小明、Alice (選填)">
+          </div>
+
+          <div class="form-group">
+            <label for="content">詳細內容 <span class="required">*</span></label>
+            <textarea id="content" rows="3" placeholder="寫下具體想法、待辦事項或是討論摘要..." required></textarea>
+          </div>
+
+          <button type="submit" id="submit-btn" class="btn btn-primary">
+            <span>寫入資料庫 💾</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- 清單區塊：從資料庫讀取並顯示 -->
+      <section class="card list-card">
+        <div class="list-header">
+          <h2>📋 已儲存的紀錄 (<span id="note-count">0</span>)</h2>
+          <button id="refresh-btn" class="btn btn-outline" title="重新向資料庫載入最新紀錄">
+            🔄 重新整理
+          </button>
+        </div>
+
+        <div id="loading" class="status-msg">載入中...</div>
+        <div id="empty-state" class="empty-state hidden">
+          <p>🎈 目前資料庫內還沒有任何紀錄！</p>
+          <p class="sub-text">在左側（上方）表單輸入第一則靈感吧！</p>
+        </div>
+
+        <div id="notes-grid" class="notes-grid">
+          <!-- 卡片會由 app.js 動態插入 -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>🚀 創創入門專案 • Powered by Express.js & SQLite • 適合 GitHub 多人協作開發</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

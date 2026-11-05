@@ -1,0 +1,19 @@
+{
+  "name": "team-web-project",
+  "version": "1.0.0",
+  "description": "創創入門專案 - 具備資料庫記憶功能的團隊協作全端網頁",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["collaborative", "web", "sqlite", "express", "fullstack"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "sqlite3": "^5.1.7"
+  }
+}

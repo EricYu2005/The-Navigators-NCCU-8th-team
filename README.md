@@ -1,129 +1,120 @@
-# 創創入門專案：團隊協作全端記憶看板 🚀
+# 💡 創創入門專案：團隊協作全端記憶看板
 
-這是一個專門為**團隊協作**打造的初學者全端專案。透過串接 **SQLite 資料庫**，讓網頁擁有「記憶」功能，使用者填寫的靈感或任務紀錄會永久保存，重整頁面依然存在。
+歡迎來到本專案！這是一個專門為**團隊協作**打造的全端 Web 應用。
+透過後端伺服器與輕量資料庫的串接，網頁擁有「**記憶功能**」，所有新增的點子、任務與討論記錄在重新整理頁面或重啟電腦後都不會消失。
 
----
-
-## 🛠️ 技術架構一覽
-
-```
-[前端瀏覽器 (HTML / CSS / JS)]
-         │
-         ▼  fetch() HTTP 請求 (GET / POST / DELETE)
-[後端伺服器 (Node.js + Express.js)]
-         │
-         ▼  SQL 查詢語法
-[輕量資料庫 (SQLite: data.db)]
-```
-
-* **前端 (Frontend)**: 原生 HTML5 + CSS3 + JavaScript，不需複雜打包工具即可直接調試。
-* **後端 (Backend)**: Node.js + Express.js 提供 RESTful API 接口。
-* **資料庫 (Database)**: SQLite，檔案型輕量資料庫（自動生成於 `data.db`），不需要自行額外架設龐大的資料庫伺服器。
+專案內建了 Windows 專屬的「一鍵式自動化工具（`.cmd`）」，讓即使不熟悉指令列的組員，也能輕鬆啟動、同步專案並保護機密資訊。
 
 ---
 
-## 📋 本地快速啟動指南
+## 🛠️ 專案核心三大助手（組員必看！）
 
-### 第一步：安裝 Node.js
-如果電腦尚未安裝 Node.js，請至官方網站下載 **LTS 版本** 安裝：
-👉 [Node.js 官方網站下載](https://nodejs.org/)
+專案根目錄中提供了三個雙擊即可執行的工具檔：
 
-### 第二步：安裝專案相依套件
-在專案根目錄開啟終端機（PowerShell 或 Terminal），執行：
-```bash
-npm install
-```
-
-### 第三步：啟動伺服器
-```bash
-npm start
-```
-伺服器啟動成功後，打開瀏覽器造訪：
-👉 **http://localhost:3000**
-
-*(若需要程式碼變更自動重啟，可執行 `npm run dev`)*
+| 檔案 | 功用 | 何時使用 |
+| :--- | :--- | :--- |
+| 🚀 [**`start.cmd`**](file:///c:/Users/user/Documents/創創入門專案/start.cmd) | **一鍵啟動伺服器** | 每天要開始開發、測試網頁時直接雙擊。自動檢查套件、自動開瀏覽器。 |
+| 🔄 [**`sync.cmd`**](file:///c:/Users/user/Documents/創創入門專案/sync.cmd) | **全組進度同步 & 機密守門員** | 開工前拉取組員進度、完工後推送代碼，自動防範機密外洩。 |
+| 🛡️ [**`gitignore.cmd`**](file:///c:/Users/user/Documents/創創入門專案/gitignore.cmd) | **Git 忽略規則與安全防護** | 專案初始化或不小心快取到敏感檔時執行，確保 `.env` 與套件庫不外洩。 |
 
 ---
 
-## 👥 GitHub 團隊協作實戰指南（新手必看 SOP）
+## 🚀 組員快速上手三步驟
 
-為了讓你們組員在合作時不會互相蓋掉彼此的程式碼，請依循以下標準協作流程：
+### 第一步：安裝必備環境
+1. 下載並安裝 **Node.js (LTS 版本)**：👉 [https://nodejs.org/](https://nodejs.org/)
+2. 下載並安裝 **Git**：👉 [https://git-scm.com/](https://git-scm.com/)
 
-### 1. 建立遠端儲存庫 (GitHub Repository)
-1. 由**專案組長**登入 [GitHub](https://github.com/) 點擊 **New repository**。
-2. 專案設為 **Public** 或 **Private**（皆可）。
-3. 進入該 Repo 的 **Settings -> Collaborators**，輸入組員的 GitHub 帳號並送出邀請。
-4. 組員到自己的信箱收信接受邀請。
-
-### 2. 將本專案推送至 GitHub
-組長在專案目錄執行：
+### 第二步：下載專案 (Clone)
+組員開啟終端機，執行以下指令將專案下載至電腦：
 ```bash
-git init
-git add .
-git commit -m "feat: 初次提交，建立具備資料庫功能之專案骨幹"
-git branch -M main
-git remote add origin https://github.com/組長帳號/專案名稱.git
-git push -u origin main
+git clone <組長的 GitHub 儲存庫網址>
+cd 創創入門專案
 ```
 
-### 3. 組員下載專案 (Clone)
-組員開啟終端機，執行：
-```bash
-git clone https://github.com/組長帳號/專案名稱.git
-cd 專案名稱
-npm install
-npm start
-```
-
-### 4. 日常開發流程：永遠不要直接在 `main` 分支開發！
-**黃金法則：一人一個分支（Branch），功能完成後再提 PR 合併。**
-
-#### 步驟 A：每天開始寫扣前，先拉取最新程式碼
-```bash
-git checkout main
-git pull origin main
-```
-
-#### 步驟 B：開立自己的新功能分支
-```bash
-# 例如組員 Alice 要做使用者登入或是修改 CSS 介面
-git checkout -b feature/alice-ui-design
-```
-
-#### 步驟 C：修改程式碼、儲存並提交
-```bash
-git add .
-git commit -m "style: 優化卡片陰影與送出按鈕視覺"
-git push -u origin feature/alice-ui-design
-```
-
-#### 步驟 D：到 GitHub 提出 Pull Request (PR)
-1. 開啟 GitHub 專案頁面，會看到綠色提示按鈕 **Compare & pull request**。
-2. 寫下這次修改的內容，並邀請另一位組員 Review（檢查代碼）。
-3. 確認無誤後點擊 **Merge pull request** 合併入 `main`。
-4. 這樣就能保證主分支永遠是穩定可用的版本，完全避免檔案被覆蓋！
+### 第三步：一鍵啟動
+直接雙擊專案目錄下的 [**`start.cmd`**](file:///c:/Users/user/Documents/創創入門專案/start.cmd)！
+* 自動安裝缺少的套件（`npm install`）
+* 自動建立環境設定檔（`.env`）
+* 自動開啟瀏覽器造訪 `http://localhost:3000`
 
 ---
 
-## 📁 檔案結構說明
+## 🔒 機密資訊儲存與安全管理規範（非常重要！）
+
+在軟體工程與創創專案中，**保護機密金鑰**是第一要務：
+
+### 1. 什麼是機密資訊？
+- 資料庫連線密碼
+- 第三方 API Key（例如 Google Maps、OpenAI、金流串接金鑰）
+- Session / Token 密鑰
+
+### 2. 機密檔案隔離原則
+* **`.env`（機密檔）**：存放所有真正的敏感數值，**絕對禁止上傳至 GitHub**！
+* **`.env.example`（公開範本）**：只存放變數名稱（不含真實金鑰），跟隨 Git 同步，讓大家知道需要設定哪些變數。
+* 本專案已在 `.gitignore` 與 `sync.cmd` 設置了雙重防護，即使誤按 `git add .` 也會自動攔截，不會將 `.env` 推送至遠端。
+
+### 3. 組員之間如何共享機密？
+1. 若專案需要新增 API Key，請組長在私人群組（如 LINE / Discord / Notion）將金鑰分享給組員。
+2. 組員各自打開自己電腦上的 `.env` 檔案，將金鑰填入儲存即可。
+
+---
+
+## 👥 GitHub 團隊協作流程（防衝突 SOP）
+
+為了避免組員互相覆蓋彼此的程式碼，請依循以下標準日常流程：
+
+```
+[GitHub main 分支 (永遠穩定的版本)]
+         ▲
+         │ Pull Request (代碼審查與合併)
+[自己的功能分支 feature/xxx]
+```
+
+### 每日開發四部曲：
+1. **開工前同步**：雙擊 [**`sync.cmd`**](file:///c:/Users/user/Documents/創創入門專案/sync.cmd) 選擇 `[1]` 拉取最新進度。
+2. **開立個人分支**：避免直接在 `main` 上修改：
+   ```bash
+   git checkout -b feature/我的功能名稱
+   ```
+3. **進行修改並測試**：修改 HTML / CSS / JS，啟動 `start.cmd` 確認功能正常。
+4. **推送與合併**：
+   - 雙擊 [**`sync.cmd`**](file:///c:/Users/user/Documents/創創入門專案/sync.cmd) 選擇 `[2]` 推送代碼。
+   - 到 GitHub 網頁點擊 **Compare & pull request**，通知組員確認後點擊 **Merge**。
+
+---
+
+## 📁 檔案架構一覽
 
 ```text
-├── public/                 # 前端靜態資源目錄
+├── public/                 # 前端介面（純靜態網頁，直覺好修改）
 │   ├── index.html          # 網頁結構與表單元件
-│   ├── style.css           # 現代化響應式排版樣式
-│   └── app.js              # 前端邏輯 (呼叫 API、動態渲染)
-├── database.js             # SQLite 資料庫連線與 SQL 操作封裝
+│   ├── style.css           # 現代化美觀樣式表 (響應式設計)
+│   └── app.js              # 前端邏輯 (呼叫 API、動態渲染清單)
+├── database.js             # SQLite 資料庫操作模組 (自動建立 data.db)
 ├── server.js               # Express 後端伺服器 (提供 RESTful API)
-├── package.json            # 專案相依性套件與執行指令設定
-├── .gitignore              # Git 忽略名單 (排除 node_modules 與 data.db)
-├── .env.example            # 環境變數設定範例檔
-└── README.md               # 專案說明與團隊協作規範
+├── package.json            # 專案相依套件清單
+├── start.cmd               # 【Windows 專用】一鍵啟動工具
+├── sync.cmd                # 【Windows 專用】團隊同步與機密保護工具
+├── gitignore.cmd           # 【Windows 專用】Git 忽略與安全設定工具
+├── .gitignore              # Git 排除名單 (阻擋 node_modules, .env, data.db)
+├── .env.example            # 環境變數範本檔 (公開安全)
+└── README.md               # 本團隊開發說明文件
 ```
 
 ---
 
-## 🚀 未來擴展建議
+## ❓ 常見問題排解 (FAQ)
 
-1. **雲端線上資料庫**：未來若要免費部署到網路上（如 Vercel 或 Render），可將 SQLite 升級為 **Supabase (免費 PostgreSQL 雲端服務)**。
-2. **會員登入機制**：可加入 JWT 或 Session，讓每位使用者只能編輯或刪除自己建立的靈感。
-3. **分類標籤與搜尋功能**：在資料表中新增 `category` 欄位，前端加入關鍵字過濾。
+**Q1：雙擊 `start.cmd` 提示找不到 Node.js？**
+> 請至 [nodejs.org](https://nodejs.org/) 下載安裝 LTS 版本，安裝完成後請關閉所有終端機與資料夾，重新點擊 `start.cmd`。
+
+**Q2：執行 `sync.cmd` 推送時被拒絕 (Rejected)？**
+> 這表示有其他組員剛推送了新成果。請先在 `sync.cmd` 選 `[1]` 拉取遠端最新進度，再執行推送。
+
+**Q3：資料庫檔案在哪裡？會被上傳到 GitHub 嗎？**
+> 本地資料庫儲存在 `data.db`。它已經被 `.gitignore` 排除，每位組員在自己本機測試時都有獨立的資料庫，不會互相干擾或覆蓋！
+
+---
+
+祝團隊合作順利，專案大獲全勝！🎉

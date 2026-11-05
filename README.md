@@ -84,23 +84,7 @@ cd 創創入門專案
 
 ---
 
-## 📁 檔案架構一覽
 
-```text
-├── public/                 # 前端介面（純靜態網頁，直覺好修改）
-│   ├── index.html          # 網頁結構與表單元件
-│   ├── style.css           # 現代化美觀樣式表 (響應式設計)
-│   └── app.js              # 前端邏輯 (呼叫 API、動態渲染清單)
-├── database.js             # SQLite 資料庫操作模組 (自動建立 data.db)
-├── server.js               # Express 後端伺服器 (提供 RESTful API)
-├── package.json            # 專案相依套件清單
-├── start.cmd               # 【Windows 專用】一鍵啟動工具
-├── sync.cmd                # 【Windows 專用】團隊同步與機密保護工具
-├── gitignore.cmd           # 【Windows 專用】Git 忽略與安全設定工具
-├── .gitignore              # Git 排除名單 (阻擋 node_modules, .env, data.db)
-├── .env.example            # 環境變數範本檔 (公開安全)
-└── README.md               # 本團隊開發說明文件
-```
 
 ---
 

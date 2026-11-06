@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+secrets.vault
 
 # GCP / 雲端金鑰 JSON 檔案（機密憑證，嚴禁上傳）
 gcp-key.json

@@ -16,7 +16,7 @@ require('dotenv').config();
 
 const DRUGBANK_MCP_URL = process.env.DRUGBANK_MCP_URL || 'https://mcp.drugbank.com/mcp';
 const DRUGBANK_API_KEY = process.env.DRUGBANK_API_KEY || '';
-const DEFAULT_TIMEOUT_MS = parseInt(process.env.DRUGBANK_TIMEOUT_MS || '6000', 10);
+const DEFAULT_TIMEOUT_MS = parseInt(process.env.DRUGBANK_TIMEOUT_MS || '10000', 10);
 
 /**
  * 台灣高齡常見慢性病「臨床實證藥理資料庫」

@@ -517,10 +517,48 @@ async function executePrescriptionInference(medications) {
   const currListEl = document.getElementById('curr-meds-list');
   const infTextEl = document.getElementById('inference-summary-text');
   const mcpResultsContainer = document.getElementById('drugbank-mcp-results');
+  const progressContainer = document.getElementById('mcp-progress-container');
+  const timerSecondsEl = document.getElementById('mcp-elapsed-seconds');
+  const progressBarFill = document.getElementById('mcp-progress-bar-fill');
+  const stage1El = document.getElementById('stage-1-item');
+  const stage2El = document.getElementById('stage-2-item');
+  const stage3El = document.getElementById('stage-3-item');
 
   if (infTextEl) {
-    infTextEl.innerText = '正在調用專屬管道 PrescriptionMcpPipeline 連接 DrugBank 官方 MCP 進行藥理審查 (6s 逾時安全閥保護中)...';
+    infTextEl.innerText = '正在調用專屬管道 PrescriptionMcpPipeline 連接 DrugBank 官方 MCP 進行藥理審查 (30s 逾時安全閥保護中)...';
   }
+
+  // 啟動 25s~35s 防耐心耗盡進度計時器
+  let elapsed = 0;
+  if (progressContainer) {
+    progressContainer.classList.add('active');
+    if (timerSecondsEl) timerSecondsEl.innerText = '0';
+    if (progressBarFill) progressBarFill.style.width = '10%';
+    if (stage1El) stage1El.className = 'mcp-stage-item in-progress';
+    if (stage2El) stage2El.className = 'mcp-stage-item';
+    if (stage3El) stage3El.className = 'mcp-stage-item';
+  }
+
+  const timerInterval = setInterval(() => {
+    elapsed++;
+    if (timerSecondsEl) timerSecondsEl.innerText = String(elapsed);
+
+    // 依據秒數動態推進 3 個臨床階段，給予使用者即時心理反饋
+    if (elapsed < 10) {
+      if (progressBarFill) progressBarFill.style.width = `${10 + elapsed * 3}%`;
+    } else if (elapsed < 20) {
+      if (stage1El) stage1El.className = 'mcp-stage-item completed';
+      if (stage2El) stage2El.className = 'mcp-stage-item in-progress';
+      if (progressBarFill) progressBarFill.style.width = `${40 + (elapsed - 10) * 3}%`;
+    } else if (elapsed <= 30) {
+      if (stage2El) stage2El.className = 'mcp-stage-item completed';
+      if (stage3El) stage3El.className = 'mcp-stage-item in-progress';
+      if (progressBarFill) progressBarFill.style.width = `${70 + (elapsed - 20) * 2.5}%`;
+    } else {
+      // 超過 30 秒即將抵達 35 秒上限
+      if (progressBarFill) progressBarFill.style.width = '96%';
+    }
+  }, 1000);
 
   try {
     const res = await fetch('/api/prescriptions/infer', {
@@ -533,6 +571,17 @@ async function executePrescriptionInference(medications) {
         bagImageUrl: uploadedBagImageBase64
       })
     });
+
+    clearInterval(timerInterval);
+
+    // 完成時平滑填滿進度條
+    if (progressBarFill) progressBarFill.style.width = '100%';
+    if (stage1El) stage1El.className = 'mcp-stage-item completed';
+    if (stage2El) stage2El.className = 'mcp-stage-item completed';
+    if (stage3El) stage3El.className = 'mcp-stage-item completed';
+    setTimeout(() => {
+      if (progressContainer) progressContainer.classList.remove('active');
+    }, 2500);
 
     const result = await res.json();
     if (!result.success) {
@@ -627,13 +676,15 @@ async function executePrescriptionInference(medications) {
 
           <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed #99f6e4; font-size:0.72rem; color:#0f766e; display:flex; justify-content:space-between;">
             <span>專屬管道：PrescriptionMcpPipeline</span>
-            <span>總管線耗時：${telemetry ? telemetry.totalLatencyMs : 180} ms ｜ 逾時防護閥：6000ms / 15000ms</span>
+            <span>總管線耗時：${telemetry ? telemetry.totalLatencyMs : 180} ms ｜ 逾時防護閥：10,000ms / 30,000ms (25s~35s 黃金閾值)</span>
           </div>
         </div>
       `;
     }
 
   } catch (err) {
+    clearInterval(timerInterval);
+    if (progressContainer) progressContainer.classList.remove('active');
     console.error('處方比對失敗:', err);
     if (infTextEl) infTextEl.innerText = '比對失敗：' + err.message;
   }

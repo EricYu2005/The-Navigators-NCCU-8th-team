@@ -21,11 +21,11 @@ const { queryDrugInteractionsAndAdrs, testDrugBankMcpConnection, DRUGBANK_MCP_UR
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
 
-// 系統全域逾時配置 (可動態熱配置)
+// 系統全域逾時配置 (依臨床實證與使用者耐心模型設定 25s~35s 黃金閾值)
 const PIPELINE_TIMEOUTS = {
   FAST_LOCAL_MS: parseInt(process.env.LLM_FAST_TIMEOUT_MS || '8000', 10),
-  MCP_LOOKUP_MS: parseInt(process.env.DRUGBANK_TIMEOUT_MS || '6000', 10),
-  MCP_TOTAL_MS: parseInt(process.env.LLM_MCP_TIMEOUT_MS || '15000', 10),
+  MCP_LOOKUP_MS: parseInt(process.env.DRUGBANK_TIMEOUT_MS || '10000', 10),
+  MCP_TOTAL_MS: parseInt(process.env.LLM_MCP_TIMEOUT_MS || '30000', 10),
   VERBAL_ORDER_MS: 6000,
   FAMILY_CARE_MS: 5000
 };
@@ -311,7 +311,7 @@ const VerbalOrderPipeline = {
 
 /**
  * 專屬管道 3：藥袋逆向推導與 DrugBank MCP 藥理專屬管道 (PrescriptionMcpPipeline)
- * 路由：DrugBank MCP 增強管道 | 雙層逾時：6000ms (MCP) + 15000ms (LLM)
+ * 路由：DrugBank MCP 增強管道 | 雙層逾時：10000ms (MCP) + 30000ms (LLM 綜合推理，嚴格鎖定 25s~35s 耐心黃金閾值)
  */
 const PrescriptionMcpPipeline = {
   pipelineName: '專屬管道: 臨床藥學 MCP 深度通道 (PrescriptionMcpPipeline)',

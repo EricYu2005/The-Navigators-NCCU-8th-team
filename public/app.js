@@ -1,17 +1,16 @@
 /**
  * app.js
- * CareNav 智護領航 - 前端交互控制器
- * 包含：
- * 1. 左側面板視圖分頁切換 (Multi-view Tab Switching)
- * 2. 全家照護雲端看板即時資料同步 (Dashboard Data Fetching)
- * 3. 診前臨床指引卡生成 (Doctor Discussion Guide Generation)
- * 4. 口頭醫囑轉譯與語音模擬 (Verbal Orders Parser)
- * 5. 藥袋代碼逆向推導與【藥學知識庫 MCP】模擬 (Prescription Inference Engine)
- * 6. 在地醫院 Hub 陪診派案 (Hospital Hub Booking)
+ * CareNav 智護領航 - 核心前端交互控制器 (專業醫療商務版)
+ * 實裝簡報 4 大核心模組 (排除第三點)：
+ * 1. 全家照護雲端看板 (Family Care Hub & Family Notes)
+ * 2. 診前臨床指引卡生成 (20秒主訴 + 5秒勾選回條)
+ * 3. 口頭醫囑結構化轉譯 (語音錄音 / 快捷句 ➜ 條件-行動-紅旗)
+ * 4. 藥袋代碼逆向推導引擎 (照片上傳 + 時段比對 + 藥學知識庫 MCP 接口)
+ * 5. 在地醫院 Hub 陪診媒合 (Linkou, NTU, VGHTPE)
  */
 
 // ========================================================
-// 1. 左側面板導覽與視圖切換機制 (View Switcher)
+// 1. 左側面板導覽與視圖切換
 // ========================================================
 const navItems = document.querySelectorAll('.nav-item');
 const pageViews = document.querySelectorAll('.page-view');
@@ -20,29 +19,28 @@ const pageDescEl = document.getElementById('page-desc');
 
 const VIEW_METAS = {
   'view-dashboard': {
-    title: '全家照護看板 (Family Care Hub)',
+    title: '全家照護雲端看板 (Family Care Hub)',
     desc: '手足同步瀏覽跨科就醫履歷、最新處方異動與口頭醫囑，杜絕照護內耗'
   },
   'view-guide': {
     title: '診前臨床指引卡生成器 (Doctor Discussion Guide)',
-    desc: '將兩週碎狀生理數值與主訴濃縮為主治醫師 20 秒快讀指引卡，自帶 5 秒勾選回條'
+    desc: '依晨間血壓、夜尿與表徵異常，AI 濃縮為主治醫師 20 秒讀完的精準主訴與 5 秒勾選回條'
   },
   'view-orders': {
     title: '口頭醫囑結構化轉譯 (Verbal Orders Digitization)',
-    desc: '出診間極速錄音/勾選，自動轉譯為全家皆懂的【觸發條件 - 具體行動 - 紅旗警訊】'
+    desc: '診後極速語音/文字錄入，自動轉譯為全家皆懂的【觸發條件 - 具體行動 - 危急紅旗】'
   },
   'view-prescription': {
     title: '藥袋用法代碼逆向推導 (Prescription Inference Engine)',
-    desc: '拍照解析醫學代碼 (QD AM/HS)，自動比對新舊處方時段變更，預留藥學知識庫 MCP 接口'
+    desc: '拍照上傳新藥袋，自動比對前後期用法標籤 (QD HS ➜ QD AM)，預留藥學知識庫 MCP 接口'
   },
   'view-hub': {
     title: '在地醫院 Hub 陪診媒合 (Hospital Hub)',
-    desc: '鎖定林口長庚、台大、榮總 15~20 分鐘生活圈，資深護理特助帶指引卡進診間'
+    desc: '鎖定林口長庚、台大、榮總 15~20 分鐘半徑，專業執業護理特助攜指引卡進診間'
   }
 };
 
 function switchView(targetViewId) {
-  // 切換選單按鈕高亮
   navItems.forEach(item => {
     if (item.getAttribute('data-view') === targetViewId) {
       item.classList.add('active');
@@ -51,7 +49,6 @@ function switchView(targetViewId) {
     }
   });
 
-  // 切換頁面視圖
   pageViews.forEach(view => {
     if (view.id === targetViewId) {
       view.classList.add('active');
@@ -60,7 +57,6 @@ function switchView(targetViewId) {
     }
   });
 
-  // 更新頂部標題與說明
   const meta = VIEW_METAS[targetViewId];
   if (meta) {
     pageTitleEl.innerText = meta.title;
@@ -84,83 +80,78 @@ async function loadDashboardData() {
     const result = await res.json();
     if (!result.success) return;
 
-    const { patient, latestGuide, latestOrder, currentPrescription, nextBooking } = result.data;
+    const { patient, latestGuide, latestOrder, currentPrescription, familyNotes } = result.data;
 
     // 渲染時間軸
     const timelineEl = document.getElementById('dashboard-timeline');
     if (timelineEl) {
       timelineEl.innerHTML = `
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
+        <div class="timeline-entry">
+          <div class="timeline-pin"></div>
           <div class="timeline-header">
-            <span class="timeline-title">🩺 心臟內科回診・門診醫囑</span>
-            <span class="timeline-time">${latestOrder ? latestOrder.created_at.slice(0, 10) : '2026-11-05'}</span>
+            <span class="timeline-title">心臟內科門診・最新口頭醫囑</span>
+            <span class="timeline-date">${latestOrder ? latestOrder.created_at.slice(0, 10) : '2026-11-05'}</span>
           </div>
-          <div class="timeline-body">
-            <strong>${latestOrder ? latestOrder.condition_text : '晨間血壓 < 110 mmHg 時'}：</strong>
-            <p>${latestOrder ? latestOrder.action_text : '暫停當天早晨脈優 5mg 一次。'}</p>
-            <small style="color:#0284c7;">由：${latestOrder ? latestOrder.recorded_by : '特助紀錄'}</small>
+          <div class="timeline-card-box">
+            <strong style="color:#0f172a;">${latestOrder ? latestOrder.condition_text : '晨間血壓 < 110 mmHg 時'}</strong>
+            <p style="margin-top:0.25rem;">${latestOrder ? latestOrder.action_text : '暫停當天早晨脈優 Norvasc 5mg 一次。'}</p>
+            <div style="font-size:0.75rem; color:#0284c7; margin-top:0.35rem;">責任特助：${latestOrder ? latestOrder.recorded_by : '王思婷 護理師'}</div>
           </div>
         </div>
 
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
+        <div class="timeline-entry">
+          <div class="timeline-pin"></div>
           <div class="timeline-header">
-            <span class="timeline-title">📋 診前臨床指引卡備忘</span>
-            <span class="timeline-time">看診前 24 小時</span>
+            <span class="timeline-title">診前臨床指引卡・決策備忘</span>
+            <span class="timeline-date">門診前 24 小時生成</span>
           </div>
-          <div class="timeline-body">
-            <p>${latestGuide ? latestGuide.key_complaint : '近兩週血壓晨間波動升高且夜尿增加。'}</p>
+          <div class="timeline-card-box">
+            <p>${latestGuide ? latestGuide.key_complaint : '近兩週晨間收縮壓反覆升高且夜尿增加，疑似利尿劑投藥時間不當。'}</p>
           </div>
         </div>
 
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
+        <div class="timeline-entry">
+          <div class="timeline-pin"></div>
           <div class="timeline-header">
-            <span class="timeline-title">💊 藥袋處方時段優化</span>
-            <span class="timeline-time">本期門診領藥</span>
+            <span class="timeline-title">門診處方逆向推導優化</span>
+            <span class="timeline-date">本期最新處方</span>
           </div>
-          <div class="timeline-body">
-            <p>已將利尿劑與脈優改至早晨服用 (QD AM)，防範夜尿跌倒風險。</p>
+          <div class="timeline-card-box">
+            <p>已將利尿劑與脈優由夜間睡前 (QD HS) 成功改至早餐後 (QD AM)，防範夜尿與夜間下床跌倒。</p>
           </div>
         </div>
       `;
     }
 
-    // 渲染今日四時段用藥排程
+    // 渲染今日四時段服藥排程
     const scheduleEl = document.getElementById('dashboard-schedule');
-    if (scheduleEl && currentPrescription) {
+    if (scheduleEl) {
       scheduleEl.innerHTML = `
-        <div class="slot-box">
-          <div class="slot-header">🌅 早晨 (AM) 飯後</div>
-          <div class="slot-med-list">
-            <span class="slot-med-tag">Norvasc 脈優 5mg (1顆)</span>
-            <span class="slot-med-tag">Lasix 歐得通/利尿劑 40mg (1顆)</span>
-          </div>
+        <div class="schedule-slot">
+          <div class="slot-heading">早晨 (AM) 飯後</div>
+          <span class="slot-pill">Norvasc 脈優 5mg (1顆)</span>
+          <span class="slot-pill">Lasix 利尿劑 40mg (1顆)</span>
         </div>
-        <div class="slot-box">
-          <div class="slot-header">☀️ 中午 (Noon)</div>
-          <div class="slot-med-list">
-            <span style="color:#94a3b8; font-size:0.75rem;">無中午常規用藥</span>
-          </div>
+        <div class="schedule-slot">
+          <div class="slot-heading">中午 (Noon)</div>
+          <span style="font-size:0.75rem; color:#94a3b8;">無中午常規用藥</span>
         </div>
-        <div class="slot-box">
-          <div class="slot-header">🌇 傍晚 (PM) 飯後</div>
-          <div class="slot-med-list">
-            <span style="color:#94a3b8; font-size:0.75rem;">無晚餐常規用藥</span>
-          </div>
+        <div class="schedule-slot">
+          <div class="slot-heading">傍晚 (PM) 飯後</div>
+          <span style="font-size:0.75rem; color:#94a3b8;">無晚餐常規用藥</span>
         </div>
-        <div class="slot-box">
-          <div class="slot-header">🌙 睡前 (HS)</div>
-          <div class="slot-med-list">
-            <span class="slot-med-tag">Diovan 得安穩 80mg (1顆)</span>
-            <span class="slot-med-tag">Crestor 冠脂妥 10mg (1顆)</span>
-          </div>
+        <div class="schedule-slot">
+          <div class="slot-heading">睡前 (HS)</div>
+          <span class="slot-pill">Diovan 得安穩 80mg (1顆)</span>
+          <span class="slot-pill">Crestor 冠脂妥 10mg (1顆)</span>
         </div>
       `;
     }
 
-    // 載入前期與本期處方對照
+    // 渲染手足協同留話簿
+    renderFamilyNotes(familyNotes || []);
+
+    // 載入處方對比預設
     loadPrescriptionPreset('changed');
 
   } catch (err) {
@@ -168,8 +159,72 @@ async function loadDashboardData() {
   }
 }
 
+function renderFamilyNotes(notes) {
+  const container = document.getElementById('family-notes-list');
+  if (!container) return;
+
+  if (notes.length === 0) {
+    container.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; text-align:center; padding:1rem;">尚無留言，手足可於上方發表照護備忘</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  notes.forEach(note => {
+    container.innerHTML += `
+      <div class="note-bubble">
+        <div class="note-bubble-head">
+          <span>${escapeHtml(note.author)} [${escapeHtml(note.city || '連線')}]</span>
+          <span class="note-bubble-time">${note.created_at ? note.created_at.slice(5, 16) : '剛剛'}</span>
+        </div>
+        <p class="note-bubble-text">${escapeHtml(note.content)}</p>
+      </div>
+    `;
+  });
+}
+
+// 手足協同留話表單送出
+const familyNoteForm = document.getElementById('family-note-form');
+if (familyNoteForm) {
+  familyNoteForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const authorSelect = document.getElementById('note-author').value;
+    const content = document.getElementById('note-content').value.trim();
+
+    if (!content) return;
+
+    const parts = authorSelect.split(' ');
+    const author = parts[0];
+    const city = parts[1] ? parts[1].replace(/[()]/g, '') : '台北';
+
+    try {
+      const res = await fetch('/api/family-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author, city, content })
+      });
+      const result = await res.json();
+      if (result.success) {
+        document.getElementById('note-content').value = '';
+        await refreshFamilyNotes();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}
+
+async function refreshFamilyNotes() {
+  try {
+    const res = await fetch('/api/family-notes');
+    const result = await res.json();
+    if (result.success) {
+      renderFamilyNotes(result.data);
+    }
+  } catch (e) {}
+}
+
 // ========================================================
-// 3. 診前臨床指引卡 (Doctor Discussion Guide) 生成
+// 3. 診前臨床指引卡 (Doctor Discussion Guide)
 // ========================================================
 const guideForm = document.getElementById('guide-form');
 if (guideForm) {
@@ -178,24 +233,26 @@ if (guideForm) {
 
     const department = document.getElementById('guide-department').value;
     const doctorName = document.getElementById('guide-doctor').value;
-    const vitalsSummary = document.getElementById('guide-vitals').value;
-    const symptoms = document.getElementById('guide-symptoms').value;
+    const visitDate = document.getElementById('guide-date').value;
+    const morningBp = document.getElementById('guide-morning-bp').value.trim();
+    const nocturiaCount = document.getElementById('guide-nocturia').value.trim();
+    const symptoms = document.getElementById('guide-symptoms').value.trim();
 
     const btn = document.getElementById('generate-guide-btn');
     btn.disabled = true;
-    btn.innerText = '🤖 正在濃縮主訴為 20 秒快讀指引...';
+    btn.innerText = '正在調用 AI 濃縮為 20 秒醫師指引卡...';
 
     try {
       const res = await fetch('/api/guides/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ department, doctorName, vitalsSummary, symptoms })
+        body: JSON.stringify({ department, doctorName, visitDate, morningBp, nocturiaCount, symptoms })
       });
 
       const result = await res.json();
       if (result.success) {
-        // 更新右側指引卡預覽
-        document.getElementById('card-dept-meta').innerText = `科別：${result.data.department}`;
+        document.getElementById('card-dept-meta').innerHTML = `<strong>科別：</strong>${result.data.department}・${result.data.doctorName}`;
+        document.getElementById('card-date-meta').innerHTML = `<strong>日期：</strong>${result.data.visitDate}`;
         document.getElementById('card-complaint').innerText = result.data.keyComplaint;
         document.getElementById('card-questions').innerText = result.data.doctorQuestions;
 
@@ -204,11 +261,11 @@ if (guideForm) {
         result.data.triageOptions.forEach((opt, idx) => {
           const checked = idx === 1 ? 'checked' : '';
           triageContainer.innerHTML += `
-            <label class="triage-checkbox"><input type="checkbox" ${checked}> ${opt}</label>
+            <label class="triage-item"><input type="checkbox" ${checked}> ${opt}</label>
           `;
         });
 
-        alert('✅ 20秒臨床指引卡已生成！可點擊右上角列印或直接展示給醫師！');
+        alert('20秒主治醫師臨床指引卡已生成！可直接列印 A4/A5 或由特助攜入診間。');
       } else {
         alert('生成失敗: ' + result.message);
       }
@@ -217,7 +274,12 @@ if (guideForm) {
       alert('伺服器連線異常');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<span>⚡ AI 自動濃縮為 20 秒醫師指引卡</span>';
+      btn.innerHTML = `
+        <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        AI 自動濃縮為 20 秒醫師臨床指引卡
+      `;
     }
   });
 }
@@ -227,14 +289,75 @@ if (guideForm) {
 // ========================================================
 const verbalForm = document.getElementById('verbal-order-form');
 const rawInputEl = document.getElementById('raw-verbal-input');
+const voiceBtn = document.getElementById('voice-record-btn');
+const voiceLabel = document.getElementById('voice-btn-label');
+
+let recognition = null;
+let isRecording = false;
+
+// 支援 Web Speech API 原生中文語音辨識
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'zh-TW';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    rawInputEl.value = transcript;
+    stopRecordingUI();
+  };
+
+  recognition.onerror = () => {
+    stopRecordingUI();
+  };
+
+  recognition.onend = () => {
+    stopRecordingUI();
+  };
+}
+
+if (voiceBtn) {
+  voiceBtn.addEventListener('click', () => {
+    if (!isRecording) {
+      isRecording = true;
+      voiceBtn.classList.add('recording');
+      voiceLabel.innerText = '正在聆聽醫師口頭醫囑（請對麥克風說話）...';
+
+      if (recognition) {
+        try {
+          recognition.start();
+        } catch (e) {}
+      } else {
+        // 若無麥克風權限或不支援，1.5 秒後自動載入範本
+        setTimeout(() => {
+          loadSampleVoice(1);
+          stopRecordingUI();
+        }, 1500);
+      }
+    } else {
+      stopRecordingUI();
+      if (recognition) recognition.stop();
+    }
+  });
+}
+
+function stopRecordingUI() {
+  isRecording = false;
+  if (voiceBtn) {
+    voiceBtn.classList.remove('recording');
+    voiceLabel.innerText = '按此開始語音口述錄音';
+  }
+}
 
 function loadSampleVoice(sampleId) {
   if (sampleId === 1) {
-    rawInputEl.value = '如果早上量血壓收縮壓低於 110，那顆脈優 5mg 先停吃一次。其餘常規藥照常吃。';
+    rawInputEl.value = '如果早上量血壓收縮壓低於 110，那顆脈優 5mg 先停吃一次。其餘常規降血脂與胃藥正常吃。';
   } else if (sampleId === 2) {
-    rawInputEl.value = '利尿劑改去早上吃免得一直起來夜尿，但如果下肢水腫三天沒消要提早回來加驗腎功能。';
+    rawInputEl.value = '利尿劑改去早餐後吃，避免半夜一直起來夜尿跌倒。若下肢水腫三天沒消要提早回來加驗腎功能。';
   } else if (sampleId === 3) {
-    rawInputEl.value = '如果血糖低於 70 出現手抖心悸，趕快喝 150cc 果汁或吃三顆方糖，暫停下次短效降糖藥。';
+    rawInputEl.value = '如果血糖低於 70 出現冒冷汗手抖，趕快喝 150cc 果汁或吃三顆方糖，暫停下一餐短效降糖藥。';
   }
 }
 
@@ -243,28 +366,29 @@ if (verbalForm) {
     e.preventDefault();
     const rawInput = rawInputEl.value.trim();
     const recordedBy = document.getElementById('order-recorder').value;
-    const department = document.getElementById('order-dept').value;
+    const deptInfo = document.getElementById('order-dept').value;
 
     if (!rawInput) {
-      alert('請輸入或選擇醫師口頭醫囑範本！');
+      alert('請先輸入或口述醫師口頭交代內容！');
       return;
     }
 
     const btn = document.getElementById('parse-order-btn');
     btn.disabled = true;
-    btn.innerText = '⚙️ 結構化轉譯中...';
+    btn.innerText = '正在執行臨床結構化轉譯...';
 
     try {
       const res = await fetch('/api/verbal-orders/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawInput, recordedBy, department })
+        body: JSON.stringify({ rawInput, recordedBy, department: deptInfo })
       });
 
       const result = await res.json();
       if (result.success) {
         await loadVerbalOrdersList();
-        alert('🎉 口頭醫囑轉譯成功！已同步發布至全家照護看板！');
+        await loadDashboardData();
+        alert('口頭醫囑結構化轉譯成功！已同步至家庭照護看板。');
         rawInputEl.value = '';
       } else {
         alert('轉譯失敗: ' + result.message);
@@ -274,7 +398,7 @@ if (verbalForm) {
       alert('轉譯失敗');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<span>⚡ 結構化轉譯為白話行動指引 ➜ 推播全家</span>';
+      btn.innerText = '結構化轉譯為白話行動指引 ➜ 即時推播全家看板';
     }
   });
 }
@@ -290,23 +414,23 @@ async function loadVerbalOrdersList() {
       container.innerHTML = '';
       result.data.forEach(order => {
         container.innerHTML += `
-          <div class="order-card-item">
-            <div class="order-item-header">
-              <strong style="color:#0f172a;">${order.department || '門診醫囑'}・${order.doctor_name || '主治醫師'}</strong>
-              <span class="badge badge-indigo">${order.created_at.slice(0, 16)}</span>
+          <div class="order-entry">
+            <div class="order-entry-head">
+              <span class="order-doc-title">${escapeHtml(order.department || '門診醫囑')}・${escapeHtml(order.doctor_name || '主治醫師')}</span>
+              <span class="status-badge">${order.created_at ? order.created_at.slice(0, 16) : '剛剛'}</span>
             </div>
-            <div class="order-raw">口語原始交代：「${order.raw_input}」</div>
-            <div class="rule-block rule-condition">
-              <strong>${order.condition_text || '觸發條件'}</strong>
+            <div class="order-raw-quote">口語原始記錄：「${escapeHtml(order.raw_input)}」</div>
+            <div class="rule-box rule-condition-box">
+              <strong>【觸發條件】</strong> ${escapeHtml(order.condition_text || '清晨量測收縮壓 < 110 mmHg 時')}
             </div>
-            <div class="rule-block rule-action">
-              <strong>${order.action_text || '行動處置'}</strong>
+            <div class="rule-box rule-action-box">
+              <strong>【具體行動】</strong> ${escapeHtml(order.action_text || '暫停服用脈優一次')}
             </div>
-            <div class="rule-block rule-redflags">
-              <strong>${order.red_flags || '危急紅旗'}</strong>
+            <div class="rule-box rule-redflags-box">
+              <strong>【危急警訊】</strong> ${escapeHtml(order.red_flags || '若持續過低請立即就醫')}
             </div>
-            <div style="font-size:0.75rem; color:#64748b; margin-top:0.5rem; text-align:right;">
-              由 <strong>${order.recorded_by}</strong> 於診後即時收錄
+            <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem; text-align:right;">
+              收錄責任人：${escapeHtml(order.recorded_by || '特助')}
             </div>
           </div>
         `;
@@ -317,26 +441,32 @@ async function loadVerbalOrdersList() {
   }
 }
 
-// 語音按鈕模擬
-const voiceBtn = document.getElementById('voice-record-btn');
-if (voiceBtn) {
-  let isRecording = false;
-  voiceBtn.addEventListener('click', () => {
-    isRecording = !isRecording;
-    if (isRecording) {
-      voiceBtn.style.background = '#ef4444';
-      voiceBtn.innerHTML = '<span class="mic-icon">🔴</span> 正在聆聽診間交代...（再次點擊結束）';
-    } else {
-      voiceBtn.style.background = 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)';
-      voiceBtn.innerHTML = '<span class="mic-icon">🎤</span> 按住錄音（或點擊下方快捷範本）';
-      loadSampleVoice(1);
+// ========================================================
+// 5. 藥袋用法代碼逆向推導 (Prescription Inference Engine)
+// ========================================================
+let uploadedBagImageBase64 = null;
+
+// 藥袋照片上傳預覽
+const bagImageInput = document.getElementById('bag-image-input');
+if (bagImageInput) {
+  bagImageInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        uploadedBagImageBase64 = event.target.result;
+        const previewImg = document.getElementById('bag-image-preview');
+        const previewContainer = document.getElementById('image-preview-container');
+        if (previewImg && previewContainer) {
+          previewImg.src = uploadedBagImageBase64;
+          previewContainer.style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(file);
     }
   });
 }
 
-// ========================================================
-// 5. 藥袋逆向推導引擎 (Prescription Inference Engine)
-// ========================================================
 function loadPrescriptionPreset(type) {
   const prevListEl = document.getElementById('prev-meds-list');
   const currListEl = document.getElementById('curr-meds-list');
@@ -344,51 +474,51 @@ function loadPrescriptionPreset(type) {
 
   if (prevListEl) {
     prevListEl.innerHTML = `
-      <div class="med-row">
-        <div class="med-name">Norvasc 脈優錠 5mg</div>
-        <span class="med-code-pill">QD HS (睡前服)</span>
-        <div style="color:#64748b; font-size:0.75rem; margin-top:0.2rem;">高血壓</div>
+      <div class="med-card-row">
+        <div><strong>Norvasc 脈優錠 5mg</strong></div>
+        <span class="med-code-badge">QD HS (每日睡前一次)</span>
+        <div style="color:#64748b; font-size:0.75rem; margin-top:0.25rem;">高血壓常規</div>
       </div>
-      <div class="med-row highlight-change">
-        <div class="med-name">Lasix 歐得通/利尿劑 40mg</div>
-        <span class="med-code-pill" style="background:#fee2e2; color:#dc2626;">QD HS (睡前服) ⚠️</span>
-        <div style="color:#b91c1c; font-size:0.75rem; margin-top:0.2rem;">導致嚴重夜尿與起夜跌倒風險</div>
+      <div class="med-card-row" style="border-color:#fca5a5; background:#fef2f2;">
+        <div><strong style="color:#b91c1c;">Lasix 歐得通/利尿劑 40mg</strong></div>
+        <span class="med-code-badge" style="background:#fee2e2; color:#dc2626;">QD HS (睡前服)</span>
+        <div style="color:#b91c1c; font-size:0.75rem; margin-top:0.25rem;">排程盲點：造成夜間起夜 3-4 次跌倒高風險</div>
       </div>
-      <div class="med-row">
-        <div class="med-name">Crestor 冠脂妥 10mg</div>
-        <span class="med-code-pill">QD HS (睡前服)</span>
-        <div style="color:#64748b; font-size:0.75rem; margin-top:0.2rem;">高血脂</div>
+      <div class="med-card-row">
+        <div><strong>Crestor 冠脂妥 10mg</strong></div>
+        <span class="med-code-badge">QD HS (每日睡前一次)</span>
+        <div style="color:#64748b; font-size:0.75rem; margin-top:0.25rem;">降膽固醇</div>
       </div>
     `;
   }
 
   if (currListEl) {
     currListEl.innerHTML = `
-      <div class="med-row highlight-change">
-        <div class="med-name">Norvasc 脈優錠 5mg</div>
-        <span class="med-code-pill" style="background:#dcfce7; color:#166534;">QD AM (改早晨) ✨</span>
-        <div style="color:#15803d; font-size:0.75rem; margin-top:0.2rem;">時段變更：壓制清晨高血壓峰值</div>
+      <div class="med-card-row change-timing">
+        <div><strong style="color:#0f766e;">Norvasc 脈優錠 5mg</strong></div>
+        <span class="med-code-badge" style="background:#ccfbf1; color:#0f766e;">QD AM (改早晨)</span>
+        <div style="color:#0f766e; font-size:0.75rem; margin-top:0.25rem;">時段變更：壓制晨峰高血壓 (早晨7-9點)</div>
       </div>
-      <div class="med-row highlight-change">
-        <div class="med-name">Lasix 歐得通/利尿劑 40mg</div>
-        <span class="med-code-pill" style="background:#dcfce7; color:#166534;">QD AM (改早晨) ✨</span>
-        <div style="color:#15803d; font-size:0.75rem; margin-top:0.2rem;">時段變更：改早餐後吃，夜尿降為1次</div>
+      <div class="med-card-row change-timing">
+        <div><strong style="color:#0f766e;">Lasix 歐得通/利尿劑 40mg</strong></div>
+        <span class="med-code-badge" style="background:#ccfbf1; color:#0f766e;">QD AM (改早晨)</span>
+        <div style="color:#0f766e; font-size:0.75rem; margin-top:0.25rem;">時段變更：改早餐後吃，夜尿降為 1 次防跌</div>
       </div>
-      <div class="med-row highlight-change">
-        <div class="med-name">Diovan 得安穩 80mg</div>
-        <span class="med-code-pill" style="background:#e0e7ff; color:#4338ca;">QD HS (新開立) 🆕</span>
-        <div style="color:#4338ca; font-size:0.75rem; margin-top:0.2rem;">本期新增：保護心臟與腎臟功能</div>
+      <div class="med-card-row change-new">
+        <div><strong style="color:#4338ca;">Diovan 得安穩 80mg</strong></div>
+        <span class="med-code-badge" style="background:#e0e7ff; color:#4338ca;">QD HS (新開立)</span>
+        <div style="color:#4338ca; font-size:0.75rem; margin-top:0.25rem;">本期新增：保護慢性腎臟病第3期之腎小球功能</div>
       </div>
-      <div class="med-row">
-        <div class="med-name">Crestor 冠脂妥 10mg</div>
-        <span class="med-code-pill">QD HS (睡前服)</span>
-        <div style="color:#64748b; font-size:0.75rem; margin-top:0.2rem;">維持不變</div>
+      <div class="med-card-row">
+        <div><strong>Crestor 冠脂妥 10mg</strong></div>
+        <span class="med-code-badge">QD HS (維持睡前)</span>
+        <div style="color:#64748b; font-size:0.75rem; margin-top:0.25rem;">維持原方續開</div>
       </div>
     `;
   }
 
   if (infTextEl) {
-    infTextEl.innerText = '【逆向推導完成】本期門診將利尿劑與脈優從睡前 (HS) 調整至晨間 (AM)，徹底消除長輩半夜起夜頻繁跌倒之隱患；新增得安穩保護慢性腎臟病第3期。';
+    infTextEl.innerText = '【門診處方逆向推導診斷】本期門診將利尿劑與脈優由夜間睡前 (QD HS) 成功調整至晨間 (QD AM)，徹底化解長輩夜間起夜 3-4 次之跌倒高風險；加開得安穩保護慢性腎臟病第3期。';
   }
 
   triggerMcpSimulation();
@@ -399,34 +529,38 @@ function triggerMcpSimulation() {
   if (!mcpArea) return;
 
   mcpArea.innerHTML = `
-    <div style="margin-top:0.75rem; padding:0.65rem; background:rgba(79, 70, 229, 0.08); border-radius:6px; border-left:3px solid #4f46e5; font-size:0.8rem; color:#3730a3;">
-      <strong>🔌 [藥學知識庫 MCP 即時比對警示]：</strong>
-      <ul style="margin-left:1.2rem; margin-top:0.25rem;">
-        <li>Norvasc (CCB) + Diovan (ARB) 協同降壓，首週晨間起立時需注意「姿勢性低血壓」。</li>
-        <li>Beers Criteria 高齡用藥指引：利尿劑避開夜間服用判定為「高度適當之劑量排程優化」。</li>
+    <div style="margin-top:0.75rem; padding:0.75rem; background:#f5f3ff; border:1px solid #c7d2fe; border-radius:6px; font-size:0.8rem; color:#3730a3;">
+      <div style="font-weight:700; margin-bottom:0.25rem;">藥學知識庫 MCP 即時臨床審查反饋：</div>
+      <ul style="margin-left:1.25rem; line-height:1.6;">
+        <li><strong>DDI 交互作用警示：</strong>Norvasc (CCB) 與 Diovan (ARB) 協同降壓，服藥時段調整首週，晨間由平躺坐起需防範姿勢性低血壓。</li>
+        <li><strong>Beers Criteria 老人用藥準則：</strong>將 Loop 利尿劑由睡前調整至早晨符合高齡最佳給藥指引，顯著降低起夜骨折事件率。</li>
       </ul>
     </div>
   `;
 }
 
-// 支援手動新增自訂藥物
-const rxForm = document.getElementById('rx-inference-form');
-if (rxForm) {
-  rxForm.addEventListener('submit', (e) => {
+// 手動加入自訂藥物比對
+const rxManualForm = document.getElementById('rx-inference-form');
+if (rxManualForm) {
+  rxManualForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const name = document.getElementById('custom-med-name').value;
-    const code = document.getElementById('custom-med-code').value;
-    const ind = document.getElementById('custom-med-ind').value;
+    const name = document.getElementById('custom-med-name').value.trim();
+    const code = document.getElementById('custom-med-code').value.trim();
+    const ind = document.getElementById('custom-med-ind').value.trim();
+
+    if (!name || !code) return;
 
     const currListEl = document.getElementById('curr-meds-list');
-    currListEl.innerHTML += `
-      <div class="med-row highlight-change">
-        <div class="med-name">${name}</div>
-        <span class="med-code-pill">${code}</span>
-        <div style="color:#0284c7; font-size:0.75rem; margin-top:0.2rem;">${ind}</div>
-      </div>
-    `;
-    alert(`✅ 已將「${name}」以代碼【${code}】加入本期處方並完成推導！`);
+    if (currListEl) {
+      currListEl.innerHTML += `
+        <div class="med-card-row change-timing">
+          <div><strong>${escapeHtml(name)}</strong></div>
+          <span class="med-code-badge">${escapeHtml(code)}</span>
+          <div style="color:#0284c7; font-size:0.75rem; margin-top:0.25rem;">${escapeHtml(ind)}</div>
+        </div>
+      `;
+    }
+    alert(`已將「${name} (${code})」納入本期處方並完成推導！`);
   });
 }
 
@@ -444,13 +578,13 @@ async function loadHubBookings() {
       container.innerHTML = '';
       result.data.forEach(item => {
         container.innerHTML += `
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.75rem; margin-top:0.5rem; font-size:0.85rem;">
-            <div style="display:flex; justify-content:space-between;">
-              <strong>🏥 ${item.hospital_name} (${item.department})</strong>
-              <span class="badge badge-success">${item.status}</span>
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:0.75rem; margin-top:0.5rem; font-size:0.82rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>${escapeHtml(item.hospital_name)} (${escapeHtml(item.department)})</strong>
+              <span class="status-badge">${escapeHtml(item.status)}</span>
             </div>
-            <div style="color:#64748b; font-size:0.8rem; margin-top:0.25rem;">
-              📅 預定時間：${item.visit_date} | 👩‍⚕️ 指派特助：${item.escort_name}
+            <div style="color:#64748b; font-size:0.78rem; margin-top:0.25rem;">
+              就醫時段：${escapeHtml(item.visit_date)} | 指定護理特助：${escapeHtml(item.escort_name)}
             </div>
           </div>
         `;
@@ -478,7 +612,7 @@ if (bookingForm) {
       });
       const result = await res.json();
       if (result.success) {
-        alert('🎉 恭喜！陪診特助已預約成功！特助將攜帶診前指引卡陪同就診。');
+        alert('在地護理特助陪診已預約成功！特助將攜帶診前指引卡陪同就診。');
         await loadHubBookings();
       }
     } catch (e) {
@@ -487,7 +621,9 @@ if (bookingForm) {
   });
 }
 
-// 檢查 Ollama 本地容器連線狀態並更新側邊欄
+// ========================================================
+// 7. Ollama 連線狀態與初始化
+// ========================================================
 async function checkOllamaStatus() {
   const dot = document.getElementById('ollama-status-dot');
   const label = document.getElementById('ollama-status-label');
@@ -497,23 +633,30 @@ async function checkOllamaStatus() {
     const res = await fetch('/api/ollama/status');
     const result = await res.json();
     if (result.success && result.data.online) {
-      dot.className = 'dot online';
-      dot.style.backgroundColor = '#10b981';
-      label.innerText = `🦙 Ollama 連線中 (${result.data.currentModel})`;
-      label.title = `可用模型: ${result.data.models.join(', ')}`;
+      dot.className = 'sys-dot online';
+      label.innerText = `Ollama 在線 (${result.data.currentModel})`;
     } else {
-      dot.className = 'dot';
+      dot.className = 'sys-dot';
       dot.style.backgroundColor = '#f59e0b';
-      label.innerText = '🦙 Ollama 容器待連線 (:11434)';
+      label.innerText = 'Ollama 容器待命 (:11434)';
     }
   } catch (e) {
-    dot.className = 'dot';
+    dot.className = 'sys-dot';
     dot.style.backgroundColor = '#f59e0b';
-    label.innerText = '🦙 Ollama 容器待連線 (:11434)';
+    label.innerText = 'Ollama 容器待命 (:11434)';
   }
 }
 
-// 刷新按鈕
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 document.getElementById('refresh-all-btn').addEventListener('click', () => {
   loadDashboardData();
   loadVerbalOrdersList();
@@ -521,12 +664,9 @@ document.getElementById('refresh-all-btn').addEventListener('click', () => {
   checkOllamaStatus();
 });
 
-// 頁面初始化
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboardData();
   loadVerbalOrdersList();
   loadHubBookings();
   checkOllamaStatus();
-});
-  loadHubBookings();
 });

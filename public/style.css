@@ -1,39 +1,47 @@
 :root {
-  --sidebar-bg: #0f172a;
-  --sidebar-hover: #1e293b;
-  --sidebar-border: #334155;
-  --main-bg: #f8fafc;
+  /* 專業醫療與商務 SaaS 色系 */
+  --sidebar-bg: #0b1120;
+  --sidebar-border: #1e293b;
+  --sidebar-item-hover: #1e293b;
+  --sidebar-active: #0284c7;
+  
+  --bg-main: #f8fafc;
   --card-bg: #ffffff;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
   
-  --primary: #0284c7;        /* 醫療青藍色 */
+  --primary: #0284c7;
   --primary-hover: #0369a1;
-  --primary-light: #e0f2fe;
+  --primary-subtle: #f0f9ff;
+  --primary-border: #bae6fd;
   
-  --teal: #0d9488;           /* 護理翡翠綠 */
-  --teal-light: #ccfbf1;
+  --teal: #0f766e;
+  --teal-hover: #115e59;
+  --teal-subtle: #f0fdfa;
   
-  --indigo: #4f46e5;         /* 智慧運算靛藍 */
-  --indigo-light: #e0e7ff;
+  --indigo: #4338ca;
+  --indigo-subtle: #eef2ff;
   
-  --amber: #d97706;          /* 警示琥珀黃 */
-  --amber-light: #fef3c7;
+  --amber: #b45309;
+  --amber-subtle: #fffbeb;
+  --amber-border: #fde68a;
   
-  --rose: #e11d48;           /* 危急警訊紅 */
-  --rose-light: #ffe4e6;
+  --rose: #b91c1c;
+  --rose-subtle: #fef2f2;
+  --rose-border: #fecaca;
   
   --text-dark: #0f172a;
   --text-body: #334155;
   --text-muted: #64748b;
-  --border: #e2e8f0;
+  --text-light: #94a3b8;
   
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -43,280 +51,295 @@
 }
 
 body {
-  font-family: 'Noto Sans TC', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background-color: var(--main-bg);
+  font-family: 'Plus Jakarta Sans', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-main);
   color: var(--text-body);
   line-height: 1.5;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ==================== 應用版面配置 (APP LAYOUT) ==================== */
+/* ==================== 佈局骨架 ==================== */
 .app-layout {
   display: flex;
   min-height: 100vh;
 }
 
-/* ==================== 左側面板 (SIDEBAR) ==================== */
+/* ==================== 專業左側面板 (SIDEBAR) ==================== */
 .sidebar {
-  width: 280px;
+  width: 290px;
   background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   color: #f8fafc;
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1.25rem;
   flex-shrink: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
   position: sticky;
   top: 0;
   height: 100vh;
 }
 
-.brand {
-  margin-bottom: 1.5rem;
+.brand-section {
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--sidebar-border);
 }
 
-.brand-logo {
+.brand-mark {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
-.logo-icon {
-  font-size: 1.8rem;
-  background: linear-gradient(135deg, #38bdf8, #818cf8);
-  border-radius: var(--radius-md);
-  padding: 0.25rem 0.5rem;
+.brand-svg {
+  width: 26px;
+  height: 26px;
+  color: #38bdf8;
 }
 
-.brand-logo h2 {
-  font-size: 1.4rem;
+.brand-naming {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.brand-title {
+  font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: #ffffff;
-  display: inline-block;
-  margin-right: 0.35rem;
 }
 
-.brand-tag {
+.brand-version {
   font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(56, 189, 248, 0.2);
+  font-weight: 600;
   color: #38bdf8;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  vertical-align: middle;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-xs);
 }
 
-.brand-sub {
-  font-size: 0.8rem;
-  color: #94a3b8;
+.brand-descriptor {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #64748b;
   margin-top: 0.35rem;
 }
 
-/* 長輩個案卡 */
-.patient-card {
+/* 長輩身分個案卡 */
+.case-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.85rem;
+  gap: 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--sidebar-border);
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem;
   margin-bottom: 1.5rem;
 }
 
-.patient-avatar {
-  font-size: 1.75rem;
-  background: rgba(255, 255, 255, 0.1);
+.case-avatar {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  background: #1e293b;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.patient-name-row {
+.case-avatar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.case-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.case-name-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
-.patient-name-row h4 {
-  font-size: 0.95rem;
+.case-name {
+  font-size: 0.92rem;
+  font-weight: 700;
   color: #ffffff;
 }
 
-.age-badge {
-  font-size: 0.7rem;
+.case-age {
+  font-size: 0.68rem;
   background: #334155;
   color: #cbd5e1;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--radius-xs);
 }
 
-.patient-meta {
-  font-size: 0.75rem;
+.case-sub {
+  font-size: 0.72rem;
   color: #94a3b8;
-  margin: 0.15rem 0 0.3rem 0;
 }
 
-.hospital-tag {
-  font-size: 0.7rem;
+.case-hub-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
   color: #38bdf8;
-  background: rgba(56, 189, 248, 0.1);
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-xs);
   display: inline-block;
+  margin-top: 0.15rem;
 }
 
-/* 導覽選單 (Side Nav) */
+/* 導覽選單清單 */
 .nav-menu {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
   flex: 1;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
   width: 100%;
-  padding: 0.75rem 0.9rem;
-  border-radius: var(--radius-md);
-  border: none;
+  padding: 0.7rem 0.85rem;
   background: transparent;
-  color: #cbd5e1;
-  font-size: 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: #94a3b8;
+  font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s ease;
-  position: relative;
+  transition: all 0.15s ease;
 }
 
 .nav-item:hover {
-  background: var(--sidebar-hover);
+  background: var(--sidebar-item-hover);
   color: #ffffff;
 }
 
 .nav-item.active {
-  background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
-  color: #ffffff;
+  background: rgba(2, 132, 199, 0.15);
+  border-color: rgba(2, 132, 199, 0.4);
+  color: #38bdf8;
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
 }
 
-.nav-icon {
-  font-size: 1.15rem;
-  margin-right: 0.75rem;
+.nav-svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
-.nav-label {
+.nav-text {
   flex: 1;
 }
 
-.nav-pill, .nav-badge {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
+.nav-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: transparent;
+}
+.nav-status-dot.active {
+  background-color: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
 }
 
-.nav-pill {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34d399;
-}
-
-.nav-badge {
-  background: rgba(255, 255, 255, 0.12);
+.nav-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 255, 255, 0.08);
   color: #cbd5e1;
 }
-
-.nav-badge.pulse {
-  background: rgba(239, 68, 68, 0.2);
+.nav-chip.pulse {
+  background: rgba(239, 68, 68, 0.15);
   color: #f87171;
-  animation: pulseAnim 2s infinite;
 }
-
-.nav-badge.mcp {
-  background: rgba(129, 140, 248, 0.2);
+.nav-chip.mcp {
+  background: rgba(99, 102, 241, 0.18);
   color: #a5b4fc;
 }
 
-@keyframes pulseAnim {
-  0% { opacity: 0.7; }
-  50% { opacity: 1; transform: scale(1.05); }
-  100% { opacity: 0.7; }
-}
-
-/* 側邊欄底部 */
-.sidebar-footer {
+/* 側邊欄底部狀態 */
+.sidebar-system-footer {
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.75rem;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.status-indicator {
+.sys-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-size: 0.72rem;
   color: #94a3b8;
-  margin-bottom: 0.75rem;
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
+.sys-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
+  background: #64748b;
+}
+.sys-dot.online {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
 }
 
-.dot.online {
-  background-color: #10b981;
-  box-shadow: 0 0 8px #10b981;
+.mcp-panel-mini {
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.7rem;
+  margin-top: 0.25rem;
 }
 
-.mcp-indicator {
+.mcp-mini-head {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(79, 70, 229, 0.15);
-  border: 1px dashed rgba(129, 140, 248, 0.35);
-  padding: 0.6rem;
-  border-radius: var(--radius-sm);
+  gap: 0.4rem;
+  font-size: 0.75rem;
   color: #c7d2fe;
 }
 
 .mcp-icon {
-  font-size: 1.1rem;
+  width: 14px;
+  height: 14px;
+  color: #818cf8;
 }
 
-.mcp-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.mcp-text strong {
-  font-size: 0.75rem;
-  color: #e0e7ff;
-}
-
-.mcp-sub {
+.mcp-mini-status {
+  display: block;
   font-size: 0.68rem;
-  color: #a5b4fc;
+  color: #94a3b8;
+  margin-top: 0.15rem;
 }
 
-/* ==================== 主內容展示區 (MAIN VIEWPORT) ==================== */
+/* ==================== 主工作視圖區 (MAIN VIEWPORT) ==================== */
 .main-viewport {
   flex: 1;
   padding: 1.75rem 2.25rem;
   overflow-y: auto;
-  max-width: 1300px;
+  max-width: 1350px;
 }
 
-/* 頂部導覽列 */
-.top-bar {
+/* 頂部導航 */
+.top-nav-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -325,16 +348,17 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.top-title h1 {
-  font-size: 1.65rem;
+.top-context h1 {
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-dark);
-  margin-bottom: 0.25rem;
+  letter-spacing: -0.3px;
 }
 
-.top-title p {
-  font-size: 0.9rem;
+.top-context p {
+  font-size: 0.85rem;
   color: var(--text-muted);
+  margin-top: 0.2rem;
 }
 
 .top-actions {
@@ -343,160 +367,191 @@ body {
   gap: 1.25rem;
 }
 
-.family-avatars {
+.family-members-sync {
   display: flex;
   align-items: center;
+  gap: 0.4rem;
   background: #ffffff;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
   border: 1px solid var(--border);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
 }
 
-.avatar {
-  font-size: 1.2rem;
-  margin-left: -0.25rem;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.avatar:hover {
-  transform: translateY(-2px) scale(1.1);
-}
-
-.avatar-more {
+.sync-title {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--primary);
-  margin-left: 0.35rem;
+  color: var(--text-muted);
 }
 
-/* ==================== 頁面視圖切換 (VIEW MECHANISM) ==================== */
+.member-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  color: var(--text-body);
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-xs);
+}
+
+/* 視圖切換機制 */
 .page-view {
   display: none;
-  animation: fadeIn 0.25s ease-in-out;
 }
-
 .page-view.active {
   display: block;
+  animation: viewFade 0.2s ease-out;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+@keyframes viewFade {
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ==================== 通用卡片與排版 ==================== */
-.card {
+/* ==================== 專業商務卡片與按鈕 ==================== */
+.panel-card {
   background: var(--card-bg);
-  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   padding: 1.5rem;
 }
 
-.card-header {
+.panel-card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.card-header h3 {
-  font-size: 1.15rem;
+.head-lead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.head-svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+}
+
+.head-lead h3 {
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-dark);
 }
 
-/* 按鈕樣式 */
+.section-intro {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   padding: 0.65rem 1.15rem;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
+  border: 1px solid transparent;
   cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-  gap: 0.4rem;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-svg {
+  width: 16px;
+  height: 16px;
 }
 
 .btn-primary {
   background-color: var(--primary);
-  color: white;
+  color: #ffffff;
 }
 .btn-primary:hover {
   background-color: var(--primary-hover);
-  transform: translateY(-1px);
 }
 
 .btn-secondary {
   background-color: var(--teal);
-  color: white;
+  color: #ffffff;
 }
 .btn-secondary:hover {
-  background-color: #0f766e;
+  background-color: var(--teal-hover);
 }
 
 .btn-outline {
   background: #ffffff;
-  border: 1px solid var(--border);
+  border-color: var(--border);
   color: var(--text-body);
 }
 .btn-outline:hover {
-  background: #f1f5f9;
+  background: var(--bg-main);
   border-color: #cbd5e1;
 }
 
 .btn-ghost {
   background: transparent;
   color: var(--primary);
-  padding: 0.35rem 0.65rem;
 }
 .btn-ghost:hover {
-  background: var(--primary-light);
+  background: var(--primary-subtle);
 }
 
 .btn-sm {
   padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
 
 .btn-block {
   width: 100%;
 }
 
-/* 表單元件 */
+/* 表單控制項 */
 .form-group {
   margin-bottom: 1.15rem;
 }
 
-.form-group label {
+.form-label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-dark);
   margin-bottom: 0.35rem;
 }
 
-.form-control {
+.form-input {
   width: 100%;
-  padding: 0.7rem 0.9rem;
-  border: 1.5px solid var(--border);
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-family: inherit;
-  background-color: #f8fafc;
-  transition: all 0.2s;
+  color: var(--text-dark);
+  background-color: #ffffff;
+  transition: all 0.15s;
 }
 
-.form-control:focus {
+.form-input:focus {
   outline: none;
   border-color: var(--primary);
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.form-input-sm {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.82rem;
 }
 
 .form-row {
@@ -506,235 +561,302 @@ body {
 
 .flex-1 { flex: 1; }
 
-/* 標籤徽章 */
-.badge {
+.status-badge {
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-xs);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
 }
 
-.badge-primary { background: var(--primary-light); color: var(--primary); }
-.badge-success, .badge-emerald { background: var(--teal-light); color: var(--teal); }
-.badge-indigo { background: var(--indigo-light); color: var(--indigo); }
-.badge-warning { background: var(--amber-light); color: var(--amber); }
+.status-badge-outline {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
 
-/* ==================== VIEW 1: 看板 (DASHBOARD) ==================== */
-.stats-row {
+/* ==================== VIEW 1: 全家照護雲端看板 ==================== */
+.kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
   margin-bottom: 1.5rem;
 }
 
-.stat-card {
+.kpi-card {
   background: #ffffff;
-  border-radius: var(--radius-md);
-  padding: 1.2rem;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.stat-icon {
-  font-size: 2rem;
-  background: #f1f5f9;
-  border-radius: var(--radius-md);
-  padding: 0.5rem;
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-icon-wrap svg {
+  width: 22px;
+  height: 22px;
 }
 
-.stat-label {
-  font-size: 0.8rem;
+.bg-blue-subtle { background: #f0f9ff; color: #0284c7; }
+.bg-teal-subtle { background: #f0fdfa; color: #0f766e; }
+.bg-amber-subtle { background: #fffbeb; color: #d97706; }
+.bg-indigo-subtle { background: #eef2ff; color: #4338ca; }
+
+.kpi-title {
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-muted);
 }
 
-.stat-value {
+.kpi-num {
   font-size: 1.35rem;
   font-weight: 800;
   color: var(--text-dark);
+  margin: 0.15rem 0;
 }
 
-.stat-meta {
-  font-size: 0.75rem;
+.kpi-sub {
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
-.text-emerald { color: #059669 !important; }
-.text-amber { color: #d97706 !important; }
+.text-teal { color: #0f766e !important; }
+.text-amber { color: #b45309 !important; }
 
-.dashboard-grid {
+.dashboard-two-col {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.5rem;
+}
+
+.right-stack {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
 /* 時間軸 */
-.timeline-container {
+.timeline-stream {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.timeline-item {
+.timeline-entry {
   position: relative;
-  padding-left: 2rem;
-  border-left: 2px dashed #cbd5e1;
-  padding-bottom: 1rem;
+  padding-left: 1.75rem;
+  border-left: 2px solid var(--border);
+  padding-bottom: 0.85rem;
 }
-
-.timeline-item:last-child {
-  border-left: 2px solid transparent;
+.timeline-entry:last-child {
+  border-left-color: transparent;
   padding-bottom: 0;
 }
 
-.timeline-dot {
+.timeline-pin {
   position: absolute;
-  left: -8px;
-  top: 0;
-  width: 14px;
-  height: 14px;
+  left: -6px;
+  top: 2px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background-color: var(--primary);
-  border: 2px solid #ffffff;
 }
 
 .timeline-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.25rem;
+  align-items: center;
 }
 
 .timeline-title {
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-dark);
-  font-size: 0.95rem;
 }
 
-.timeline-time {
+.timeline-date {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-light);
 }
 
-.timeline-body {
-  font-size: 0.85rem;
-  color: var(--text-body);
-  background: #f8fafc;
-  padding: 0.75rem;
-  border-radius: var(--radius-sm);
-  margin-top: 0.4rem;
+.timeline-card-box {
+  background: var(--bg-main);
   border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
 }
 
-/* 四時段用藥 */
-.schedule-slots {
+/* 四時段排程 */
+.med-schedule-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
-  margin-bottom: 1rem;
 }
 
-.slot-box {
-  background: #f8fafc;
+.schedule-slot {
+  background: var(--bg-main);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 0.9rem;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
 }
 
-.slot-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: var(--text-dark);
-}
-
-.slot-med-list {
+.slot-heading {
   font-size: 0.8rem;
-  color: var(--text-body);
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.4rem;
 }
 
-.slot-med-tag {
+.slot-pill {
   display: block;
   background: #ffffff;
   border: 1px solid var(--border);
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
+  font-size: 0.75rem;
   margin-bottom: 0.35rem;
+  color: var(--text-body);
 }
 
-.family-notice-box {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: var(--radius-md);
-  padding: 0.85rem;
-  font-size: 0.85rem;
-  color: #166534;
+/* 手足協同留話簿 */
+.family-note-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-/* ==================== VIEW 2: 診前臨床指引卡 (GUIDE) ==================== */
-.guide-layout {
+.notes-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.note-bubble {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
+
+.note-bubble-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.note-bubble-time {
+  font-weight: 400;
+  color: var(--text-light);
+}
+
+.note-bubble-text {
+  font-size: 0.82rem;
+  color: var(--text-body);
+}
+
+/* ==================== VIEW 2: 診前臨床指引卡 (FORMAL CLINICAL SHEET) ==================== */
+.two-col-layout {
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 1fr 1.15fr;
   gap: 1.5rem;
   align-items: start;
 }
 
-.printable-card {
+/* 專業高對比臨床單據 (Clinical Sheet) */
+.clinical-sheet {
   background: #ffffff;
   border: 2px solid #0f172a;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   padding: 1.5rem;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
 }
 
-.guide-card-header {
-  border-bottom: 2px solid #0f172a;
-  padding-bottom: 0.85rem;
-  margin-bottom: 1.25rem;
+.sheet-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #0f172a;
+  margin-bottom: 1rem;
 }
 
-.guide-badge {
+.sheet-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.sheet-subtitle {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  display: block;
+}
+
+.sheet-meta-box {
+  font-size: 0.78rem;
+  color: #334155;
+  text-align: right;
+  line-height: 1.4;
+}
+
+.sheet-block {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 0.85rem;
+  background: #ffffff;
+}
+
+.block-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.label-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-xs);
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.label-badge-dark {
   background: #0f172a;
   color: #ffffff;
-  font-weight: 800;
-  font-size: 0.9rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 4px;
 }
 
-.guide-card-meta {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #334155;
-  display: flex;
-  gap: 0.75rem;
-}
-
-.guide-section {
-  margin-bottom: 1.25rem;
-  padding: 0.85rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radius-sm);
-}
-
-.guide-sec-title {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  color: #0f172a;
-  margin-bottom: 0.45rem;
-}
-
-.guide-sec-content {
-  font-size: 0.88rem;
+.block-body {
+  font-size: 0.85rem;
   color: #1e293b;
   line-height: 1.6;
 }
@@ -743,20 +865,19 @@ body {
   white-space: pre-line;
 }
 
-.triage-section {
-  background: #fefce8;
-  border: 1.5px dashed #ca8a04;
+.triage-box {
+  background: #fffbeb;
+  border: 1.5px solid #ca8a04;
 }
 
-.triage-options-grid {
+.triage-checkbox-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 
-.triage-checkbox {
-  font-size: 0.85rem;
+.triage-item {
+  font-size: 0.82rem;
   font-weight: 600;
   color: #854d0e;
   display: flex;
@@ -765,289 +886,421 @@ body {
   cursor: pointer;
 }
 
-.guide-card-footer {
+.sheet-footer {
   margin-top: 1rem;
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: #94a3b8;
+  padding-top: 0.75rem;
   border-top: 1px dashed var(--border);
-  padding-top: 0.5rem;
+  font-size: 0.7rem;
+  color: #94a3b8;
 }
 
-/* ==================== VIEW 3: 口頭醫囑轉譯 (ORDERS) ==================== */
-.orders-layout {
-  display: grid;
-  grid-template-columns: 460px 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.voice-record-box {
-  background: #f8fafc;
-  border: 1.5px dashed #cbd5e1;
-  border-radius: var(--radius-md);
+/* ==================== VIEW 3: 口頭醫囑轉譯 ==================== */
+.voice-console {
+  background: var(--bg-main);
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius-sm);
   padding: 1.25rem;
   text-align: center;
   margin-bottom: 1.25rem;
 }
 
-.voice-record-btn {
-  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
-  color: white;
-  border: none;
-  border-radius: 999px;
-  padding: 0.85rem 1.75rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+.voice-mic-button {
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-  transition: transform 0.2s;
+  transition: all 0.15s;
 }
 
-.voice-record-btn:hover {
-  transform: scale(1.03);
+.voice-mic-button:hover {
+  background: #1e293b;
 }
 
-.quick-samples {
+.voice-mic-button.recording {
+  background: #dc2626;
+  animation: recPulse 1.5s infinite;
+}
+
+@keyframes recPulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.mic-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.quick-presets-row {
   margin-top: 0.85rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  gap: 0.4rem;
 }
 
-.btn-sample {
+.preset-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.btn-preset {
   background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0.2rem 0.5rem;
-  font-size: 0.75rem;
-  cursor: pointer;
+  font-size: 0.72rem;
   color: var(--primary);
+  cursor: pointer;
 }
-.btn-sample:hover {
-  background: var(--primary-light);
+.btn-preset:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary-border);
 }
 
-.orders-list {
+.orders-stream {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.order-card-item {
+.order-entry {
   background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 1.25rem;
-  box-shadow: var(--shadow-sm);
-  border-left: 4px solid var(--teal);
+  border-radius: var(--radius-sm);
+  padding: 1.15rem;
+  border-left: 3px solid var(--teal);
 }
 
-.order-item-header {
+.order-entry-head {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.order-raw {
-  font-size: 0.85rem;
-  color: #64748b;
-  background: #f8fafc;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-sm);
-  margin-bottom: 0.75rem;
-  font-style: italic;
-}
-
-.rule-block {
-  padding: 0.6rem 0.8rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }
 
-.rule-condition { background: #fef3c7; color: #92400e; border-left: 3px solid #d97706; }
-.rule-action { background: #dcfce7; color: #166534; border-left: 3px solid #16a34a; }
-.rule-redflags { background: #fee2e2; color: #991b1b; border-left: 3px solid #dc2626; }
+.order-doc-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
 
-/* ==================== VIEW 4: 藥袋逆向推導 (PRESCRIPTION) ==================== */
-.mcp-banner {
-  background: linear-gradient(90deg, #ede9fe 0%, #e0e7ff 100%);
+.order-raw-quote {
+  font-size: 0.82rem;
+  color: #64748b;
+  background: var(--bg-main);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-xs);
+  margin-bottom: 0.75rem;
+}
+
+.rule-box {
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.82rem;
+  margin-bottom: 0.4rem;
+}
+
+.rule-condition-box {
+  background: var(--amber-subtle);
+  border: 1px solid var(--amber-border);
+  color: #92400e;
+}
+
+.rule-action-box {
+  background: var(--teal-subtle);
+  border: 1px solid #99f6e4;
+  color: #115e59;
+}
+
+.rule-redflags-box {
+  background: var(--rose-subtle);
+  border: 1px solid var(--rose-border);
+  color: #991b1b;
+}
+
+/* ==================== VIEW 4: 藥袋逆向推導 ==================== */
+.mcp-alert-bar {
+  background: #ffffff;
   border: 1px solid #c7d2fe;
-  border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.15rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.mcp-alert-lead {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.85rem;
 }
 
-.mcp-banner-icon { font-size: 1.8rem; }
-.mcp-banner-content h4 { font-size: 0.95rem; color: #3730a3; }
-.mcp-banner-content p { font-size: 0.8rem; color: #4338ca; }
-
-.prescription-grid {
-  display: grid;
-  grid-template-columns: 1.3fr 0.7fr;
-  gap: 1.5rem;
+.mcp-alert-svg {
+  width: 22px;
+  height: 22px;
+  color: #4f46e5;
+  flex-shrink: 0;
 }
 
-.compare-columns {
+.mcp-alert-lead strong {
+  font-size: 0.88rem;
+  color: #312e81;
+}
+
+.mcp-alert-lead p {
+  font-size: 0.78rem;
+  color: #4338ca;
+}
+
+.rx-compare-flex {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1.25rem;
 }
 
-.rx-col {
+.rx-column {
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #f8fafc;
+  border-radius: var(--radius-xs);
+  background: var(--bg-main);
   overflow: hidden;
 }
 
-.rx-col-header {
-  padding: 0.75rem;
+.rx-col-title {
+  padding: 0.65rem 0.85rem;
+  background: #f1f5f9;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-dark);
 }
 
-.rx-col-header.prev { background: #f1f5f9; color: #475569; }
-.rx-col-header.curr { background: #dbeafe; color: #1e40af; }
+.rx-curr .rx-col-title {
+  background: #e0f2fe;
+  color: #0369a1;
+}
 
-.med-table {
+.med-list {
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.med-row {
+.med-card-row {
   background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.6rem;
+  border-radius: var(--radius-xs);
+  padding: 0.65rem;
   font-size: 0.82rem;
 }
 
-.med-row.highlight-change {
+.med-card-row.change-timing {
   border-color: #f59e0b;
   background: #fffbeb;
 }
 
-.med-name { font-weight: 700; color: #0f172a; }
-.med-code-pill {
-  display: inline-block;
-  background: #e0f2fe;
-  color: #0369a1;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+.med-card-row.change-new {
+  border-color: #818cf8;
+  background: #f5f3ff;
 }
 
-.inference-result-box {
-  background: #f0fdf4;
-  border: 1.5px solid #86efac;
-  border-radius: var(--radius-md);
+.med-code-badge {
+  display: inline-block;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-xs);
+  margin-top: 0.2rem;
+}
+
+.inference-report {
+  background: #f8fafc;
+  border: 1.5px solid #0f766e;
+  border-radius: var(--radius-sm);
   padding: 1rem;
 }
 
-.inf-header {
+.report-head {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #15803d;
-  margin-bottom: 0.5rem;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  color: #0f766e;
+  margin-bottom: 0.4rem;
 }
 
-.code-glossary {
-  background: #f1f5f9;
+.report-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.report-text {
+  font-size: 0.82rem;
+  color: var(--text-body);
+  line-height: 1.6;
+}
+
+.photo-upload-zone {
+  border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  text-align: center;
+  background: var(--bg-main);
+  margin-bottom: 1.25rem;
+}
+
+.image-preview-box {
+  margin-top: 0.75rem;
+}
+
+.image-preview-box img {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+}
+
+.preview-caption {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.code-ref-box {
+  background: var(--bg-main);
+  border-radius: var(--radius-xs);
   padding: 0.65rem;
   font-size: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.ref-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--text-dark);
+}
+
+.ref-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
 }
 
-.code-chip {
+.ref-chips span {
   background: #ffffff;
+  border: 1px solid var(--border);
   padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-xs);
 }
 
-/* ==================== VIEW 5: 醫院 HUB (HOSPITAL HUB) ==================== */
-.hub-grid {
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 1.5rem;
-}
-
-.hubs-container {
+/* ==================== VIEW 5: 醫院 HUB ==================== */
+.hub-list {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
 
 .hub-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 1rem;
   background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  transition: all 0.2s;
+  position: relative;
 }
 
-.hub-item.active {
-  border-color: var(--teal);
-  background: #f0fdfa;
+.hub-item.current {
+  border-color: var(--primary);
+  background: #f0f9ff;
 }
 
-.hub-icon {
-  font-size: 2rem;
-  background: #e2e8f0;
-  border-radius: var(--radius-sm);
-  padding: 0.5rem;
+.hub-badge-main {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: #ffffff;
+  border: 1px solid var(--primary-border);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-xs);
 }
 
-.hub-info h4 { font-size: 1rem; color: #0f172a; }
-.hub-info p { font-size: 0.8rem; color: #64748b; }
-.escort-pill {
-  font-size: 0.75rem;
+.hub-content h4 {
+  font-size: 0.95rem;
+  color: var(--text-dark);
+}
+
+.hub-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.2rem 0;
+}
+
+.hub-escort-info {
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--teal);
-  margin-top: 0.25rem;
 }
 
-.card-intro {
-  font-size: 0.85rem;
-  color: #475569;
-  background: #f8fafc;
-  padding: 0.75rem;
+.pricing-card {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  padding: 1rem;
   margin-bottom: 1.25rem;
+}
+
+.pricing-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.pricing-amount {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0.25rem 0;
+}
+
+.pricing-unit {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.pricing-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
-/* ==================== 列印專用樣式 (PRINT STYLES) ==================== */
+/* ==================== 列印樣式 (PRINT STYLES) ==================== */
 @media print {
-  body { background: white; color: black; }
-  .sidebar, .top-bar, .form-panel, .preview-actions { display: none !important; }
-  .main-viewport { padding: 0; }
-  .guide-layout { grid-template-columns: 1fr; }
-  .printable-card { border: 2px solid black; box-shadow: none; }
+  body { background: #ffffff !important; color: #000000 !important; }
+  .sidebar, .top-nav-bar, .two-col-layout > .panel-card:first-child, .panel-card-head { display: none !important; }
+  .main-viewport { padding: 0 !important; }
+  .two-col-layout { display: block !important; }
+  .clinical-sheet { border: 2px solid #000000 !important; box-shadow: none !important; }
 }

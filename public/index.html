@@ -7,190 +7,307 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="app-layout">
-    <!-- ==================== 左側導覽面板 (SIDEBAR) ==================== -->
+    <!-- ==================== 左側商務面板 (SIDEBAR) ==================== -->
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-logo">
-          <span class="logo-icon">🧭</span>
-          <div>
-            <h2>CareNav</h2>
-            <span class="brand-tag">智護領航</span>
+      <!-- 品牌識別 -->
+      <div class="brand-section">
+        <div class="brand-mark">
+          <svg class="brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="brand-naming">
+            <span class="brand-title">CareNav</span>
+            <span class="brand-version">智護領航</span>
           </div>
         </div>
-        <p class="brand-sub">診間決策 Copilot × 家庭長照</p>
+        <p class="brand-descriptor">CLINICAL COPILOT &amp; CARE RETENTION</p>
       </div>
 
       <!-- 長輩個案身分卡 -->
-      <div class="patient-card">
-        <div class="patient-avatar">👴</div>
-        <div class="patient-info">
-          <div class="patient-name-row">
-            <h4 id="sidebar-patient-name">陳國華 (爸爸)</h4>
-            <span class="age-badge">72歲</span>
+      <div class="case-card">
+        <div class="case-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="case-details">
+          <div class="case-name-row">
+            <span class="case-name" id="sidebar-patient-name">陳國華 (爸爸)</span>
+            <span class="case-age">72歲</span>
           </div>
-          <p class="patient-meta" id="sidebar-patient-conditions">高血壓二期・腎臟病3期</p>
-          <span class="hospital-tag" id="sidebar-patient-hospital">🏥 林口長庚紀念醫院</span>
+          <div class="case-sub" id="sidebar-patient-conditions">高血壓二期・腎臟病3期</div>
+          <div class="case-hub-tag" id="sidebar-patient-hospital">林口長庚紀念醫院 Hub</div>
         </div>
       </div>
 
-      <!-- 導航選單 (依不同頁面切換) -->
+      <!-- 專業功能選單 (左側切換) -->
       <nav class="nav-menu">
         <button class="nav-item active" data-view="view-dashboard">
-          <span class="nav-icon">🏠</span>
-          <span class="nav-label">全家照護看板</span>
-          <span class="nav-pill">即時</span>
+          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span class="nav-text">全家照護雲端看板</span>
+          <span class="nav-status-dot active"></span>
         </button>
 
         <button class="nav-item" data-view="view-guide">
-          <span class="nav-icon">📋</span>
-          <span class="nav-label">診前臨床指引卡</span>
-          <span class="nav-badge">20秒快讀</span>
+          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="nav-text">診前臨床指引卡生成</span>
+          <span class="nav-chip">20s快讀</span>
         </button>
 
         <button class="nav-item" data-view="view-orders">
-          <span class="nav-icon">🎙️</span>
-          <span class="nav-label">口頭醫囑轉譯</span>
-          <span class="nav-badge pulse">語音</span>
+          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <span class="nav-text">口頭醫囑結構化轉譯</span>
+          <span class="nav-chip pulse">即時推播</span>
         </button>
 
         <button class="nav-item" data-view="view-prescription">
-          <span class="nav-icon">💊</span>
-          <span class="nav-label">藥袋逆向推導</span>
-          <span class="nav-badge mcp">MCP接口</span>
+          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="16" height="16" rx="4"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="12" y1="4" x2="12" y2="20"/>
+          </svg>
+          <span class="nav-text">藥袋用法逆向推導</span>
+          <span class="nav-chip mcp">MCP接口</span>
         </button>
 
         <button class="nav-item" data-view="view-hub">
-          <span class="nav-icon">🏥</span>
-          <span class="nav-label">醫院 Hub 陪診媒合</span>
-          <span class="nav-badge">特助</span>
+          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 9h6M9 13h6M9 17h6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="nav-text">醫院 Hub 陪診媒合</span>
+          <span class="nav-chip">特助就近</span>
         </button>
       </nav>
 
-      <!-- 側邊欄底部狀態與 MCP 預留 -->
-      <div class="sidebar-footer">
-        <div class="status-indicator">
-          <span class="dot online"></span>
-          <span>SQLite 記憶資料庫 (已連線)</span>
+      <!-- 側邊欄底部系統運行指示 -->
+      <div class="sidebar-system-footer">
+        <div class="sys-item">
+          <span class="sys-dot online"></span>
+          <span class="sys-label">SQLite 資料庫：記憶在線</span>
         </div>
-        <div class="status-indicator" id="ollama-status-row">
-          <span class="dot online" id="ollama-status-dot"></span>
-          <span id="ollama-status-label">🦙 Ollama Docker (:11434)</span>
+        <div class="sys-item" id="ollama-status-row">
+          <span class="sys-dot online" id="ollama-status-dot"></span>
+          <span class="sys-label" id="ollama-status-label">Ollama 本地容器 (:11434)</span>
         </div>
-        <div class="mcp-indicator">
-          <span class="mcp-icon">🔌</span>
-          <div class="mcp-text">
+        <div class="mcp-panel-mini">
+          <div class="mcp-mini-head">
+            <svg class="mcp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             <strong>藥學知識庫 MCP</strong>
-            <span class="mcp-sub">介面已就緒・等待掛載</span>
           </div>
+          <span class="mcp-mini-status">擴充掛載點已就緒</span>
         </div>
       </div>
     </aside>
 
-    <!-- ==================== 主內容展示區 (MAIN CONTENT) ==================== -->
+    <!-- ==================== 主工作視圖區 (MAIN VIEWPORT) ==================== -->
     <main class="main-viewport">
-      <!-- 頂部通用導航列 -->
-      <header class="top-bar">
-        <div class="top-title">
-          <h1 id="page-title">全家照護看板 (Family Care Hub)</h1>
+      <!-- 頂部工作列 -->
+      <header class="top-nav-bar">
+        <div class="top-context">
+          <h1 id="page-title">全家照護雲端看板</h1>
           <p id="page-desc">手足同步瀏覽跨科就醫履歷、最新處方異動與口頭醫囑，杜絕照護內耗</p>
         </div>
         <div class="top-actions">
-          <div class="family-avatars" title="共同協同家屬">
-            <span class="avatar" title="台北・大女兒 (Alice)">👩‍💼</span>
-            <span class="avatar" title="竹科・小兒子 (David)">👨‍💻</span>
-            <span class="avatar" title="海外・長子 (James)">✈️</span>
-            <span class="avatar-more">+2</span>
+          <div class="family-members-sync" title="手足跨縣市/海外連線狀態">
+            <span class="sync-title">手足協同：</span>
+            <span class="member-tag">台北・大女兒</span>
+            <span class="member-tag">竹科・小兒子</span>
+            <span class="member-tag">海外・長子</span>
           </div>
-          <button class="btn btn-outline" id="refresh-all-btn">🔄 重新整理</button>
+          <button class="btn btn-outline btn-sm" id="refresh-all-btn">
+            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            即時同步
+          </button>
         </div>
       </header>
 
-      <!-- VIEW 1: 全家照護雲端看板 (Family Care Hub) -->
+      <!-- ==================== VIEW 1: 全家照護雲端看板 ==================== -->
       <section id="view-dashboard" class="page-view active">
-        <!-- 數據指標列 -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <span class="stat-icon">📅</span>
-            <div>
-              <p class="stat-label">下次回診倒數</p>
-              <h3 class="stat-value">6 天後</h3>
-              <span class="stat-meta">11/20 新陳代謝科・長庚</span>
+        <!-- 4大核心關鍵指標 -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap bg-blue-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">下次回診倒數</span>
+              <h3 class="kpi-num">6 天</h3>
+              <span class="kpi-sub">11/20 新陳代謝科・長庚 Hub</span>
             </div>
           </div>
-          <div class="stat-card">
-            <span class="stat-icon">💊</span>
-            <div>
-              <p class="stat-label">目前常規用藥</p>
-              <h3 class="stat-value" id="dash-med-count">4 種</h3>
-              <span class="stat-meta text-emerald">本期時段已優化 (防夜尿)</span>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap bg-teal-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="4" width="16" height="16" rx="4"/>
+                <line x1="4" y1="12" x2="20" y2="12"/>
+                <line x1="12" y1="4" x2="12" y2="20"/>
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">目前常規用藥</span>
+              <h3 class="kpi-num" id="dash-med-count">4 種</h3>
+              <span class="kpi-sub text-teal">本期已逆向優化時段 (防跌)</span>
             </div>
           </div>
-          <div class="stat-card">
-            <span class="stat-icon">🔔</span>
-            <div>
-              <p class="stat-label">最新口頭醫囑警示</p>
-              <h3 class="stat-value text-amber">血壓 &lt; 110</h3>
-              <span class="stat-meta">暫停當天早晨脈優一次</span>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap bg-amber-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">最新口頭醫囑警示</span>
+              <h3 class="kpi-num text-amber">血壓 &lt; 110</h3>
+              <span class="kpi-sub">晨間暫停脈優 Norvasc 5mg 一次</span>
             </div>
           </div>
-          <div class="stat-card">
-            <span class="stat-icon">👩‍⚕️</span>
-            <div>
-              <p class="stat-label">就醫陪診特助</p>
-              <h3 class="stat-value">王思婷 (護理師)</h3>
-              <span class="stat-meta">林口長庚 Hub 專屬錨定</span>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap bg-indigo-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-title">門診特助錨定</span>
+              <h3 class="kpi-num">王思婷 護理師</h3>
+              <span class="kpi-sub">林口長庚 Hub 專屬責任派案</span>
             </div>
           </div>
         </div>
 
-        <!-- 看板兩大核心欄位 -->
-        <div class="dashboard-grid">
-          <!-- 左欄：跨科就醫動態時間軸 -->
-          <div class="card timeline-card">
-            <div class="card-header">
-              <h3>🕒 跨科看診與醫囑時序紀錄</h3>
-              <button class="btn btn-sm btn-ghost" onclick="switchView('view-guide')">+ 建立新指引</button>
+        <div class="dashboard-two-col">
+          <!-- 左欄：跨科就醫履歷動態時間軸 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <h3>跨科就醫履歷與醫囑動態時序</h3>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="switchView('view-guide')">+ 建立新指引</button>
             </div>
-            <div class="timeline-container" id="dashboard-timeline">
+            <div class="timeline-stream" id="dashboard-timeline">
               <!-- 動態渲染時間軸節點 -->
             </div>
           </div>
 
-          <!-- 右欄：目前每日用藥全景 (早中晚睡前) -->
-          <div class="card schedule-card">
-            <div class="card-header">
-              <h3>☀️ 今日四時段服藥行程</h3>
-              <span class="badge badge-success">逆向推導完成</span>
+          <!-- 右欄：四時段服藥排程 + 手足協同留話簿 -->
+          <div class="right-stack">
+            <!-- 服藥排程 -->
+            <div class="panel-card">
+              <div class="panel-card-head">
+                <div class="head-lead">
+                  <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                  </svg>
+                  <h3>今日四時段服藥排程 (全家同步)</h3>
+                </div>
+                <span class="status-badge-outline">逆向推導優化</span>
+              </div>
+              <div class="med-schedule-grid" id="dashboard-schedule">
+                <!-- 動態注入排程 -->
+              </div>
             </div>
-            <div class="schedule-slots" id="dashboard-schedule">
-              <!-- 動態渲染四時段用藥 -->
-            </div>
-            <div class="family-notice-box">
-              <strong>💡 手足協同提醒：</strong>
-              <p>大女兒已於今晨致電確認爸爸已將利尿劑改為早餐後服用，近兩日夜尿次數已降至 1 次，睡眠品質改善。</p>
+
+            <!-- 手足協同留話簿 (家庭協同) -->
+            <div class="panel-card">
+              <div class="panel-card-head">
+                <div class="head-lead">
+                  <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <h3>手足協同留話簿 (杜絕互推責任)</h3>
+                </div>
+              </div>
+
+              <!-- 留話輸入 -->
+              <form id="family-note-form" class="family-note-input-row">
+                <select id="note-author" class="form-input form-input-sm" style="width: 140px;">
+                  <option value="Alice 大女兒 (台北)">大女兒 (台北)</option>
+                  <option value="David 小兒子 (竹科)">小兒子 (竹科)</option>
+                  <option value="James 長子 (海外)">長子 (海外)</option>
+                </select>
+                <input type="text" id="note-content" class="form-input form-input-sm flex-1" placeholder="填寫最新服藥觀察、陪診安排或長輩狀況..." required>
+                <button type="submit" class="btn btn-primary btn-sm">發表</button>
+              </form>
+
+              <!-- 留話清單 -->
+              <div class="notes-stream" id="family-notes-list">
+                <!-- 動態渲染留話 -->
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- VIEW 2: 診前臨床指引卡生成器 (Doctor Discussion Guide) -->
+      <!-- ==================== VIEW 2: 診前臨床指引卡生成器 ==================== -->
       <section id="view-guide" class="page-view">
-        <div class="guide-layout">
-          <!-- 填寫輸入區 -->
-          <div class="card form-panel">
-            <div class="card-header">
-              <h3>✏️ 診前表徵與生理指標輸入</h3>
-              <span class="badge badge-primary">自動濃縮為 20 秒快讀</span>
+        <div class="two-col-layout">
+          <!-- 填寫輸入面板 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                <h3>診前臨床表徵與生活指標輸入</h3>
+              </div>
+              <span class="status-badge">AI 濃縮 20s 備忘</span>
             </div>
+
+            <p class="section-intro">
+              依據簡報規格：系統將整合長輩近兩週<strong>晨間血壓</strong>、<strong>夜尿頻率</strong>與<strong>食慾/水腫異常</strong>，由 AI 濃縮為主治醫師 20 秒讀完的精準主訴備忘錄，末端自帶醫師 5 秒勾選回條。
+            </p>
+
             <form id="guide-form">
               <div class="form-row">
                 <div class="form-group flex-1">
-                  <label>就診科別</label>
-                  <select id="guide-department" class="form-control">
+                  <label class="form-label">就診科別</label>
+                  <select id="guide-department" class="form-input">
                     <option value="心臟內科" selected>心臟內科</option>
                     <option value="新陳代謝科">新陳代謝科</option>
                     <option value="神經內科">神經內科</option>
@@ -198,345 +315,454 @@
                   </select>
                 </div>
                 <div class="form-group flex-1">
-                  <label>主治醫師 (選填)</label>
-                  <input type="text" id="guide-doctor" class="form-control" placeholder="例：林主治醫師" value="林主治醫師">
+                  <label class="form-label">預計看診日期</label>
+                  <input type="date" id="guide-date" class="form-input" value="2026-11-12">
+                </div>
+                <div class="form-group flex-1">
+                  <label class="form-label">主治醫師姓名</label>
+                  <input type="text" id="guide-doctor" class="form-input" value="林主治醫師">
                 </div>
               </div>
 
+              <!-- 關鍵臨床三指標 -->
               <div class="form-group">
-                <label>近兩週異常指標與數值 (關鍵數據)</label>
-                <textarea id="guide-vitals" class="form-control" rows="3" placeholder="例如：近兩週晨間收縮壓 148-162 mmHg，夜尿次數由 1 次增為 3-4 次，下肢壓下去有輕微凹陷。">近兩週清晨收縮壓平均 148-162 mmHg，夜尿次數由每晚 1 次增加為 3-4 次，輕微雙腳下肢水腫。</textarea>
+                <label class="form-label">近兩週晨間血壓範圍 (收縮壓 / 舒張壓)</label>
+                <input type="text" id="guide-morning-bp" class="form-input" placeholder="例：148 - 162 mmHg (早晨起床後半小時量測)" value="148 - 162 mmHg (連續 10 天晨峰偏高)">
               </div>
 
               <div class="form-group">
-                <label>長輩主要抱怨症狀 / 生活困擾</label>
-                <input type="text" id="guide-symptoms" class="form-control" placeholder="例如：起床容易頭暈、一直起夜睡不好" value="晨起頭暈、夜間頻繁起夜影響睡眠">
+                <label class="form-label">夜尿頻率變化 (起夜次數與睡眠影響)</label>
+                <input type="text" id="guide-nocturia" class="form-input" placeholder="例：由每晚 1 次增加為 3-4 次" value="每晚 3 - 4 次 (嚴重中斷睡眠、有夜間起夜跌倒風險)">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">食慾異常、下肢水腫或主要生活困擾</label>
+                <textarea id="guide-symptoms" class="form-input" rows="3" placeholder="詳細描述長輩近期表徵...">晨起頭暈、夜間起夜頻繁導致白天嗜睡、雙下肢脛骨前緣有輕度凹陷水腫、食慾略降。</textarea>
               </div>
 
               <button type="submit" class="btn btn-primary btn-block" id="generate-guide-btn">
-                <span>⚡ AI 自動濃縮為 20 秒醫師指引卡</span>
+                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                AI 自動濃縮為 20 秒醫師臨床指引卡
               </button>
             </form>
           </div>
 
-          <!-- 生成的指引卡預覽區 (可列印/全螢幕) -->
-          <div class="card preview-panel">
-            <div class="card-header">
-              <h3>📄 臨床指引卡預覽 (醫師專用版)</h3>
-              <div class="preview-actions">
-                <button class="btn btn-sm btn-outline" onclick="window.print()">🖨️ 友善列印 (A4/A5)</button>
+          <!-- 輸出與預覽面板 (可印出/展示) -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <h3>主治醫師 20 秒臨床指引卡 (診間決策單)</h3>
               </div>
+              <button class="btn btn-outline btn-sm" onclick="window.print()">
+                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                列印 A4/A5 決策單
+              </button>
             </div>
 
-            <!-- 實體指引卡外觀 -->
-            <div class="printable-card" id="printable-guide-card">
-              <div class="guide-card-header">
-                <div class="guide-badge">CareNav 診間決策備忘錄</div>
-                <div class="guide-card-meta">
-                  <span>病患：陳國華 (72歲)</span>
-                  <span id="card-dept-meta">科別：心臟內科</span>
-                  <span id="card-date-meta">日期：2026-11-12</span>
+            <!-- 實體指引卡外觀 (高對比臨床排版) -->
+            <div class="clinical-sheet" id="clinical-sheet">
+              <div class="sheet-header">
+                <div>
+                  <h4 class="sheet-title">CareNav 門診 150 秒臨床溝通備忘單</h4>
+                  <span class="sheet-subtitle">DOCTOR DISCUSSION &amp; CLINICAL TRIAGE GUIDE</span>
+                </div>
+                <div class="sheet-meta-box">
+                  <div><strong>病患：</strong>陳國華 (72歲)</div>
+                  <div id="card-dept-meta"><strong>科別：</strong>心臟內科・林主治醫師</div>
+                  <div id="card-date-meta"><strong>日期：</strong>2026-11-12</div>
                 </div>
               </div>
 
-              <!-- 20秒快讀主訴 -->
-              <div class="guide-section">
-                <div class="guide-sec-title">
-                  <span class="icon">🎯</span>
-                  <strong>20秒核心主訴與客觀趨勢 (Key Complaint & Vitals)</strong>
+              <!-- 主訴濃縮 -->
+              <div class="sheet-block">
+                <div class="block-label">
+                  <span class="label-badge">20秒快讀</span>
+                  <strong>臨床主訴與兩週客觀生理趨勢 (Key Clinical Trend)</strong>
                 </div>
-                <div class="guide-sec-content" id="card-complaint">
-                  血壓近兩週晨間反覆升高 (平均 148-162 mmHg) 且夜尿增加，疑似現有降壓藥物晨間保護力不足，並伴隨雙下肢輕微水腫。
+                <div class="block-body" id="card-complaint">
+                  患者近兩週晨間收縮壓反覆達 148-162 mmHg，夜尿次數由 1 次增為 3-4 次，伴隨雙下肢輕微水腫。臨床研判疑似夜間降壓與利尿劑排程不當，造成夜間頻繁起夜跌倒風險，且晨峰血壓覆蓋不足。
                 </div>
               </div>
 
-              <!-- 待診決策問題 -->
-              <div class="guide-section">
-                <div class="guide-sec-title">
-                  <span class="icon">❓</span>
-                  <strong>家屬/特助待診關鍵提問 (Decision Points)</strong>
+              <!-- 待診決策焦點問題 -->
+              <div class="sheet-block">
+                <div class="block-label">
+                  <span class="label-badge">提問焦點</span>
+                  <strong>家屬/特助待診決策提問 (Decision Points for Doctor)</strong>
                 </div>
-                <div class="guide-sec-content pre-line" id="card-questions">
-1. 是否需調整利尿劑投藥時間或換為長效型？
-2. 鈣離子阻斷劑 (脈優) 是否需改至早晨服用以覆蓋晨峰血壓？
-3. 是否需加驗腎功能指数 (Cr/eGFR)？
+                <div class="block-body pre-line" id="card-questions">
+1. 是否建議將利尿劑 (Lasix) 由睡前移至晨間 (QD AM)，以阻斷頻繁夜尿與夜間下床跌倒？
+2. 脈優 (Norvasc) 是否建議移至晨間投藥以有效壓制晨峰高血壓？
+3. 是否加驗腎功能血清肌酸酐 (Cr/eGFR) 與血清電解質？
                 </div>
               </div>
 
               <!-- 醫師 5 秒勾選回條 -->
-              <div class="guide-section triage-section">
-                <div class="guide-sec-title">
-                  <span class="icon">✍️</span>
-                  <strong>醫師 5 秒快速勾選回條 (Doctor's Triage Receipt)</strong>
+              <div class="sheet-block triage-box">
+                <div class="block-label">
+                  <span class="label-badge label-badge-dark">醫師回條</span>
+                  <strong>主治醫師 5 秒快速勾選回條 (Doctor's Triage Receipt)</strong>
                 </div>
-                <div class="triage-options-grid" id="card-triage-options">
-                  <label class="triage-checkbox"><input type="checkbox"> 原處方續開維持</label>
-                  <label class="triage-checkbox"><input type="checkbox" checked> 調整脈優服藥時段至晨間 (QD AM)</label>
-                  <label class="triage-checkbox"><input type="checkbox" checked> 利尿劑改早餐後吃 (防夜尿)</label>
-                  <label class="triage-checkbox"><input type="checkbox"> 加抽血液生化評估腎功能</label>
+                <div class="triage-checkbox-list" id="card-triage-options">
+                  <label class="triage-item"><input type="checkbox"> 原處方續開維持</label>
+                  <label class="triage-item"><input type="checkbox" checked> 調整脈優服藥時段至晨間 (QD AM)</label>
+                  <label class="triage-item"><input type="checkbox" checked> 利尿劑改早餐後吃 (防夜尿跌倒)</label>
+                  <label class="triage-item"><input type="checkbox"> 安排兩週後複查心臟超音波與生化抽血</label>
                 </div>
               </div>
 
-              <div class="guide-card-footer">
-                <span>※ 本單供門診 150 秒內高效率醫病決策，不取代正式電子病歷。</span>
-                <span>CareNav 智護領航系統生成</span>
+              <div class="sheet-footer">
+                <span>※ 本指引單由 CareNav 智護領航臨床模組生成，協助診間高效率決策，不取代正式電子病歷。</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- VIEW 3: 口頭醫囑結構化轉譯 (Verbal Orders Digitization) -->
+      <!-- ==================== VIEW 3: 口頭醫囑結構化轉譯 ==================== -->
       <section id="view-orders" class="page-view">
-        <div class="orders-layout">
-          <!-- 語音/文字輸入區 -->
-          <div class="card form-panel">
-            <div class="card-header">
-              <h3>🎙️ 診後口頭交代即時轉譯</h3>
-              <span class="badge badge-indigo">語音/文字雙模</span>
+        <div class="two-col-layout">
+          <!-- 錄入區 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                <h3>出診間極速口頭醫囑錄入</h3>
+              </div>
+              <span class="status-badge">語音 / 文字雙模</span>
             </div>
 
-            <!-- 語音按鈕模擬 -->
-            <div class="voice-record-box">
-              <button class="voice-record-btn" id="voice-record-btn" type="button">
-                <span class="mic-icon">🎤</span>
-                <span class="voice-text">按住錄音（或點擊下方快捷範本）</span>
+            <p class="section-intro">
+              依據簡報規格：診後快速語音輸入或特助勾選，系統自動將醫師口頭交代（如「血壓低於110暫停這顆」）轉為白話行動指引，並即時推播全家。
+            </p>
+
+            <!-- 語音錄音控制座 -->
+            <div class="voice-console">
+              <button type="button" class="voice-mic-button" id="voice-record-btn">
+                <svg class="mic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                <span id="voice-btn-label">按此開始語音口述錄音</span>
               </button>
-              <div class="quick-samples">
-                <span>快速範本：</span>
-                <button type="button" class="btn-sample" onclick="loadSampleVoice(1)">範本1：血壓低於110暫停</button>
-                <button type="button" class="btn-sample" onclick="loadSampleVoice(2)">範本2：利尿劑調時段與水腫</button>
-                <button type="button" class="btn-sample" onclick="loadSampleVoice(3)">範本3：低血糖急救處理</button>
+              <div class="quick-presets-row">
+                <span class="preset-label">診間高頻口語範本：</span>
+                <button type="button" class="btn-preset" onclick="loadSampleVoice(1)">血壓 &lt; 110 暫停脈優</button>
+                <button type="button" class="btn-preset" onclick="loadSampleVoice(2)">利尿劑改早晨避免夜尿</button>
+                <button type="button" class="btn-preset" onclick="loadSampleVoice(3)">低血糖急救處理</button>
               </div>
             </div>
 
+            <!-- 輸入表單 -->
             <form id="verbal-order-form">
               <div class="form-group">
-                <label>醫師口頭交代原始內容 (口語描述)</label>
-                <textarea id="raw-verbal-input" class="form-control" rows="3" placeholder="例如：如果早上量血壓收縮壓低於 110，那顆脈優 5mg 先停吃一次。利尿劑換到早上吃避免夜尿，若下肢水腫三天沒消要提早回來。"></textarea>
+                <label class="form-label">醫師口語原始交代內容</label>
+                <textarea id="raw-verbal-input" class="form-input" rows="3" placeholder="例如：如果早上量血壓收縮壓低於 110，那顆脈優 5mg 先停吃一次。利尿劑換到早上吃避免夜尿，若下肢水腫三天沒消要提早回來。"></textarea>
               </div>
 
               <div class="form-row">
                 <div class="form-group flex-1">
-                  <label>紀錄人身分</label>
-                  <input type="text" id="order-recorder" class="form-control" value="林口長庚 Hub 護理特助 - 王思婷">
+                  <label class="form-label">紀錄責任人員</label>
+                  <input type="text" id="order-recorder" class="form-input" value="林口長庚 Hub 護理特助 - 王思婷">
                 </div>
                 <div class="form-group flex-1">
-                  <label>看診科別</label>
-                  <input type="text" id="order-dept" class="form-control" value="心臟內科">
+                  <label class="form-label">科別與主治醫師</label>
+                  <input type="text" id="order-dept" class="form-input" value="心臟內科・林主治醫師">
                 </div>
               </div>
 
               <button type="submit" class="btn btn-primary btn-block" id="parse-order-btn">
-                <span>⚡ 結構化轉譯為白話行動指引 ➜ 推播全家</span>
+                結構化轉譯為白話行動指引 ➜ 即時推播全家看板
               </button>
             </form>
           </div>
 
-          <!-- 轉譯結果與歷史紀錄 -->
-          <div class="card history-panel">
-            <div class="card-header">
-              <h3>📜 轉譯結果與全家醫囑推播庫</h3>
-              <span class="badge badge-emerald">推播中</span>
+          <!-- 轉譯成果展示與全家廣播清單 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <h3>全家同步白話行動醫囑庫</h3>
+              </div>
+              <span class="status-badge-outline">即時廣播</span>
             </div>
 
-            <div id="verbal-orders-list" class="orders-list">
-              <!-- 動態渲染口頭醫囑卡片 -->
+            <div class="orders-stream" id="verbal-orders-list">
+              <!-- 動態注入轉譯後的口頭醫囑卡片 -->
             </div>
           </div>
         </div>
       </section>
 
-      <!-- VIEW 4: 藥袋逆向推導引擎 (Prescription Inference Engine) -->
+      <!-- ==================== VIEW 4: 藥袋用法代碼逆向推導引擎 ==================== -->
       <section id="view-prescription" class="page-view">
-        <!-- 藥學 MCP 準備提示橫幅 -->
-        <div class="mcp-banner">
-          <div class="mcp-banner-icon">💡</div>
-          <div class="mcp-banner-content">
-            <h4>【藥學知識庫 MCP 預留擴充接口】已就緒</h4>
-            <p>系統已內建醫學用法代碼庫 (QD/AM/HS/BID/TID)。當您加入藥學知識庫 MCP 後，可直接無縫啟用「多重用藥交互作用審查」與「老人高風險用藥 Beers 警示」！</p>
+        <!-- 藥學知識庫 MCP 頂部條 -->
+        <div class="mcp-alert-bar">
+          <div class="mcp-alert-lead">
+            <svg class="mcp-alert-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            <div>
+              <strong>藥學知識庫 MCP 接口已就緒</strong>
+              <p>內建醫學用法代碼庫 (QD/AM/HS/BID/TID)。連接藥學 MCP 後，將自動啟動藥物交互作用 (DDI) 與高齡 Beers Criteria 審查。</p>
+            </div>
           </div>
-          <button class="btn btn-sm btn-outline" onclick="triggerMcpSimulation()">🔍 模擬 MCP 藥學審查</button>
+          <button class="btn btn-outline btn-sm" onclick="triggerMcpSimulation()">觸發 MCP 藥學審查模擬</button>
         </div>
 
-        <div class="prescription-grid">
-          <!-- 上方/左方：新舊藥袋對照與推導推播 -->
-          <div class="card rx-compare-card">
-            <div class="card-header">
-              <h3>🔄 跨期門診處方逆向推導比對</h3>
-              <div class="btn-group">
-                <button class="btn btn-sm btn-outline" onclick="loadPrescriptionPreset('changed')">載入本期處方異動示範</button>
+        <div class="two-col-layout">
+          <!-- 前後期藥袋處方比對 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 3 21 3 21 8"/>
+                  <line x1="4" y1="20" x2="21" y2="3"/>
+                  <polyline points="21 16 21 21 16 21"/>
+                  <line x1="15" y1="15" x2="21" y2="21"/>
+                  <line x1="4" y1="4" x2="9" y2="9"/>
+                </svg>
+                <h3>跨期門診處方標籤逆向比對</h3>
               </div>
+              <button class="btn btn-outline btn-sm" onclick="loadPrescriptionPreset('changed')">載入本期異動範例</button>
             </div>
 
-            <!-- 兩期藥袋比對視圖 -->
-            <div class="compare-columns">
-              <!-- 前期藥袋 (舊) -->
-              <div class="rx-col">
-                <div class="rx-col-header prev">
-                  <h4>⏮️ 前期處方 (2026/10/15)</h4>
-                  <span class="tag">原心臟內科常規</span>
+            <p class="section-intro">
+              依據簡報規格：拍照上傳新藥袋，系統自動比對前後期標籤（如從 QD HS 改為 QD AM），自動推導出門診處方變更，彌補長輩自理就醫的資訊斷層。
+            </p>
+
+            <div class="rx-compare-flex">
+              <!-- 前期處方 -->
+              <div class="rx-column rx-prev">
+                <div class="rx-col-title">
+                  <span>前期常規處方 (2026/10/15)</span>
+                  <span class="tag-neutral">舊方</span>
                 </div>
-                <div class="med-table" id="prev-meds-list">
+                <div class="med-list" id="prev-meds-list">
                   <!-- 前期用藥列表 -->
                 </div>
               </div>
 
-              <!-- 本期新藥袋 (新) -->
-              <div class="rx-col">
-                <div class="rx-col-header curr">
-                  <h4>⏭️ 本期新處方 (2026/11/05)</h4>
-                  <span class="tag tag-success">逆向推導異動</span>
+              <!-- 本期處方 -->
+              <div class="rx-column rx-curr">
+                <div class="rx-col-title">
+                  <span>本期門診新處方 (2026/11/05)</span>
+                  <span class="tag-active">逆向推導診斷</span>
                 </div>
-                <div class="med-table" id="curr-meds-list">
+                <div class="med-list" id="curr-meds-list">
                   <!-- 本期用藥列表 -->
                 </div>
               </div>
             </div>
 
-            <!-- 逆向推導診斷總結 -->
-            <div class="inference-result-box" id="inference-box">
-              <div class="inf-header">
-                <span class="inf-icon">🧠</span>
-                <strong>處方逆向推導報告 (Inference Summary)：</strong>
+            <!-- 逆向推導報告 -->
+            <div class="inference-report" id="inference-box">
+              <div class="report-head">
+                <svg class="report-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <circle cx="12" cy="14" r="3"/>
+                </svg>
+                <strong>門診處方逆向推導診斷報告 (Inference Summary)</strong>
               </div>
-              <p id="inference-summary-text">載入中...</p>
-              <div class="mcp-notes-area" id="mcp-notes-area">
-                <!-- 藥學知識庫回傳注意事項 -->
-              </div>
+              <p class="report-text" id="inference-summary-text">載入中...</p>
+              <div id="mcp-notes-area"></div>
             </div>
           </div>
 
-          <!-- 右方/下方：自訂藥袋代碼解析測試 -->
-          <div class="card rx-manual-card">
-            <div class="card-header">
-              <h3>📷 模擬上傳/手動解析藥袋用法代碼</h3>
-              <span class="badge badge-indigo">代碼逆向推導</span>
+          <!-- 藥袋拍攝與手動代碼測試 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <h3>藥袋照片拍攝上傳與代碼解析</h3>
+              </div>
             </div>
 
-            <div class="code-glossary">
-              <strong>常見醫學代碼快查：</strong>
-              <span class="code-chip">QD AM：每日早晨一次</span>
-              <span class="code-chip">QD HS：每日睡前一次</span>
-              <span class="code-chip">BID：每日兩次</span>
-              <span class="code-chip">TID：每日三次</span>
-              <span class="code-chip">AC：飯前</span>
-              <span class="code-chip">PC：飯後</span>
+            <!-- 拍照上傳按鈕與預覽 -->
+            <div class="photo-upload-zone" id="photo-upload-zone">
+              <input type="file" id="bag-image-input" accept="image/*" capture="environment" style="display:none;">
+              <button type="button" class="btn btn-outline" onclick="document.getElementById('bag-image-input').click()">
+                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                拍照或上傳新藥袋照片
+              </button>
+              <div id="image-preview-container" class="image-preview-box" style="display:none;">
+                <img id="bag-image-preview" alt="藥袋照片預覽">
+                <span class="preview-caption">已載入藥袋照片 (待比對)</span>
+              </div>
             </div>
 
+            <!-- 醫學代碼速查 -->
+            <div class="code-ref-box">
+              <span class="ref-title">醫學用法代碼庫 (Latin Sig Reference)：</span>
+              <div class="ref-chips">
+                <span><code>QD AM</code> 每日早晨一次</span>
+                <span><code>QD HS</code> 每日睡前一次</span>
+                <span><code>BID</code> 每日早晚兩次</span>
+                <span><code>TID</code> 每日早中晚三次</span>
+                <span><code>AC</code> 飯前服用</span>
+                <span><code>PC</code> 飯後服用</span>
+              </div>
+            </div>
+
+            <!-- 自訂新增藥物 -->
             <form id="rx-inference-form">
               <div class="form-row">
                 <div class="form-group flex-1">
-                  <label>藥品名稱</label>
-                  <input type="text" id="custom-med-name" class="form-control" placeholder="例：Norvasc 脈優 5mg" value="Norvasc 脈優 5mg">
+                  <label class="form-label">藥品學名/商品名</label>
+                  <input type="text" id="custom-med-name" class="form-input" value="Norvasc 脈優 5mg">
                 </div>
                 <div class="form-group flex-1">
-                  <label>藥袋用法代碼 (拉丁頻率)</label>
-                  <input type="text" id="custom-med-code" class="form-control" placeholder="例：QD AM" value="QD AM">
+                  <label class="form-label">用法代碼</label>
+                  <input type="text" id="custom-med-code" class="form-input" value="QD AM">
                 </div>
               </div>
 
               <div class="form-group">
-                <label>適應症 / 備註</label>
-                <input type="text" id="custom-med-ind" class="form-control" placeholder="例：降血壓" value="高血壓 (原為 QD HS 改至晨間)">
+                <label class="form-label">適應症 / 門診備註</label>
+                <input type="text" id="custom-med-ind" class="form-input" value="高血壓 (時段由睡前改早晨，壓制晨峰高壓)">
               </div>
 
               <button type="submit" class="btn btn-secondary btn-block">
-                <span>➕ 加入本期藥物並觸發逆向推導</span>
+                加入本期處方並執行逆向比對
               </button>
             </form>
           </div>
         </div>
       </section>
 
-      <!-- VIEW 5: 在地醫院 Hub 陪診媒合 (Hospital Hub) -->
+      <!-- ==================== VIEW 5: 在地醫院 Hub 陪診媒合 ==================== -->
       <section id="view-hub" class="page-view">
-        <div class="hub-grid">
-          <!-- Hub 地圖與網絡錨定 -->
-          <div class="card hub-list-card">
-            <div class="card-header">
-              <h3>📍 在地醫院 Hub 網格錨定（零通勤損耗）</h3>
-              <span class="badge badge-emerald">專屬派員</span>
+        <div class="two-col-layout">
+          <!-- 在地 Hub 網格 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <h3>在地醫學中心 Hub 網格錨定（零通勤損耗）</h3>
+              </div>
+              <span class="status-badge">15~20分鐘半徑</span>
             </div>
 
-            <div class="hubs-container">
-              <div class="hub-item active">
-                <div class="hub-icon">🏥</div>
-                <div class="hub-info">
+            <p class="section-intro">
+              依據簡報第 5 頁：高齡長輩就醫高度鎖定特定區域醫學中心。我們不隨機全台派遣，而是依醫院半徑錨定網格，招募居住於院區周圍之執業護理師，專職進診間溝通。
+            </p>
+
+            <div class="hub-list">
+              <div class="hub-item current">
+                <div class="hub-badge-main">常去主院</div>
+                <div class="hub-content">
                   <h4>林口長庚紀念醫院 Hub</h4>
-                  <p>責任半徑：林口、龜山、桃園交流道周邊</p>
-                  <div class="escort-pill">專屬錨定特助：王思婷 (資深心內護理師)</div>
+                  <p class="hub-meta">涵蓋半徑：林口、龜山、桃園交流道生活圈</p>
+                  <div class="hub-escort-info">責任特助：王思婷 (資深心臟血管專科護理師)</div>
                 </div>
-                <span class="hub-status badge-success">長輩常去主院</span>
               </div>
 
               <div class="hub-item">
-                <div class="hub-icon">🏥</div>
-                <div class="hub-info">
-                  <h4>台大醫院總院 Hub</h4>
-                  <p>責任半徑：台北中正、大安、萬華</p>
-                  <div class="escort-pill">專屬錨定特助：林欣蓓 (高齡醫學護理師)</div>
+                <div class="hub-content">
+                  <h4>國立臺灣大學醫學院附設醫院 (台大總院) Hub</h4>
+                  <p class="hub-meta">涵蓋半徑：中正、大安、萬華、永和</p>
+                  <div class="hub-escort-info">責任特助：林欣蓓 (高齡醫學兼任護理師)</div>
                 </div>
-                <span class="hub-status badge-secondary">可隨選加購</span>
               </div>
 
               <div class="hub-item">
-                <div class="hub-icon">🏥</div>
-                <div class="hub-info">
-                  <h4>台北榮總 Hub</h4>
-                  <p>責任半徑：北投、士林、天母、石牌</p>
-                  <div class="escort-pill">專屬錨定特助：張宇哲 (急重症護理師)</div>
+                <div class="hub-content">
+                  <h4>臺北榮民總醫院 (榮總) Hub</h4>
+                  <p class="hub-meta">涵蓋半徑：北投、士林、天母、石牌</p>
+                  <div class="hub-escort-info">責任特助：張宇哲 (急重症加護專科護理師)</div>
                 </div>
-                <span class="hub-status badge-secondary">可隨選加購</span>
               </div>
             </div>
 
-            <div class="booking-history">
-              <h4>📅 陪診特助派案紀錄</h4>
+            <!-- 派案履歷 -->
+            <div class="hub-history-section">
+              <h4>近期陪診派案與就醫紀錄</h4>
               <div id="hub-bookings-list">
-                <!-- 動態注入預約清單 -->
+                <!-- 動態注入派案 -->
               </div>
             </div>
           </div>
 
-          <!-- 快速預約陪診表單 (商業變現模組) -->
-          <div class="card booking-form-card">
-            <div class="card-header">
-              <h3>🤝 預約在地臨床特助陪診</h3>
-              <span class="badge badge-indigo">高客單隨選服務</span>
+          <!-- 陪診特助預約 -->
+          <div class="panel-card">
+            <div class="panel-card-head">
+              <div class="head-lead">
+                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <h3>預約在地臨床特助就近陪診</h3>
+              </div>
+              <span class="status-badge-outline">高客單隨選</span>
             </div>
 
-            <p class="card-intro">
-              訂閱戶專享特權價 <strong>NT$ 2,000 / 次</strong>（原價 NT$ 3,200）。攜帶「診前指引卡」進診間焦點溝通，診後 15 分鐘系統產出白話報告書。
-            </p>
+            <div class="pricing-card">
+              <div class="pricing-label">訂閱用戶專屬加購價</div>
+              <div class="pricing-amount">NT$ 2,000 <span class="pricing-unit">/ 次 (原價 3,200)</span></div>
+              <p class="pricing-desc">包含攜帶診前指引卡進診間焦點決策溝通、診後 15 分鐘系統產出白話結構化報告書直傳全家看板。</p>
+            </div>
 
             <form id="hub-booking-form">
               <div class="form-group">
-                <label>選擇目標醫院 Hub</label>
-                <select id="booking-hospital" class="form-control">
-                  <option value="林口長庚紀念醫院" selected>林口長庚紀念醫院 Hub (陳爸爸常就醫)</option>
-                  <option value="台大醫院總院">台大醫院總院 Hub</option>
-                  <option value="台北榮民總醫院">台北榮民總醫院 Hub</option>
+                <label class="form-label">選擇在地醫院 Hub</label>
+                <select id="booking-hospital" class="form-input">
+                  <option value="林口長庚紀念醫院" selected>林口長庚紀念醫院 Hub (陳爸爸主要就醫)</option>
+                  <option value="國立臺灣大學醫學院附設醫院">台大醫院總院 Hub</option>
+                  <option value="臺北榮民總醫院">台北榮總 Hub</option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label>看診科別與醫師</label>
-                <input type="text" id="booking-dept" class="form-control" placeholder="例：新陳代謝科・張醫師" value="新陳代謝科・張醫師">
+                <label class="form-label">看診科別與指定主治醫師</label>
+                <input type="text" id="booking-dept" class="form-input" value="新陳代謝科・張主治醫師">
               </div>
 
               <div class="form-group">
-                <label>預計就醫日期與時間</label>
-                <input type="text" id="booking-date" class="form-control" placeholder="例：2026-11-20 (週五上午)" value="2026-11-20 (週五 09:30)">
+                <label class="form-label">門診日期與報到時段</label>
+                <input type="text" id="booking-date" class="form-input" value="2026-11-20 (週五 09:30)">
               </div>
 
               <div class="form-group">
-                <label>指定特助 (可由系統智能配對)</label>
-                <input type="text" id="booking-escort" class="form-control" value="林口 Hub 特助 - 陳雅琪 (專科護理師)">
+                <label class="form-label">指定責任特助護理師</label>
+                <input type="text" id="booking-escort" class="form-input" value="林口 Hub 專屬特助 - 陳雅琪 (專科護理師)">
               </div>
 
               <button type="submit" class="btn btn-primary btn-block">
-                <span>🎯 確認預約就醫陪診特助</span>
+                確認預約並錨定在地特助
               </button>
             </form>
           </div>

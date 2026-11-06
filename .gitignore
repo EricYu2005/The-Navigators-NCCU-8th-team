@@ -1,7 +1,7 @@
-# 相依套件庫（每個人 clone 下來後透過 npm install 安裝，絕對不要上傳至 GitHub）
+# 相依套件庫
 node_modules/
 
-# 本地環境變數設定檔（內含機密如資料庫連線字串、金鑰，不要上傳）
+# 本地機密環境變數設定檔（禁止推送到 GitHub）
 .env
 .env.local
 .env.*.local
@@ -14,7 +14,7 @@ gcp-key.json
 *.pem
 *.key
 
-# 本地 SQLite 資料庫檔案（避免組員互相覆蓋各自的測試資料）
+# 本地 SQLite 資料庫檔案
 *.db
 *.sqlite
 *.sqlite3

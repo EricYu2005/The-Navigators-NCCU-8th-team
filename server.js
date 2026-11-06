@@ -16,7 +16,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { dbQuery } = require('./database');
-const { generateDiscussionGuideWithAI, parseVerbalOrderWithAI } = require('./geminiService');
+const { checkOllamaConnection, generateDiscussionGuideWithOllama, parseVerbalOrderWithOllama } = require('./ollamaService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -88,6 +88,16 @@ app.get('/api/guides', async (req, res) => {
   }
 });
 
+// 取得 Ollama 本地 Docker 容器狀態與可用模型
+app.get('/api/ollama/status', async (req, res) => {
+  try {
+    const status = await checkOllamaConnection();
+    res.json({ success: true, data: status });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // AI/規則引擎：自動生成診前 20 秒醫師快讀指引卡 + 5秒勾選回條
 app.post('/api/guides/generate', async (req, res) => {
   try {
@@ -97,8 +107,8 @@ app.post('/api/guides/generate', async (req, res) => {
       return res.status(400).json({ success: false, message: '請提供科別與近況數值摘要！' });
     }
 
-    // 調用 Gemini LLM（或備援臨床規則引擎）濃縮生成指引卡
-    const aiOutput = await generateDiscussionGuideWithAI({ department, doctorName, vitalsSummary, symptoms });
+    // 調用 Ollama 本地模型（或備援臨床規則引擎）濃縮生成指引卡
+    const aiOutput = await generateDiscussionGuideWithOllama({ department, doctorName, vitalsSummary, symptoms });
     const keyComplaint = aiOutput.keyComplaint;
     const doctorQuestions = Array.isArray(aiOutput.doctorQuestions) ? aiOutput.doctorQuestions.join('\n') : aiOutput.doctorQuestions;
     const triageOptions = aiOutput.triageOptions;
@@ -159,8 +169,8 @@ app.post('/api/verbal-orders/parse', async (req, res) => {
       return res.status(400).json({ success: false, message: '請輸入或錄製醫師口頭醫囑！' });
     }
 
-    // 調用 Gemini LLM（或備援臨床規則引擎）結構化轉譯口頭醫囑
-    const aiOrder = await parseVerbalOrderWithAI(rawInput);
+    // 調用 Ollama 本地模型（或備援臨床規則引擎）結構化轉譯口頭醫囑
+    const aiOrder = await parseVerbalOrderWithOllama(rawInput);
     const conditionText = aiOrder.conditionText;
     const actionText = aiOrder.actionText;
     const redFlags = aiOrder.redFlags;

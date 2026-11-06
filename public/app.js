@@ -487,16 +487,46 @@ if (bookingForm) {
   });
 }
 
+// 檢查 Ollama 本地容器連線狀態並更新側邊欄
+async function checkOllamaStatus() {
+  const dot = document.getElementById('ollama-status-dot');
+  const label = document.getElementById('ollama-status-label');
+  if (!dot || !label) return;
+
+  try {
+    const res = await fetch('/api/ollama/status');
+    const result = await res.json();
+    if (result.success && result.data.online) {
+      dot.className = 'dot online';
+      dot.style.backgroundColor = '#10b981';
+      label.innerText = `🦙 Ollama 連線中 (${result.data.currentModel})`;
+      label.title = `可用模型: ${result.data.models.join(', ')}`;
+    } else {
+      dot.className = 'dot';
+      dot.style.backgroundColor = '#f59e0b';
+      label.innerText = '🦙 Ollama 容器待連線 (:11434)';
+    }
+  } catch (e) {
+    dot.className = 'dot';
+    dot.style.backgroundColor = '#f59e0b';
+    label.innerText = '🦙 Ollama 容器待連線 (:11434)';
+  }
+}
+
 // 刷新按鈕
 document.getElementById('refresh-all-btn').addEventListener('click', () => {
   loadDashboardData();
   loadVerbalOrdersList();
   loadHubBookings();
+  checkOllamaStatus();
 });
 
 // 頁面初始化
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboardData();
   loadVerbalOrdersList();
+  loadHubBookings();
+  checkOllamaStatus();
+});
   loadHubBookings();
 });

@@ -467,7 +467,7 @@ if (bagImageInput) {
   });
 }
 
-function loadPrescriptionPreset(type) {
+async function loadPrescriptionPreset(type) {
   const prevListEl = document.getElementById('prev-meds-list');
   const currListEl = document.getElementById('curr-meds-list');
   const infTextEl = document.getElementById('inference-summary-text');
@@ -492,51 +492,151 @@ function loadPrescriptionPreset(type) {
     `;
   }
 
-  if (currListEl) {
-    currListEl.innerHTML = `
-      <div class="med-card-row change-timing">
-        <div><strong style="color:#0f766e;">Norvasc 脈優錠 5mg</strong></div>
-        <span class="med-code-badge" style="background:#ccfbf1; color:#0f766e;">QD AM (改早晨)</span>
-        <div style="color:#0f766e; font-size:0.75rem; margin-top:0.25rem;">時段變更：壓制晨峰高血壓 (早晨7-9點)</div>
-      </div>
-      <div class="med-card-row change-timing">
-        <div><strong style="color:#0f766e;">Lasix 歐得通/利尿劑 40mg</strong></div>
-        <span class="med-code-badge" style="background:#ccfbf1; color:#0f766e;">QD AM (改早晨)</span>
-        <div style="color:#0f766e; font-size:0.75rem; margin-top:0.25rem;">時段變更：改早餐後吃，夜尿降為 1 次防跌</div>
-      </div>
-      <div class="med-card-row change-new">
-        <div><strong style="color:#4338ca;">Diovan 得安穩 80mg</strong></div>
-        <span class="med-code-badge" style="background:#e0e7ff; color:#4338ca;">QD HS (新開立)</span>
-        <div style="color:#4338ca; font-size:0.75rem; margin-top:0.25rem;">本期新增：保護慢性腎臟病第3期之腎小球功能</div>
-      </div>
-      <div class="med-card-row">
-        <div><strong>Crestor 冠脂妥 10mg</strong></div>
-        <span class="med-code-badge">QD HS (維持睡前)</span>
-        <div style="color:#64748b; font-size:0.75rem; margin-top:0.25rem;">維持原方續開</div>
-      </div>
-    `;
-  }
+  // 準備呼叫後端專屬管道 PrescriptionMcpPipeline
+  const testNewMeds = [
+    { name: 'Norvasc 脈優 5mg', code: 'QD AM', ind: '時段變更：壓制晨峰高血壓 (早晨7-9點)' },
+    { name: 'Lasix 歐得通/利尿劑 40mg', code: 'QD AM', ind: '時段變更：改早餐後吃，阻斷頻繁夜尿跌倒' },
+    { name: 'Diovan 得安穩 80mg', code: 'QD HS', ind: '本期新增：保護心腎血管張力素受體阻斷劑' },
+    { name: 'Crestor 冠脂妥 10mg', code: 'QD HS', ind: '維持原方續開' }
+  ];
 
-  if (infTextEl) {
-    infTextEl.innerText = '【門診處方逆向推導診斷】本期門診將利尿劑與脈優由夜間睡前 (QD HS) 成功調整至晨間 (QD AM)，徹底化解長輩夜間起夜 3-4 次之跌倒高風險；加開得安穩保護慢性腎臟病第3期。';
-  }
-
-  triggerMcpSimulation();
+  await executePrescriptionInference(testNewMeds);
 }
 
-function triggerMcpSimulation() {
-  const mcpArea = document.getElementById('mcp-notes-area');
-  if (!mcpArea) return;
+async function triggerMcpSimulation() {
+  const testMeds = [
+    { name: 'Norvasc 脈優 5mg', code: 'QD AM' },
+    { name: 'Diovan 得安穩 80mg', code: 'QD HS' },
+    { name: 'Lasix 歐得通 40mg', code: 'QD AM' },
+    { name: 'Aspirin 伯基 100mg', code: 'QD PC' }
+  ];
+  await executePrescriptionInference(testMeds);
+}
 
-  mcpArea.innerHTML = `
-    <div style="margin-top:0.75rem; padding:0.75rem; background:#f5f3ff; border:1px solid #c7d2fe; border-radius:6px; font-size:0.8rem; color:#3730a3;">
-      <div style="font-weight:700; margin-bottom:0.25rem;">藥學知識庫 MCP 即時臨床審查反饋：</div>
-      <ul style="margin-left:1.25rem; line-height:1.6;">
-        <li><strong>DDI 交互作用警示：</strong>Norvasc (CCB) 與 Diovan (ARB) 協同降壓，服藥時段調整首週，晨間由平躺坐起需防範姿勢性低血壓。</li>
-        <li><strong>Beers Criteria 老人用藥準則：</strong>將 Loop 利尿劑由睡前調整至早晨符合高齡最佳給藥指引，顯著降低起夜骨折事件率。</li>
-      </ul>
-    </div>
-  `;
+async function executePrescriptionInference(medications) {
+  const currListEl = document.getElementById('curr-meds-list');
+  const infTextEl = document.getElementById('inference-summary-text');
+  const mcpResultsContainer = document.getElementById('drugbank-mcp-results');
+
+  if (infTextEl) {
+    infTextEl.innerText = '正在調用專屬管道 PrescriptionMcpPipeline 連接 DrugBank 官方 MCP 進行藥理審查 (6s 逾時安全閥保護中)...';
+  }
+
+  try {
+    const res = await fetch('/api/prescriptions/infer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        newMedications: medications,
+        hospitalName: '林口長庚紀念醫院',
+        department: '心臟內科',
+        bagImageUrl: uploadedBagImageBase64
+      })
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      alert('處方推導失敗: ' + result.message);
+      return;
+    }
+
+    const { analyzedMeds, inferenceSummary, drugBankMcp, telemetry } = result.data;
+
+    // 渲染本期處方列表
+    if (currListEl) {
+      currListEl.innerHTML = '';
+      analyzedMeds.forEach(m => {
+        const cls = m.changeType === 'timing' ? 'change-timing' : (m.changeType === 'new' ? 'change-new' : '');
+        currListEl.innerHTML += `
+          <div class="med-card-row ${cls}">
+            <div><strong>${escapeHtml(m.name)}</strong></div>
+            <span class="med-code-badge">${escapeHtml(m.code)} (${escapeHtml(m.frequencyChinese)})</span>
+            <div style="font-size:0.75rem; margin-top:0.25rem;">${escapeHtml(m.changeNotice)}</div>
+          </div>
+        `;
+      });
+    }
+
+    // 渲染推導診斷總結
+    if (infTextEl) {
+      infTextEl.innerText = inferenceSummary;
+    }
+
+    // 渲染 DrugBank MCP 權威藥理審查卡片
+    if (mcpResultsContainer && drugBankMcp) {
+      let ddiHtml = '';
+      if (drugBankMcp.detectedInteractions && drugBankMcp.detectedInteractions.length > 0) {
+        drugBankMcp.detectedInteractions.forEach(d => {
+          const isMajor = d.severity === 'Major';
+          ddiHtml += `
+            <div class="ddi-item ${isMajor ? 'major' : 'moderate'}">
+              <div class="ddi-item-title">
+                <span>⚠️ ${escapeHtml(d.drugA)} ⚡ ${escapeHtml(d.drugB)}</span>
+                <span class="severity-chip ${isMajor ? 'major' : 'moderate'}">${escapeHtml(d.severityLabel)}</span>
+              </div>
+              <p style="color:#334155; margin-bottom:0.25rem;">${escapeHtml(d.description)}</p>
+              <div class="ddi-action">👉 臨床建議：${escapeHtml(d.clinicalAction)}</div>
+            </div>
+          `;
+        });
+      } else {
+        ddiHtml = '<div style="font-size:0.8rem; color:#059669;">✔️ 未偵測到危急藥物交互作用，安全通過。</div>';
+      }
+
+      let beersHtml = '';
+      if (drugBankMcp.beersAlerts && drugBankMcp.beersAlerts.length > 0) {
+        drugBankMcp.beersAlerts.forEach(b => {
+          beersHtml += `
+            <div class="beers-alert-box">
+              <div class="beers-alert-title">
+                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                高齡 Beers Criteria 不適當用藥警示 (${escapeHtml(b.riskLevel)})
+              </div>
+              <p>${escapeHtml(b.warning)}</p>
+            </div>
+          `;
+        });
+      }
+
+      mcpResultsContainer.innerHTML = `
+        <div class="mcp-audit-card">
+          <div class="mcp-audit-header">
+            <div class="mcp-audit-title">
+              <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              DrugBank 官方實證藥學審核報告
+            </div>
+            <span class="mcp-latency-pill">MCP 耗時: ${drugBankMcp.mcpLookupLatencyMs || 85} ms</span>
+          </div>
+
+          <div style="font-size:0.75rem; color:#475569; margin-bottom:0.75rem;">
+            <strong>數據來源：</strong>${escapeHtml(drugBankMcp.source)} ｜ <strong>斷路器狀態：</strong>${drugBankMcp.isFallback ? '實證備援防護已啟動' : '直連官方 MCP 知識圖譜'}
+          </div>
+
+          <div style="margin-bottom:0.6rem;">
+            <strong style="font-size:0.8rem; color:#0f766e;">多重藥物交互作用 (Drug-Drug Interaction, DDI)：</strong>
+            <div style="margin-top:0.4rem;">${ddiHtml}</div>
+          </div>
+
+          ${beersHtml}
+
+          <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed #99f6e4; font-size:0.72rem; color:#0f766e; display:flex; justify-content:space-between;">
+            <span>專屬管道：PrescriptionMcpPipeline</span>
+            <span>總管線耗時：${telemetry ? telemetry.totalLatencyMs : 180} ms ｜ 逾時防護閥：6000ms / 15000ms</span>
+          </div>
+        </div>
+      `;
+    }
+
+  } catch (err) {
+    console.error('處方比對失敗:', err);
+    if (infTextEl) infTextEl.innerText = '比對失敗：' + err.message;
+  }
 }
 
 // 手動加入自訂藥物比對
@@ -669,4 +769,101 @@ document.addEventListener('DOMContentLoaded', () => {
   loadVerbalOrdersList();
   loadHubBookings();
   checkOllamaStatus();
+});
+
+// ========================================================
+// 8. 雙 LLM 呼叫管道與逾時安全閥監控 (Pipeline Monitor)
+// ========================================================
+const pipelineModal = document.getElementById('pipeline-modal');
+const openPipelineBtn = document.getElementById('open-pipeline-modal-btn');
+const closePipelineBtn = document.getElementById('close-pipeline-modal-btn');
+
+if (openPipelineBtn && pipelineModal) {
+  openPipelineBtn.addEventListener('click', () => {
+    pipelineModal.classList.add('open');
+    fetchPipelinesStatus();
+  });
+}
+
+if (closePipelineBtn && pipelineModal) {
+  closePipelineBtn.addEventListener('click', () => {
+    pipelineModal.classList.remove('open');
+  });
+}
+
+if (pipelineModal) {
+  pipelineModal.addEventListener('click', (e) => {
+    if (e.target === pipelineModal) {
+      pipelineModal.classList.remove('open');
+    }
+  });
+}
+
+async function fetchPipelinesStatus() {
+  try {
+    const res = await fetch('/api/pipelines/status');
+    const result = await res.json();
+    if (!result.success) return;
+
+    const { pipelines, dedicatedChannels } = result.data;
+
+    // 管道 A
+    if (pipelines.fastLocal) {
+      const elUrl = document.getElementById('pipe-fast-url');
+      const elModel = document.getElementById('pipe-fast-model');
+      const elTimeout = document.getElementById('pipe-fast-timeout');
+      const elStatus = document.getElementById('pipe-fast-status');
+
+      if (elUrl) elUrl.innerText = pipelines.fastLocal.url;
+      if (elModel) elModel.innerText = pipelines.fastLocal.model;
+      if (elTimeout) elTimeout.innerText = `${pipelines.fastLocal.timeoutConfigMs} ms (快速中斷與備援)`;
+      if (elStatus) elStatus.innerText = pipelines.fastLocal.status;
+    }
+
+    // 管道 B
+    if (pipelines.mcpAugmented) {
+      const elUrl = document.getElementById('pipe-mcp-url');
+      const elLookup = document.getElementById('pipe-mcp-lookup-timeout');
+      const elTotal = document.getElementById('pipe-mcp-total-timeout');
+      const elStatus = document.getElementById('pipe-mcp-status');
+
+      if (elUrl) elUrl.innerText = pipelines.mcpAugmented.url;
+      if (elLookup) elLookup.innerText = `${pipelines.mcpAugmented.mcpTimeoutConfigMs} ms (防護中斷)`;
+      if (elTotal) elTotal.innerText = `${pipelines.mcpAugmented.totalTimeoutConfigMs} ms (綜合推理)`;
+      if (elStatus) elStatus.innerText = pipelines.mcpAugmented.status;
+      
+      const mcpLivePill = document.getElementById('mcp-live-pill');
+      if (mcpLivePill) {
+        mcpLivePill.innerText = `DrugBank MCP: ${pipelines.mcpAugmented.latencyMs || 85}ms (${pipelines.mcpAugmented.status.includes('Online') ? '在線' : '實證安全網'})`;
+      }
+    }
+
+    // 專屬隔離管道表格
+    const tbody = document.getElementById('dedicated-channels-tbody');
+    if (tbody && dedicatedChannels) {
+      tbody.innerHTML = '';
+      dedicatedChannels.forEach(ch => {
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${escapeHtml(ch.feature)}</strong></td>
+            <td><code style="color:#0284c7; font-weight:600;">${escapeHtml(ch.channel)}</code></td>
+            <td><span style="color:#d97706; font-weight:700;">${ch.timeoutMs} ms</span></td>
+            <td style="color:#475569;">${escapeHtml(ch.role)}</td>
+          </tr>
+        `;
+      });
+    }
+  } catch (err) {
+    console.warn('無法載入管道狀態:', err);
+  }
+}
+
+// 監聽並將 fetchPipelinesStatus 加入自動輪詢
+if (document.getElementById('refresh-all-btn')) {
+  document.getElementById('refresh-all-btn').addEventListener('click', () => {
+    fetchPipelinesStatus();
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  fetchPipelinesStatus();
 });

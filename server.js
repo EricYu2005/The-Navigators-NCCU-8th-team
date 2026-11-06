@@ -1,13 +1,15 @@
 /**
  * server.js
  * CareNav 智護領航 - 核心 API 伺服器
- * 提供 4 大模組（排除功能三）的完整業務邏輯與 Ollama 本地模型推論：
- * 1. 全家照護雲端看板 (/api/dashboard, /api/family-notes)
- * 2. 診前臨床指引卡生成 (/api/guides, /api/guides/generate)
- * 3. 診後口頭醫囑轉譯 (/api/verbal-orders, /api/verbal-orders/parse)
- * 4. 藥袋代碼逆向推導與處方比對 (/api/prescriptions, /api/prescriptions/infer)
- * 5. 在地醫院 Hub 陪診媒合 (/api/hub-bookings)
- * 6. Ollama 連線狀態與模型查詢 (/api/ollama/status)
+ * 
+ * 雙 LLM 呼叫管道與各功能專屬管道架構：
+ * 1. 雙管道與逾時狀態監控 (/api/pipelines/status)
+ * 2. 診前臨床指引卡生成 (專屬管道: GuidePipeline -> /api/guides, /api/guides/generate)
+ * 3. 診後口頭醫囑轉譯 (專屬管道: VerbalOrderPipeline -> /api/verbal-orders, /api/verbal-orders/parse)
+ * 4. 藥袋代碼逆向推導與 DrugBank MCP 藥理審核 (專屬管道: PrescriptionMcpPipeline -> /api/prescriptions, /api/prescriptions/infer)
+ * 5. 全家照護雲端看板 (專屬管道: FamilyCarePipeline -> /api/dashboard, /api/family-notes)
+ * 6. 在地醫院 Hub 陪診媒合 (/api/hub-bookings)
+ * 7. 本機 Ollama 連線狀態查詢 (/api/ollama/status)
  */
 
 require('dotenv').config();
@@ -15,7 +17,14 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { dbQuery } = require('./database');
-const { checkOllamaConnection, generateDiscussionGuideWithOllama, parseVerbalOrderWithOllama } = require('./ollamaService');
+const { checkOllamaConnection } = require('./ollamaService');
+const {
+  getPipelinesStatus,
+  GuidePipeline,
+  VerbalOrderPipeline,
+  PrescriptionMcpPipeline,
+  FamilyCarePipeline
+} = require('./llmPipelines');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,7 +35,7 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 醫學處方代碼字典 (Medical Frequency & Timing Lexicon)
+// 醫學處方代碼字典
 const MEDICAL_CODES = {
   'QD': '每日一次 (固定時間)',
   'QD AM': '每日一次 (早晨服用)',
@@ -45,69 +54,108 @@ const MEDICAL_CODES = {
 };
 
 // ========================================================
-// 1. 全家照護雲端看板 (Family Care Hub)
+// 0. 雙 LLM 呼叫管道與各功能專屬管道狀態監控
+// ========================================================
+app.get('/api/pipelines/status', async (req, res) => {
+  try {
+    const statusData = await getPipelinesStatus();
+    res.json({ success: true, data: statusData });
+  } catch (error) {
+    console.error('查詢管道狀態失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========================================================
+// 1. 全家照護雲端看板模組 (Family Care Hub)
 // ========================================================
 app.get('/api/dashboard', async (req, res) => {
   try {
     const patient = await dbQuery.get("SELECT * FROM patients WHERE id = 1");
-    const latestGuide = await dbQuery.get("SELECT * FROM discussion_guides ORDER BY id DESC LIMIT 1");
-    const latestOrder = await dbQuery.get("SELECT * FROM verbal_orders ORDER BY id DESC LIMIT 1");
-    const currentRx = await dbQuery.get("SELECT * FROM prescriptions WHERE period_type = 'current' ORDER BY id DESC LIMIT 1");
-    const prevRx = await dbQuery.get("SELECT * FROM prescriptions WHERE period_type = 'previous' ORDER BY id DESC LIMIT 1");
-    const nextBooking = await dbQuery.get("SELECT * FROM hub_bookings ORDER BY id DESC LIMIT 1");
-    const familyNotes = await dbQuery.all("SELECT * FROM family_notes ORDER BY id DESC LIMIT 15");
+    const activeGuides = await dbQuery.all("SELECT * FROM discussion_guides WHERE patient_id = 1 ORDER BY id DESC LIMIT 5");
+    const verbalOrders = await dbQuery.all("SELECT * FROM verbal_orders WHERE patient_id = 1 ORDER BY id DESC LIMIT 5");
+    const prescriptions = await dbQuery.all("SELECT * FROM prescriptions WHERE patient_id = 1 ORDER BY id DESC LIMIT 5");
+    const hubBookings = await dbQuery.all("SELECT * FROM hub_bookings WHERE patient_id = 1 ORDER BY id DESC LIMIT 5");
+    const familyNotes = await dbQuery.all("SELECT * FROM family_notes WHERE patient_id = 1 ORDER BY id DESC LIMIT 10");
+
+    const parsedGuides = activeGuides.map(g => ({
+      ...g,
+      triage_options: JSON.parse(g.triage_options || '[]')
+    }));
+
+    const parsedPrescriptions = prescriptions.map(p => ({
+      ...p,
+      medications: JSON.parse(p.medications_json || '[]')
+    }));
 
     res.json({
       success: true,
       data: {
         patient,
-        latestGuide,
-        latestOrder,
-        currentPrescription: currentRx ? { ...currentRx, medications: JSON.parse(currentRx.medications_json) } : null,
-        previousPrescription: prevRx ? { ...prevRx, medications: JSON.parse(prevRx.medications_json) } : null,
-        nextBooking,
+        guides: parsedGuides,
+        verbalOrders,
+        prescriptions: parsedPrescriptions,
+        hubBookings,
         familyNotes
       }
     });
   } catch (error) {
-    console.error('載入看板失敗:', error);
-    res.status(500).json({ success: false, message: '伺服器讀取看板資料失敗' });
+    console.error('取得看板資料失敗:', error);
+    res.status(500).json({ success: false, message: '資料庫讀取失敗' });
   }
 });
 
-// 手足協同留話簿
-app.get('/api/family-notes', async (req, res) => {
-  try {
-    const notes = await dbQuery.all("SELECT * FROM family_notes ORDER BY id DESC");
-    res.json({ success: true, data: notes });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
+// 手足雲端協同備忘
 app.post('/api/family-notes', async (req, res) => {
   try {
-    const { author, city, content } = req.body;
-    if (!author || !content) {
-      return res.status(400).json({ success: false, message: '請填寫發言人與內容！' });
+    const { authorLocation, authorName, noteText, noteType } = req.body;
+    if (!authorName || !noteText) {
+      return res.status(400).json({ success: false, message: '請提供姓名與備忘內容！' });
     }
-    const result = await dbQuery.run(
-      "INSERT INTO family_notes (patient_id, author, city, content) VALUES (1, ?, ?, ?)",
-      [author, city || '台北', content]
-    );
-    res.status(201).json({ success: true, id: result.lastID });
+
+    // 透過專屬管道進行手足衛教轉譯
+    const formatted = await FamilyCarePipeline.formatNoteForSiblings(authorName, noteText);
+
+    const result = await dbQuery.run(`
+      INSERT INTO family_notes (patient_id, author_location, author_name, note_text, note_type)
+      VALUES (1, ?, ?, ?, ?)
+    `, [
+      authorLocation || '台北',
+      authorName,
+      formatted.formattedSummary,
+      noteType || '日常叮嚀'
+    ]);
+
+    res.status(201).json({
+      success: true,
+      message: '手足照護提醒已同步！',
+      data: {
+        id: result.lastID,
+        authorLocation: authorLocation || '台北',
+        authorName,
+        noteText: formatted.formattedSummary,
+        noteType: noteType || '日常叮嚀',
+        telemetry: formatted.telemetry
+      }
+    });
   } catch (error) {
+    console.error('新增家庭備忘失敗:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 // ========================================================
-// 2. 診前臨床指引卡模組 (Doctor Discussion Guide)
+// 2. 診前臨床指引卡生成模組 (Doctor Discussion Guide)
+// ★ 專屬管道: GuidePipeline (8s 逾時防護)
 // ========================================================
 app.get('/api/guides', async (req, res) => {
   try {
     const guides = await dbQuery.all("SELECT * FROM discussion_guides ORDER BY id DESC");
-    res.json({ success: true, data: guides });
+    const formatted = guides.map(g => ({
+      ...g,
+      triage_options: JSON.parse(g.triage_options || '[]')
+    }));
+    res.json({ success: true, data: formatted });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -117,8 +165,8 @@ app.post('/api/guides/generate', async (req, res) => {
   try {
     const { department, doctorName, visitDate, morningBp, nocturiaCount, symptoms, vitalsSummary } = req.body;
 
-    // 調用 Ollama 本地模型（或臨床備援引擎）
-    const aiOutput = await generateDiscussionGuideWithOllama({
+    // 透過專屬功能管道 GuidePipeline 處理
+    const aiOutput = await GuidePipeline.generate({
       department,
       doctorName,
       morningBp,
@@ -162,7 +210,8 @@ app.post('/api/guides/generate', async (req, res) => {
         symptoms,
         keyComplaint,
         doctorQuestions,
-        triageOptions
+        triageOptions,
+        telemetry: aiOutput.telemetry
       }
     });
   } catch (error) {
@@ -173,6 +222,7 @@ app.post('/api/guides/generate', async (req, res) => {
 
 // ========================================================
 // 3. 診後口頭醫囑轉譯模組 (Verbal Orders Digitization)
+// ★ 專屬管道: VerbalOrderPipeline (6s 即時語音響應逾時防護)
 // ========================================================
 app.get('/api/verbal-orders', async (req, res) => {
   try {
@@ -191,8 +241,8 @@ app.post('/api/verbal-orders/parse', async (req, res) => {
       return res.status(400).json({ success: false, message: '請提供口頭交代內容！' });
     }
 
-    // 調用 Ollama 本地模型（或臨床規則引擎）進行結構化轉譯
-    const aiOrder = await parseVerbalOrderWithOllama(rawInput);
+    // 透過專屬功能管道 VerbalOrderPipeline 處理
+    const aiOrder = await VerbalOrderPipeline.parse(rawInput);
     const conditionText = aiOrder.conditionText;
     const actionText = aiOrder.actionText;
     const redFlags = aiOrder.redFlags;
@@ -220,7 +270,8 @@ app.post('/api/verbal-orders/parse', async (req, res) => {
         conditionText,
         actionText,
         redFlags,
-        recordedBy: recordedBy || '林口長庚 Hub 護理特助'
+        recordedBy: recordedBy || '林口長庚 Hub 護理特助',
+        telemetry: aiOrder.telemetry
       }
     });
   } catch (error) {
@@ -231,7 +282,7 @@ app.post('/api/verbal-orders/parse', async (req, res) => {
 
 // ========================================================
 // 4. 藥袋用法代碼逆向推導模組 (Prescription Inference Engine)
-// ★ 預留藥學知識庫 MCP (Pharmacology MCP Hook)
+// ★ 專屬管道: PrescriptionMcpPipeline (對接 DrugBank MCP: 6s/15s 雙層防護)
 // ========================================================
 app.get('/api/prescriptions', async (req, res) => {
   try {
@@ -263,48 +314,18 @@ app.post('/api/prescriptions/infer', async (req, res) => {
       } catch (e) {}
     }
 
-    // 逆向推導比對演算法
-    const analyzedMeds = newMedications.map(newMed => {
-      const codeUpper = (newMed.code || 'QD').toUpperCase();
-      const codeMeaning = MEDICAL_CODES[codeUpper] || '依照專科醫師特定醫囑服用';
-      
-      const matchedOld = prevMeds.find(old => {
-        const oldPrefix = old.name.split(' ')[0].toLowerCase();
-        const newPrefix = newMed.name.split(' ')[0].toLowerCase();
-        return oldPrefix === newPrefix || old.name.includes(newMed.name.slice(0, 4));
-      });
-
-      let changeType = 'new';
-      let changeNotice = '本期初次新增處方';
-
-      if (matchedOld) {
-        const oldCodeUpper = (matchedOld.code || '').toUpperCase();
-        if (oldCodeUpper !== codeUpper) {
-          changeType = 'timing';
-          changeNotice = `時段重大調整：由前期【${oldCodeUpper}】改為本期【${codeUpper}】(${codeMeaning})`;
-        } else {
-          changeType = 'same';
-          changeNotice = '劑量與用法維持不變 (常規續開)';
-        }
-      }
-
-      return {
-        ...newMed,
-        code: codeUpper,
-        frequencyChinese: codeMeaning,
-        changeType,
-        changeNotice
-      };
+    // 透過專屬 DrugBank MCP 增強管道進行逆向推導、DDI 比對與臨床審查
+    const inferResult = await PrescriptionMcpPipeline.inferAndAudit({
+      newMedications,
+      prevMedications: prevMeds,
+      hospitalName,
+      department
     });
 
-    const changedCount = analyzedMeds.filter(m => m.changeType !== 'same').length;
-    let inferenceSummary = `【門診處方逆向推導診斷】本期門診辨識出 ${analyzedMeds.length} 種常規藥品，偵測到 ${changedCount} 項重要處方變更。利尿劑與脈優由晚間改至晨間服用，消弭夜間起夜高頻跌倒風險；加開保護心腎藥物。`;
-
-    // 擴充掛載點：藥學知識庫 MCP (Pharmacology Knowledge Base)
-    const mcpPharmacologyNotes = [
-      "藥學交互作用分析 (DDI)：Norvasc (CCB) 與 Diovan (ARB) 具協同降血壓作用，調整初期一週請監測晨間起立時之姿勢性低血壓。",
-      "高齡用藥指引 (Beers Criteria)：利尿劑改至早晨服用為正確醫囑排程，大幅降低夜間起夜跌倒風險。"
-    ];
+    const analyzedMeds = inferResult.analyzedMeds;
+    const inferenceSummary = inferResult.inferenceSummary;
+    const drugBankMcp = inferResult.drugBankMcp;
+    const telemetry = inferResult.telemetry;
 
     await dbQuery.run(`
       INSERT INTO prescriptions (
@@ -321,11 +342,13 @@ app.post('/api/prescriptions/infer', async (req, res) => {
 
     res.json({
       success: true,
-      message: '藥袋用法代碼逆向推導與處方比對完成！',
+      message: '藥袋代碼推導與 DrugBank MCP 藥理審查完成！',
       data: {
         analyzedMeds,
         inferenceSummary,
-        mcpPharmacologyNotes,
+        clinicalActions: inferResult.clinicalActions,
+        drugBankMcp,
+        telemetry,
         medicalCodesReference: MEDICAL_CODES
       }
     });
@@ -366,7 +389,7 @@ app.post('/api/hub-bookings', async (req, res) => {
 });
 
 // ========================================================
-// 6. Ollama 連線狀態與模型查詢
+// 6. 本機 Ollama 連線狀態查詢
 // ========================================================
 app.get('/api/ollama/status', async (req, res) => {
   try {
@@ -378,8 +401,12 @@ app.get('/api/ollama/status', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`===============================================`);
+  console.log(`====================================================`);
   console.log(`🚀 CareNav 智護領航 - 核心伺服器運行中！`);
+  console.log(`⚡ 雙 LLM 呼叫管道就緒：`);
+  console.log(`   ├─ 管道 A [本地極速推理]：直連本機 Ollama (${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'})`);
+  console.log(`   └─ 管道 B [臨床藥學 MCP]：直連 DrugBank MCP (${process.env.DRUGBANK_MCP_URL || 'https://mcp.drugbank.com/mcp'})`);
+  console.log(`🛡️ 專屬功能隔離通道：GuidePipeline | VerbalOrderPipeline | PrescriptionMcpPipeline | FamilyCarePipeline`);
   console.log(`🌐 系統前台網址： http://localhost:${PORT}`);
-  console.log(`===============================================`);
+  console.log(`====================================================`);
 });

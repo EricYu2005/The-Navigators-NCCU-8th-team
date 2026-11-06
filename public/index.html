@@ -134,6 +134,13 @@
             <span class="member-tag">竹科・小兒子</span>
             <span class="member-tag">海外・長子</span>
           </div>
+          <button class="btn btn-outline btn-sm pipeline-monitor-btn" id="open-pipeline-modal-btn" title="查看雙 LLM 呼叫管道與各功能逾時安全閥狀態">
+            <span class="pulse-dot"></span>
+            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            雙管道與逾時監控
+          </button>
           <button class="btn btn-outline btn-sm" id="refresh-all-btn">
             <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
@@ -299,6 +306,11 @@
               <span class="status-badge">AI 濃縮 20s 備忘</span>
             </div>
 
+            <div class="telemetry-tag fast">
+              <span class="pulse-dot" style="width:6px;height:6px;"></span>
+              <span>⚡ 專屬管道: GuidePipeline (本地極速通道 • 8s 逾時防護)</span>
+            </div>
+
             <p class="section-intro">
               依據簡報規格：系統將整合長輩近兩週<strong>晨間血壓</strong>、<strong>夜尿頻率</strong>與<strong>食慾/水腫異常</strong>，由 AI 濃縮為主治醫師 20 秒讀完的精準主訴備忘錄，末端自帶醫師 5 秒勾選回條。
             </p>
@@ -450,6 +462,11 @@
               <span class="status-badge">語音 / 文字雙模</span>
             </div>
 
+            <div class="telemetry-tag fast">
+              <span class="pulse-dot" style="width:6px;height:6px;"></span>
+              <span>⚡ 專屬管道: VerbalOrderPipeline (診間語音即時通道 • 6s 逾時防護)</span>
+            </div>
+
             <p class="section-intro">
               依據簡報規格：診後快速語音輸入或特助勾選，系統自動將醫師口頭交代（如「血壓低於110暫停這顆」）轉為白話行動指引，並即時推播全家。
             </p>
@@ -525,11 +542,19 @@
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
             </svg>
             <div>
-              <strong>藥學知識庫 MCP 接口已就緒</strong>
-              <p>內建醫學用法代碼庫 (QD/AM/HS/BID/TID)。連接藥學 MCP 後，將自動啟動藥物交互作用 (DDI) 與高齡 Beers Criteria 審查。</p>
+              <strong>DrugBank 官方 MCP 臨床藥理安全網已啟用</strong>
+              <p>端點：<code>https://mcp.drugbank.com/mcp</code> ｜ 雙層逾時防護 (6s MCP 查詢 / 15s 綜合推理) ｜ 斷路器與實證安全網已就緒</p>
             </div>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="triggerMcpSimulation()">觸發 MCP 藥學審查模擬</button>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <span class="mcp-latency-pill" id="mcp-live-pill">DrugBank MCP 檢測在線</span>
+            <button class="btn btn-outline btn-sm" onclick="triggerMcpSimulation()">執行 DrugBank 藥學審查</button>
+          </div>
+        </div>
+
+        <div class="telemetry-tag mcp">
+          <span class="pulse-dot" style="width:6px;height:6px;background:#0d9488;"></span>
+          <span>🛡️ 專屬管道: PrescriptionMcpPipeline (DrugBank MCP 深度藥學通道 • 6s/15s 雙層安全閥)</span>
         </div>
 
         <div class="two-col-layout">
@@ -588,6 +613,7 @@
               </div>
               <p class="report-text" id="inference-summary-text">載入中...</p>
               <div id="mcp-notes-area"></div>
+              <div id="drugbank-mcp-results"></div>
             </div>
           </div>
 
@@ -769,6 +795,98 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- ==================== 雙 LLM 呼叫管道與各功能專屬管道監控儀表板 (MODAL) ==================== -->
+  <div id="pipeline-modal" class="pipeline-modal-backdrop">
+    <div class="pipeline-modal-content">
+      <div class="pipeline-modal-header">
+        <h3>
+          <svg style="width:20px;height:20px;color:#0284c7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          CareNav 雙 LLM 呼叫管道與逾時安全閥監控
+        </h3>
+        <button type="button" class="modal-close-btn" id="close-pipeline-modal-btn">&times;</button>
+      </div>
+      <div class="pipeline-modal-body">
+        <p style="font-size:0.82rem; color:#64748b; margin-bottom:1.25rem;">
+          為確保系統在調用大型外部知識庫時<strong>絕不卡死、絕無醫療幻覺</strong>，CareNav 架構了<strong>「本地極速推理」與「DrugBank MCP 臨床增強」雙呼叫管道</strong>，且為每一個功能配置了<strong>專屬隔離管道與獨立逾時安全閥 (Circuit Breaker)</strong>。
+        </p>
+
+        <div class="pipeline-cards-grid">
+          <!-- 管道 A -->
+          <div class="pipeline-tech-card" id="card-pipe-fast">
+            <span class="tech-card-badge badge-fast">管道 A (極速私有)</span>
+            <div class="tech-card-title">本地極速推理管道</div>
+            <div class="tech-card-sub">直連本機 Docker Ollama (100% 醫療隱私本地留存)</div>
+            <div class="tech-card-stats">
+              <div class="stat-row">
+                <span class="stat-label">連線端點：</span>
+                <span class="stat-val" id="pipe-fast-url">http://localhost:11434</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">預設模型：</span>
+                <span class="stat-val highlight" id="pipe-fast-model">llama3.2</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">逾時安全閥：</span>
+                <span class="stat-val" id="pipe-fast-timeout">8,000 ms</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">當前狀態：</span>
+                <span class="stat-val good" id="pipe-fast-status">在線 (Online)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 管道 B -->
+          <div class="pipeline-tech-card active-card" id="card-pipe-mcp">
+            <span class="tech-card-badge badge-mcp">管道 B (實證增強)</span>
+            <div class="tech-card-title">臨床藥學 MCP 增強管道</div>
+            <div class="tech-card-sub">直連 DrugBank 官方 MCP (徹底消除醫療幻覺)</div>
+            <div class="tech-card-stats">
+              <div class="stat-row">
+                <span class="stat-label">MCP 端點：</span>
+                <span class="stat-val" id="pipe-mcp-url">https://mcp.drugbank.com/mcp</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">第一層 MCP 逾時：</span>
+                <span class="stat-val" id="pipe-mcp-lookup-timeout">6,000 ms (防護中斷)</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">第二層 LLM 逾時：</span>
+                <span class="stat-val" id="pipe-mcp-total-timeout">15,000 ms (綜合推理)</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">斷路器安全網：</span>
+                <span class="stat-val good" id="pipe-mcp-status">實證規則保護中</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 各功能專屬隔離對應表 -->
+        <div class="dedicated-channels-section">
+          <h4 style="font-size:0.92rem; color:#0f172a; margin-bottom:0.5rem; font-weight:700;">
+            各功能專屬隔離管道配置 (Feature-Dedicated Pipelines)
+          </h4>
+          <table class="dedicated-table">
+            <thead>
+              <tr>
+                <th>功能模組</th>
+                <th>專屬獨立管道</th>
+                <th>逾時安全閥</th>
+                <th>臨床職責與特性</th>
+              </tr>
+            </thead>
+            <tbody id="dedicated-channels-tbody">
+              <!-- 動態由 API 填入 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

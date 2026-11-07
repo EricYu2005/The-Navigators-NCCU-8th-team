@@ -105,9 +105,32 @@ function initDatabase() {
         author TEXT NOT NULL,
         city TEXT NOT NULL,
         content TEXT NOT NULL,
+        author_location TEXT,
+        author_name TEXT,
+        note_text TEXT,
+        note_type TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `, () => {
+      // 安全欄位補齊遷移 (確保舊版 SQLite 自動升級)
+      const safeAddColumns = [
+        { table: 'patients', col: 'care_category TEXT' },
+        { table: 'patients', col: 'department TEXT' },
+        { table: 'patients', col: 'doctor_name TEXT' },
+        { table: 'patients', col: 'next_visit_date TEXT' },
+        { table: 'discussion_guides', col: 'morning_bp TEXT' },
+        { table: 'discussion_guides', col: 'nocturia_count TEXT' },
+        { table: 'discussion_guides', col: 'symptoms TEXT' },
+        { table: 'prescriptions', col: 'bag_image_url TEXT' },
+        { table: 'family_notes', col: 'author_location TEXT' },
+        { table: 'family_notes', col: 'author_name TEXT' },
+        { table: 'family_notes', col: 'note_text TEXT' },
+        { table: 'family_notes', col: 'note_type TEXT' }
+      ];
+      safeAddColumns.forEach(item => {
+        db.run(`ALTER TABLE ${item.table} ADD COLUMN ${item.col}`, () => {});
+      });
+
       seedInitialData();
     });
   });

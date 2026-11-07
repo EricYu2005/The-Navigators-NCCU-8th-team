@@ -145,16 +145,25 @@ app.post('/api/scenarios/load', async (req, res) => {
       p.visitDate || '2026-11-20'
     ]);
 
-    // 2. 插入診前指引卡
+    // 2. 插入診前指引卡 (若情境已有預設分析則直接套用，否則呼叫專屬管道)
     if (scenario.doctorDiscussionGuide) {
       const dg = scenario.doctorDiscussionGuide;
-      const guideRes = await GuidePipeline.generate({
-        department: p.department,
-        doctorName: p.doctorName,
-        morningBp: dg.morningBp,
-        nocturiaCount: dg.nocturiaCount,
-        symptoms: dg.symptoms
-      });
+      let keyComplaint = dg.keyComplaint;
+      let doctorQuestions = dg.doctorQuestions;
+      let triageOptions = dg.triageOptions;
+
+      if (!keyComplaint) {
+        const guideRes = await GuidePipeline.generate({
+          department: p.department,
+          doctorName: p.doctorName,
+          morningBp: dg.morningBp,
+          nocturiaCount: dg.nocturiaCount,
+          symptoms: dg.symptoms
+        });
+        keyComplaint = guideRes.keyComplaint;
+        doctorQuestions = guideRes.doctorQuestions;
+        triageOptions = guideRes.triageOptions;
+      }
 
       await dbQuery.run(`
         INSERT INTO discussion_guides (
@@ -167,16 +176,26 @@ app.post('/api/scenarios/load', async (req, res) => {
         dg.morningBp || '158-164 mmHg',
         dg.nocturiaCount || '3-4次/晚',
         dg.symptoms || '晨起頭暈',
-        guideRes.keyComplaint,
-        Array.isArray(guideRes.doctorQuestions) ? guideRes.doctorQuestions.join('\n') : guideRes.doctorQuestions,
-        JSON.stringify(guideRes.triageOptions)
+        keyComplaint,
+        Array.isArray(doctorQuestions) ? doctorQuestions.join('\n') : doctorQuestions,
+        JSON.stringify(triageOptions || [])
       ]);
     }
 
     // 3. 插入口頭醫囑
     if (scenario.verbalOrder) {
       const vo = scenario.verbalOrder;
-      const orderRes = await VerbalOrderPipeline.parse(vo.rawInput);
+      let conditionText = vo.conditionText;
+      let actionText = vo.actionText;
+      let redFlags = vo.redFlags;
+
+      if (!conditionText || !actionText) {
+        const orderRes = await VerbalOrderPipeline.parse(vo.rawInput);
+        conditionText = orderRes.conditionText;
+        actionText = orderRes.actionText;
+        redFlags = orderRes.redFlags;
+      }
+
       await dbQuery.run(`
         INSERT INTO verbal_orders (
           patient_id, department, doctor_name, raw_input, condition_text, action_text, red_flags, recorded_by
@@ -185,9 +204,9 @@ app.post('/api/scenarios/load', async (req, res) => {
         vo.department || p.department,
         p.doctorName,
         vo.rawInput,
-        orderRes.conditionText,
-        orderRes.actionText,
-        orderRes.redFlags,
+        conditionText,
+        actionText,
+        redFlags,
         vo.recordedBy || '特助'
       ]);
     }
@@ -206,12 +225,19 @@ app.post('/api/scenarios/load', async (req, res) => {
         ]);
       }
       if (scenario.prescriptions.current && scenario.prescriptions.current.length > 0) {
-        const rxRes = await PrescriptionMcpPipeline.inferAndAudit({
-          newMedications: scenario.prescriptions.current,
-          prevMedications: scenario.prescriptions.previous || [],
-          hospitalName: p.primaryHospital,
-          department: p.department
-        });
+        let analyzedMeds = scenario.prescriptions.current;
+        let inferenceSummary = scenario.prescriptions.inferenceSummary;
+
+        if (!inferenceSummary) {
+          const rxRes = await PrescriptionMcpPipeline.inferAndAudit({
+            newMedications: scenario.prescriptions.current,
+            prevMedications: scenario.prescriptions.previous || [],
+            hospitalName: p.primaryHospital,
+            department: p.department
+          });
+          analyzedMeds = rxRes.analyzedMeds;
+          inferenceSummary = rxRes.inferenceSummary;
+        }
 
         await dbQuery.run(`
           INSERT INTO prescriptions (
@@ -221,8 +247,8 @@ app.post('/api/scenarios/load', async (req, res) => {
           p.primaryHospital || '林口長庚紀念醫院',
           p.department || '心臟內科',
           p.visitDate || new Date().toISOString().split('T')[0],
-          JSON.stringify(rxRes.analyzedMeds),
-          rxRes.inferenceSummary
+          JSON.stringify(analyzedMeds),
+          inferenceSummary
         ]);
       }
     }
@@ -230,13 +256,19 @@ app.post('/api/scenarios/load', async (req, res) => {
     // 5. 插入家庭備忘
     if (scenario.familyNotes && Array.isArray(scenario.familyNotes)) {
       for (const fn of scenario.familyNotes) {
+        const author = fn.authorName || '家屬';
+        const city = fn.authorLocation || '台北';
+        const content = fn.noteText || '';
         await dbQuery.run(`
-          INSERT INTO family_notes (patient_id, author_location, author_name, note_text, note_type)
-          VALUES (1, ?, ?, ?, ?)
+          INSERT INTO family_notes (patient_id, author, city, content, author_location, author_name, note_text, note_type)
+          VALUES (1, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          fn.authorLocation || '台北',
-          fn.authorName || '家屬',
-          fn.noteText || '',
+          author,
+          city,
+          content,
+          city,
+          author,
+          content,
           fn.noteType || '日常叮嚀'
         ]);
       }
@@ -303,13 +335,20 @@ app.post('/api/family-notes', async (req, res) => {
     // 透過專屬管道進行手足衛教轉譯
     const formatted = await FamilyCarePipeline.formatNoteForSiblings(authorName, noteText);
 
+    const author = authorName;
+    const city = authorLocation || '台北';
+    const content = formatted.formattedSummary;
+
     const result = await dbQuery.run(`
-      INSERT INTO family_notes (patient_id, author_location, author_name, note_text, note_type)
-      VALUES (1, ?, ?, ?, ?)
+      INSERT INTO family_notes (patient_id, author, city, content, author_location, author_name, note_text, note_type)
+      VALUES (1, ?, ?, ?, ?, ?, ?, ?)
     `, [
-      authorLocation || '台北',
-      authorName,
-      formatted.formattedSummary,
+      author,
+      city,
+      content,
+      city,
+      author,
+      content,
       noteType || '日常叮嚀'
     ]);
 

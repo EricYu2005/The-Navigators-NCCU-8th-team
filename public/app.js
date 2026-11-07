@@ -1063,7 +1063,7 @@ if (confirmLoadScenarioBtn) {
       });
       const result = await res.json();
       if (result.success) {
-        // 更新側邊欄長輩個案資訊
+        // 1. 更新側邊欄長輩個案資訊
         const p = selectedScenarioData.patient;
         if (p) {
           const nameEl = document.querySelector('.case-name');
@@ -1076,7 +1076,7 @@ if (confirmLoadScenarioBtn) {
           if (subEl) subEl.innerText = `${p.primaryHospital} (${p.department})`;
           if (hubEl) hubEl.innerText = p.careCategory || '高齡慢性照護';
 
-          // 更新診前指引表單欄位
+          // 2. 更新診前指引表單欄位與預覽卡片
           const bpEl = document.getElementById('guide-morning-bp');
           const nocturiaEl = document.getElementById('guide-nocturia');
           const symEl = document.getElementById('guide-symptoms');
@@ -1084,20 +1084,86 @@ if (confirmLoadScenarioBtn) {
           const docEl = document.getElementById('guide-doctor');
 
           if (selectedScenarioData.doctorDiscussionGuide) {
-            if (bpEl) bpEl.value = selectedScenarioData.doctorDiscussionGuide.morningBp || '';
-            if (nocturiaEl) nocturiaEl.value = selectedScenarioData.doctorDiscussionGuide.nocturiaCount || '';
-            if (symEl) symEl.value = selectedScenarioData.doctorDiscussionGuide.symptoms || '';
+            const dg = selectedScenarioData.doctorDiscussionGuide;
+            if (bpEl) bpEl.value = dg.morningBp || '';
+            if (nocturiaEl) nocturiaEl.value = dg.nocturiaCount || '';
+            if (symEl) symEl.value = dg.symptoms || '';
+
+            // 即時更新診前指引卡
+            if (dg.keyComplaint) {
+              const compEl = document.getElementById('card-complaint');
+              if (compEl) compEl.innerText = dg.keyComplaint;
+            }
+            if (dg.doctorQuestions) {
+              const qEl = document.getElementById('card-questions');
+              if (qEl) qEl.innerText = Array.isArray(dg.doctorQuestions) ? dg.doctorQuestions.join('\n') : dg.doctorQuestions;
+            }
+            if (dg.triageOptions) {
+              const triageContainer = document.getElementById('card-triage-options');
+              if (triageContainer) {
+                triageContainer.innerHTML = '';
+                dg.triageOptions.forEach((opt, idx) => {
+                  const checked = idx === 1 ? 'checked' : '';
+                  triageContainer.innerHTML += `<label class="triage-item"><input type="checkbox" ${checked}> ${escapeHtml(opt)}</label>`;
+                });
+              }
+            }
+            const deptMetaEl = document.getElementById('card-dept-meta');
+            const dateMetaEl = document.getElementById('card-date-meta');
+            if (deptMetaEl) deptMetaEl.innerHTML = `<strong>科別：</strong>${escapeHtml(p.department)}・${escapeHtml(p.doctorName)}`;
+            if (dateMetaEl) dateMetaEl.innerHTML = `<strong>日期：</strong>${escapeHtml(p.visitDate || '2026-11-20')}`;
           }
           if (deptEl) deptEl.value = p.department;
           if (docEl) docEl.value = p.doctorName;
         }
 
-        // 重新整理儀表板、醫囑列表與處方比對
+        // 3. 更新口頭醫囑輸入框
+        if (selectedScenarioData.verbalOrder) {
+          const rawInputEl = document.getElementById('raw-verbal-input');
+          if (rawInputEl) rawInputEl.value = selectedScenarioData.verbalOrder.rawInput || '';
+        }
+
+        // 4. 更新處方清單與推導總評
+        if (selectedScenarioData.prescriptions) {
+          const prevListEl = document.getElementById('prev-meds-list');
+          const currListEl = document.getElementById('curr-meds-list');
+          const infTextEl = document.getElementById('inference-summary-text');
+
+          if (prevListEl && selectedScenarioData.prescriptions.previous) {
+            prevListEl.innerHTML = '';
+            selectedScenarioData.prescriptions.previous.forEach(m => {
+              prevListEl.innerHTML += `
+                <div class="med-card-row">
+                  <div><strong>${escapeHtml(m.name)}</strong></div>
+                  <span class="med-code-badge">${escapeHtml(m.code)}</span>
+                  <div style="font-size:0.85rem; color:#64748b; margin-top:0.25rem;">${escapeHtml(m.ind || '')}</div>
+                </div>
+              `;
+            });
+          }
+
+          if (currListEl && selectedScenarioData.prescriptions.current) {
+            currListEl.innerHTML = '';
+            selectedScenarioData.prescriptions.current.forEach(m => {
+              const isTiming = m.ind && (m.ind.includes('調整') || m.ind.includes('改') || m.ind.includes('調降'));
+              currListEl.innerHTML += `
+                <div class="med-card-row ${isTiming ? 'change-timing' : ''}">
+                  <div><strong>${escapeHtml(m.name)}</strong></div>
+                  <span class="med-code-badge">${escapeHtml(m.code)}</span>
+                  <div style="font-size:0.85rem; margin-top:0.25rem;">${escapeHtml(m.ind || '')}</div>
+                </div>
+              `;
+            });
+          }
+
+          if (infTextEl && selectedScenarioData.prescriptions.inferenceSummary) {
+            infTextEl.innerText = selectedScenarioData.prescriptions.inferenceSummary;
+          }
+        }
+
+        // 5. 重新整理儀表板與醫囑列表
         await loadDashboardData();
         await loadVerbalOrdersList();
-        if (selectedScenarioData.prescriptions && selectedScenarioData.prescriptions.current) {
-          await executePrescriptionInference(selectedScenarioData.prescriptions.current);
-        }
 
         if (scenarioModal) scenarioModal.classList.remove('open');
         alert(`✅ 成功載入情境【${selectedScenarioData.title || p.name}】！全系統畫面與資料庫已全面更新。`);

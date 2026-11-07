@@ -1,0 +1,92 @@
+{
+  "scenarioId": "scenario-a",
+  "title": "劇本 A：王奶奶 (82歲) - 心臟內科與慢性腎病「晨峰高血壓與夜尿跌倒危機」",
+  "description": "長輩常規睡前服用利尿劑引發每晚起夜 3-4 次，造成嚴重夜間摸黑跌倒骨折風險；晨起血壓飆升至 162 mmHg，亟需門診處方時段調整與醫病溝通。",
+  "patient": {
+    "id": 1,
+    "name": "王林秀美",
+    "age": 82,
+    "gender": "女",
+    "careCategory": "高齡心血管與慢性腎病長照追蹤",
+    "primaryHospital": "林口長庚紀念醫院",
+    "department": "心臟內科",
+    "doctorName": "林宏昌 主治醫師",
+    "visitDate": "2026-11-20",
+    "chronicConditions": [
+      "原發性高血壓第2期 (晨峰型)",
+      "慢性腎臟病第3a期 (CKD Stage 3a)",
+      "雙側退化性膝關節炎"
+    ]
+  },
+  "doctorDiscussionGuide": {
+    "morningBp": "158 - 164 mmHg (晨起連續 12 天偏高，呈現典型晨峰高血壓)",
+    "nocturiaCount": "每晚 3 - 4 次 (嚴重中斷深層睡眠，夜間起夜常有步態不穩跌倒驚險)",
+    "symptoms": "晨起後腦勺脹痛與明顯暈眩、雙下肢腳踝至脛骨前緣有輕度凹陷水腫 (++)、夜尿頻繁導致白天精神萎靡嗜睡。"
+  },
+  "verbalOrder": {
+    "rawInput": "如果早上量血壓收縮壓低於 110，那顆脈優 5mg 先停吃一次。利尿劑換到早餐後吃避免夜尿跌倒，若水腫三天沒消要提早回來驗腎功能與心臟超音波。",
+    "recordedBy": "林口長庚 Hub 護理特助 - 王思婷 (專科護理師)",
+    "department": "心臟內科・林宏昌主治醫師"
+  },
+  "prescriptions": {
+    "previous": [
+      {
+        "name": "Norvasc 脈優 5mg",
+        "code": "QD HS",
+        "ind": "高血壓 (前期排程：睡前服用，無法有效覆蓋次日晨峰高血壓)"
+      },
+      {
+        "name": "Lasix 歐得通/利尿劑 40mg",
+        "code": "QD HS",
+        "ind": "水腫控制 (前期排程盲點：睡前服用造成每晚夜尿 3-4 次高跌倒風險)"
+      },
+      {
+        "name": "Crestor 冠脂妥 10mg",
+        "code": "QD HS",
+        "ind": "高膽固醇血症與動脈硬化預防"
+      }
+    ],
+    "current": [
+      {
+        "name": "Norvasc 脈優 5mg",
+        "code": "QD AM",
+        "ind": "時段重大調整：改早晨服用，有效壓制早晨 7-9 點之晨峰血壓"
+      },
+      {
+        "name": "Lasix 歐得通/利尿劑 40mg",
+        "code": "QD AM",
+        "ind": "時段重大調整：改早餐後服用，阻斷夜尿頻率，大幅消除夜間跌倒風險"
+      },
+      {
+        "name": "Diovan 得安穩 80mg",
+        "code": "QD HS",
+        "ind": "本期初次新增處方：血管張力素受體阻斷劑 (ARB)，保護慢性腎臟病腎功能"
+      },
+      {
+        "name": "Crestor 冠脂妥 10mg",
+        "code": "QD HS",
+        "ind": "維持原方續開"
+      }
+    ]
+  },
+  "familyNotes": [
+    {
+      "authorLocation": "台北",
+      "authorName": "大女兒 (主要照顧者)",
+      "noteText": "林口長庚門診醫師已將利尿劑改至早餐後吃，昨晚阿嬤夜尿只起來 1 次，睡眠品質好很多！",
+      "noteType": "門診追蹤"
+    },
+    {
+      "authorLocation": "新竹",
+      "authorName": "小兒子 (竹科工程師)",
+      "noteText": "已訂購床邊走道感應紅外線夜燈，週六回去安裝，預防阿嬤下床摸黑摔跤。",
+      "noteType": "環境安全"
+    },
+    {
+      "authorLocation": "海外",
+      "authorName": "長子 (西雅圖視訊)",
+      "noteText": "晨間血壓這兩天降到 132/84，看來脈優改早晨確實有壓制早晨血壓峰值，大家辛苦了！",
+      "noteType": "數據同步"
+    }
+  ]
+}

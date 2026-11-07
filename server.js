@@ -16,6 +16,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const { dbQuery } = require('./database');
 const { checkOllamaConnection } = require('./ollamaService');
 const {
@@ -62,6 +63,192 @@ app.get('/api/pipelines/status', async (req, res) => {
     res.json({ success: true, data: statusData });
   } catch (error) {
     console.error('查詢管道狀態失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========================================================
+// 0.1 臨床 Demo 情境檔案管理 (/api/scenarios)
+// 支援從 scenarios/ 目錄讀取自訂 JSON 檔案，或由使用者自行擴充上傳
+// ========================================================
+const SCENARIOS_DIR = path.join(__dirname, 'scenarios');
+
+app.get('/api/scenarios', (req, res) => {
+  try {
+    if (!fs.existsSync(SCENARIOS_DIR)) {
+      return res.json({ success: true, data: [] });
+    }
+    const files = fs.readdirSync(SCENARIOS_DIR).filter(f => f.endsWith('.json'));
+    const list = files.map(filename => {
+      try {
+        const content = JSON.parse(fs.readFileSync(path.join(SCENARIOS_DIR, filename), 'utf8'));
+        return {
+          filename,
+          scenarioId: content.scenarioId || filename.replace('.json', ''),
+          title: content.title || filename,
+          description: content.description || '',
+          patientName: content.patient?.name || '',
+          department: content.patient?.department || ''
+        };
+      } catch (e) {
+        return { filename, error: '解析失敗' };
+      }
+    });
+    res.json({ success: true, data: list });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/scenarios/:filename', (req, res) => {
+  try {
+    const filePath = path.join(SCENARIOS_DIR, req.params.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: '找不到指定的情境檔案' });
+    }
+    const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    res.json({ success: true, data: content });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/scenarios/load', async (req, res) => {
+  try {
+    const scenario = req.body;
+    if (!scenario || !scenario.patient) {
+      return res.status(400).json({ success: false, message: '情境格式不正確（缺少 patient 資料）！' });
+    }
+
+    const p = scenario.patient;
+
+    // 1. 更新病患基本檔
+    await dbQuery.run(`
+      UPDATE patients SET
+        name = ?,
+        age = ?,
+        gender = ?,
+        care_category = ?,
+        primary_hospital = ?,
+        department = ?,
+        doctor_name = ?,
+        next_visit_date = ?
+      WHERE id = 1
+    `, [
+      p.name || '王林秀美',
+      p.age || 82,
+      p.gender || '女',
+      p.careCategory || '高齡慢性病照護追蹤',
+      p.primaryHospital || '林口長庚紀念醫院',
+      p.department || '心臟內科',
+      p.doctorName || '林宏昌 主治醫師',
+      p.visitDate || '2026-11-20'
+    ]);
+
+    // 2. 插入診前指引卡
+    if (scenario.doctorDiscussionGuide) {
+      const dg = scenario.doctorDiscussionGuide;
+      const guideRes = await GuidePipeline.generate({
+        department: p.department,
+        doctorName: p.doctorName,
+        morningBp: dg.morningBp,
+        nocturiaCount: dg.nocturiaCount,
+        symptoms: dg.symptoms
+      });
+
+      await dbQuery.run(`
+        INSERT INTO discussion_guides (
+          patient_id, department, doctor_name, visit_date, morning_bp, nocturia_count, symptoms, key_complaint, doctor_questions, triage_options
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        p.department || '心臟內科',
+        p.doctorName || '主治醫師',
+        p.visitDate || new Date().toISOString().split('T')[0],
+        dg.morningBp || '158-164 mmHg',
+        dg.nocturiaCount || '3-4次/晚',
+        dg.symptoms || '晨起頭暈',
+        guideRes.keyComplaint,
+        Array.isArray(guideRes.doctorQuestions) ? guideRes.doctorQuestions.join('\n') : guideRes.doctorQuestions,
+        JSON.stringify(guideRes.triageOptions)
+      ]);
+    }
+
+    // 3. 插入口頭醫囑
+    if (scenario.verbalOrder) {
+      const vo = scenario.verbalOrder;
+      const orderRes = await VerbalOrderPipeline.parse(vo.rawInput);
+      await dbQuery.run(`
+        INSERT INTO verbal_orders (
+          patient_id, department, doctor_name, raw_input, condition_text, action_text, red_flags, recorded_by
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        vo.department || p.department,
+        p.doctorName,
+        vo.rawInput,
+        orderRes.conditionText,
+        orderRes.actionText,
+        orderRes.redFlags,
+        vo.recordedBy || '特助'
+      ]);
+    }
+
+    // 4. 插入處方
+    if (scenario.prescriptions) {
+      if (scenario.prescriptions.previous && scenario.prescriptions.previous.length > 0) {
+        await dbQuery.run(`
+          INSERT INTO prescriptions (
+            patient_id, hospital_name, department, prescription_date, period_type, medications_json, inference_summary
+          ) VALUES (1, ?, ?, '2026-10-15', 'previous', ?, '前期常規門診處方')
+        `, [
+          p.primaryHospital || '林口長庚紀念醫院',
+          p.department || '心臟內科',
+          JSON.stringify(scenario.prescriptions.previous)
+        ]);
+      }
+      if (scenario.prescriptions.current && scenario.prescriptions.current.length > 0) {
+        const rxRes = await PrescriptionMcpPipeline.inferAndAudit({
+          newMedications: scenario.prescriptions.current,
+          prevMedications: scenario.prescriptions.previous || [],
+          hospitalName: p.primaryHospital,
+          department: p.department
+        });
+
+        await dbQuery.run(`
+          INSERT INTO prescriptions (
+            patient_id, hospital_name, department, prescription_date, period_type, medications_json, inference_summary
+          ) VALUES (1, ?, ?, ?, 'current', ?, ?)
+        `, [
+          p.primaryHospital || '林口長庚紀念醫院',
+          p.department || '心臟內科',
+          p.visitDate || new Date().toISOString().split('T')[0],
+          JSON.stringify(rxRes.analyzedMeds),
+          rxRes.inferenceSummary
+        ]);
+      }
+    }
+
+    // 5. 插入家庭備忘
+    if (scenario.familyNotes && Array.isArray(scenario.familyNotes)) {
+      for (const fn of scenario.familyNotes) {
+        await dbQuery.run(`
+          INSERT INTO family_notes (patient_id, author_location, author_name, note_text, note_type)
+          VALUES (1, ?, ?, ?, ?)
+        `, [
+          fn.authorLocation || '台北',
+          fn.authorName || '家屬',
+          fn.noteText || '',
+          fn.noteType || '日常叮嚀'
+        ]);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `情境「${scenario.title || p.name}」已成功載入！全系統資料已同步完成。`,
+      data: scenario
+    });
+  } catch (error) {
+    console.error('載入情境資料失敗:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

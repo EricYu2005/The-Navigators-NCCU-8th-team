@@ -918,3 +918,201 @@ if (document.getElementById('refresh-all-btn')) {
 document.addEventListener('DOMContentLoaded', () => {
   fetchPipelinesStatus();
 });
+
+// ========================================================
+// 9. 臨床 Demo 情境檔案載入器 (Scenario Loader)
+// ========================================================
+const scenarioModal = document.getElementById('scenario-modal');
+const openScenarioBtn = document.getElementById('open-scenario-modal-btn');
+const closeScenarioBtn = document.getElementById('close-scenario-modal-btn');
+const scenariosContainer = document.getElementById('scenarios-list-container');
+const confirmLoadScenarioBtn = document.getElementById('confirm-load-scenario-btn');
+const scenarioFileInput = document.getElementById('scenario-file-input');
+
+let selectedScenarioData = null;
+
+if (openScenarioBtn && scenarioModal) {
+  openScenarioBtn.addEventListener('click', () => {
+    scenarioModal.classList.add('open');
+    fetchScenariosList();
+  });
+}
+
+if (closeScenarioBtn && scenarioModal) {
+  closeScenarioBtn.addEventListener('click', () => {
+    scenarioModal.classList.remove('open');
+  });
+}
+
+if (scenarioModal) {
+  scenarioModal.addEventListener('click', (e) => {
+    if (e.target === scenarioModal) {
+      scenarioModal.classList.remove('open');
+    }
+  });
+}
+
+async function fetchScenariosList() {
+  if (!scenariosContainer) return;
+  scenariosContainer.innerHTML = '<div style="padding:1rem; color:#64748b;">正在掃描 scenarios/ 目錄...</div>';
+
+  try {
+    const res = await fetch('/api/scenarios');
+    const result = await res.json();
+    if (!result.success || !result.data || result.data.length === 0) {
+      scenariosContainer.innerHTML = '<div style="padding:1rem; color:#64748b;">scenarios/ 資料夾內暫無情境檔案。您可以自行上傳 JSON。</div>';
+      return;
+    }
+
+    scenariosContainer.innerHTML = '';
+    result.data.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'scenario-item-card';
+      card.innerHTML = `
+        <div class="scenario-card-info">
+          <h4>${escapeHtml(item.title)}</h4>
+          <p>${escapeHtml(item.description)}</p>
+          <div class="scenario-card-meta">
+            <span class="scenario-badge">長輩：${escapeHtml(item.patientName)}</span>
+            <span class="scenario-badge">科別：${escapeHtml(item.department)}</span>
+            <span class="scenario-badge" style="background:#e0f2fe; color:#0369a1;">檔名：${escapeHtml(item.filename)}</span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" style="flex-shrink:0;">選取</button>
+      `;
+
+      card.addEventListener('click', async () => {
+        document.querySelectorAll('.scenario-item-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        try {
+          const detailRes = await fetch(`/api/scenarios/${encodeURIComponent(item.filename)}`);
+          const detail = await detailRes.json();
+          if (detail.success) {
+            selectedScenarioData = detail.data;
+            showScenarioPreview(selectedScenarioData);
+          }
+        } catch (e) {
+          console.error('讀取情境詳細失敗:', e);
+        }
+      });
+
+      scenariosContainer.appendChild(card);
+    });
+  } catch (err) {
+    scenariosContainer.innerHTML = `<div style="padding:1rem; color:#b91c1c;">載入情境清單失敗: ${err.message}</div>`;
+  }
+}
+
+function showScenarioPreview(scenario) {
+  const previewBox = document.getElementById('scenario-active-preview');
+  const titleEl = document.getElementById('preview-scenario-title');
+  const descEl = document.getElementById('preview-scenario-desc');
+
+  if (previewBox && titleEl && descEl) {
+    titleEl.innerText = scenario.title || scenario.patient?.name || '已選取情境';
+    descEl.innerHTML = `
+      <strong>臨床個案：</strong>${scenario.patient?.name} (${scenario.patient?.age}歲 / ${scenario.patient?.department})<br>
+      <strong>核心衝突：</strong>${scenario.description || '無描述'}<br>
+      <strong>門診處方：</strong>${scenario.prescriptions?.current?.length || 0} 種藥品比對 ｜ <strong>口頭醫囑：</strong>${scenario.verbalOrder?.rawInput ? '已備妥' : '無'}
+    `;
+    previewBox.style.display = 'block';
+  }
+
+  if (confirmLoadScenarioBtn) {
+    confirmLoadScenarioBtn.disabled = false;
+  }
+}
+
+// 支援從本機上傳自訂 JSON
+if (scenarioFileInput) {
+  scenarioFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (!parsed.patient) {
+          alert('上傳的 JSON 缺少 patient 欄位，請參閱 scenarios/README.md 格式規範。');
+          return;
+        }
+        selectedScenarioData = parsed;
+        document.querySelectorAll('.scenario-item-card').forEach(c => c.classList.remove('selected'));
+        showScenarioPreview(selectedScenarioData);
+        alert(`自訂情境檔案「${file.name}」已讀取成功！請點選下方按鈕確認載入。`);
+      } catch (err) {
+        alert('JSON 解析失敗，請確認檔案格式是否正確: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// 確認載入情境至全系統
+if (confirmLoadScenarioBtn) {
+  confirmLoadScenarioBtn.addEventListener('click', async () => {
+    if (!selectedScenarioData) return;
+
+    confirmLoadScenarioBtn.disabled = true;
+    confirmLoadScenarioBtn.innerText = '正在將情境寫入全系統資料庫...';
+
+    try {
+      const res = await fetch('/api/scenarios/load', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selectedScenarioData)
+      });
+      const result = await res.json();
+      if (result.success) {
+        // 更新側邊欄長輩個案資訊
+        const p = selectedScenarioData.patient;
+        if (p) {
+          const nameEl = document.querySelector('.case-name');
+          const ageEl = document.querySelector('.case-age');
+          const subEl = document.querySelector('.case-sub');
+          const hubEl = document.querySelector('.case-hub-tag');
+
+          if (nameEl) nameEl.innerText = p.name;
+          if (ageEl) ageEl.innerText = `${p.age}歲`;
+          if (subEl) subEl.innerText = `${p.primaryHospital} (${p.department})`;
+          if (hubEl) hubEl.innerText = p.careCategory || '高齡慢性照護';
+
+          // 更新診前指引表單欄位
+          const bpEl = document.getElementById('guide-morning-bp');
+          const nocturiaEl = document.getElementById('guide-nocturia');
+          const symEl = document.getElementById('guide-symptoms');
+          const deptEl = document.getElementById('guide-department');
+          const docEl = document.getElementById('guide-doctor');
+
+          if (selectedScenarioData.doctorDiscussionGuide) {
+            if (bpEl) bpEl.value = selectedScenarioData.doctorDiscussionGuide.morningBp || '';
+            if (nocturiaEl) nocturiaEl.value = selectedScenarioData.doctorDiscussionGuide.nocturiaCount || '';
+            if (symEl) symEl.value = selectedScenarioData.doctorDiscussionGuide.symptoms || '';
+          }
+          if (deptEl) deptEl.value = p.department;
+          if (docEl) docEl.value = p.doctorName;
+        }
+
+        // 重新整理儀表板、醫囑列表與處方比對
+        await loadDashboardData();
+        await loadVerbalOrdersList();
+        if (selectedScenarioData.prescriptions && selectedScenarioData.prescriptions.current) {
+          await executePrescriptionInference(selectedScenarioData.prescriptions.current);
+        }
+
+        if (scenarioModal) scenarioModal.classList.remove('open');
+        alert(`✅ 成功載入情境【${selectedScenarioData.title || p.name}】！全系統畫面與資料庫已全面更新。`);
+      } else {
+        alert('載入情境失敗: ' + result.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('載入情境連線失敗');
+    } finally {
+      confirmLoadScenarioBtn.disabled = false;
+      confirmLoadScenarioBtn.innerText = '確認載入此情境至全系統';
+    }
+  });
+}

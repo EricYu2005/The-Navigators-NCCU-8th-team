@@ -1,0 +1,82 @@
+{
+  "scenarioId": "scenario-c",
+  "title": "劇本 C：林伯伯 (79歲) - 神經內科與身心照護「高齡不適當用藥 Beers Criteria 失眠跌倒」",
+  "description": "長輩因焦慮失眠，醫師加開 Stilnox 使蒂諾斯安眠藥；服藥後夜間起夜神智混亂、步態不穩險摔傷。DrugBank MCP 觸發高齡 Beers Criteria 高跌倒骨折致命風險警示。",
+  "patient": {
+    "id": 3,
+    "name": "林清福",
+    "age": 79,
+    "gender": "男",
+    "careCategory": "高齡失眠照護與 Beers 不適當用藥防護",
+    "primaryHospital": "臺北榮民總醫院",
+    "department": "神經內科 / 高齡醫學科",
+    "doctorName": "郭思齊 主治醫師",
+    "visitDate": "2026-12-05",
+    "chronicConditions": [
+      "輕度認知障礙 (MCI)",
+      "慢性原發性高血壓",
+      "頑固性失眠症與日夜節律混亂"
+    ]
+  },
+  "doctorDiscussionGuide": {
+    "morningBp": "128/76 mmHg (血壓控制尚佳)",
+    "nocturiaCount": "每晚 2 次",
+    "symptoms": "夜間輾轉難眠，要求開立安眠藥 Stilnox；服藥後半夜起床如廁神智恍惚、夢遊且步態嚴重搖晃差點跌倒，次日白天持續嗜睡無力。"
+  },
+  "verbalOrder": {
+    "rawInput": "史蒂諾斯 Stilnox 屬於高齡高危跌倒藥物，強烈建議漸進式減量停藥！改由白天照光與非藥物睡眠引導。若夜間躁動，請勿自行加量安眠藥。",
+    "recordedBy": "台北榮總 Hub 護理特助 - 趙敏婷",
+    "department": "神經內科・郭思齊主治醫師"
+  },
+  "prescriptions": {
+    "previous": [
+      {
+        "name": "Diovan 得安穩 80mg",
+        "code": "QD AM",
+        "ind": "高血壓常規控制"
+      },
+      {
+        "name": "Stilnox 使蒂諾斯 10mg",
+        "code": "QD HS",
+        "ind": "失眠 (Beers Criteria 核心管制高跌倒致死風險藥品)"
+      }
+    ],
+    "current": [
+      {
+        "name": "Diovan 得安穩 80mg",
+        "code": "QD AM",
+        "ind": "高血壓常規控制"
+      },
+      {
+        "name": "Stilnox 使蒂諾斯 5mg (減半並停藥評估)",
+        "code": "PRN HS",
+        "ind": "Beers Criteria 警示：漸進式減量停藥，避免夜間中樞抑制與骨折"
+      },
+      {
+        "name": "Melatonin 褪黑激素 2mg",
+        "code": "QD HS",
+        "ind": "生理節律睡眠替代調理"
+      }
+    ]
+  },
+  "familyNotes": [
+    {
+      "authorLocation": "台北",
+      "authorName": "小女兒",
+      "noteText": "台北榮總郭醫師確認使蒂諾斯是阿公夜間恍惚差點跌倒的元凶，現在已改半顆並排定日間活動。",
+      "noteType": "安全改善"
+    },
+    {
+      "authorLocation": "新竹",
+      "authorName": "大女婿",
+      "noteText": "已預約日間樂齡活動中心每週二四上午的園藝課，讓爸爸白天有充實體力消耗。",
+      "noteType": "日間活動"
+    },
+    {
+      "authorLocation": "海外",
+      "authorName": "長女 (多倫多)",
+      "noteText": "每天台灣時間上午九點我會打電話陪爸爸聊 15 分鐘，讓他白天保持清醒曬太陽。",
+      "noteType": "日常作息"
+    }
+  ]
+}

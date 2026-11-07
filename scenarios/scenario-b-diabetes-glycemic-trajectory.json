@@ -1,0 +1,97 @@
+{
+  "scenarioId": "scenario-b",
+  "title": "劇本 B：陳爺爺 (76歲) - 長周期血糖波動與日常體能之「代謝健康軌跡」",
+  "description": "系統完整記錄長輩過去三週每日三餐前後血糖曲線與清晨低血糖事件 (62 mg/dL)；同時如實記錄膝關節疼痛對居家散步活動量的影響，將全方位生活數據無縫銜接至醫師診間。",
+  "patient": {
+    "id": 2,
+    "name": "陳建國",
+    "age": 76,
+    "gender": "男",
+    "careCategory": "糖尿病代謝動態與生活作息全方位追蹤",
+    "primaryHospital": "國立臺灣大學醫學院附設醫院",
+    "department": "新陳代謝科 / 糖尿病中心",
+    "doctorName": "張景翔 主治醫師",
+    "visitDate": "2026-11-25",
+    "chronicConditions": [
+      "第二型糖尿病 (常規降血糖口服藥治療)",
+      "冠狀動脈粥狀硬化心臟病 (術後穩定維護)",
+      "雙側退化性膝關節炎"
+    ]
+  },
+  "doctorDiscussionGuide": {
+    "morningBp": "132/80 mmHg (血壓連續兩週維持平穩)",
+    "nocturiaCount": "每晚 1 次 (睡眠作息規律)",
+    "symptoms": "系統血糖日誌顯示近兩週清晨 6 點曾出現三次血糖過低 (< 70 mg/dL，最低 62 mg/dL)，伴隨手抖、冷汗與飢餓感；膝關節痠痛導致日行步數由 5,000 步驟降至 1,200 步，飯後活動量大幅減少。"
+  },
+  "verbalOrder": {
+    "rawInput": "依據你們帶來的血糖軌跡紀錄，清晨常有低血糖，如果血糖低於 70 出現冒汗手抖，立刻喝 150cc 果汁或三顆方糖。早餐前那顆促泌劑我幫你減半劑量。關節痛部分我請骨科開立合適的局部外用藥，避免影響日常散步。",
+    "recordedBy": "台大醫院 Hub 專科護理特助 - 許佳玲",
+    "department": "新陳代謝科・張景翔主治醫師"
+  },
+  "prescriptions": {
+    "previous": [
+      {
+        "name": "Glucophage 庫魯化 500mg",
+        "code": "BID PC",
+        "ind": "第二型糖尿病常規控制"
+      },
+      {
+        "name": "Glimepiride 瑪爾胰 2mg (促泌劑)",
+        "code": "QD AC",
+        "ind": "早餐前服用 (依據血糖日誌軌跡，清晨活動前劑量偏高需調整)"
+      },
+      {
+        "name": "Bokey 伯基膠囊 100mg",
+        "code": "QD PC",
+        "ind": "心血管支架術後常規保護"
+      },
+      {
+        "name": "Lipitor 立普妥 20mg",
+        "code": "QD HS",
+        "ind": "血脂健康管理"
+      }
+    ],
+    "current": [
+      {
+        "name": "Glucophage 庫魯化 500mg",
+        "code": "BID PC",
+        "ind": "維持常規飯後服用"
+      },
+      {
+        "name": "Glimepiride 瑪爾胰 1mg (依軌跡減半)",
+        "code": "QD AC",
+        "ind": "醫師專業調降劑量：依據清晨低血糖軌跡調降，防範飢餓手抖"
+      },
+      {
+        "name": "Bokey 伯基膠囊 100mg",
+        "code": "QD PC",
+        "ind": "心血管常規維持"
+      },
+      {
+        "name": "Lipitor 立普妥 20mg",
+        "code": "QD HS",
+        "ind": "血脂健康管理維持"
+      }
+    ]
+  },
+  "familyNotes": [
+    {
+      "authorLocation": "台北",
+      "authorName": "二兒子",
+      "noteText": "台大張醫師稱讚我們帶去的長周期血糖軌跡表非常清楚！清晨降血糖藥已調降劑量，這兩天觀察清晨血糖穩定在 105-115 mg/dL。",
+      "noteType": "門診回饋"
+    },
+    {
+      "authorLocation": "新竹",
+      "authorName": "二媳婦",
+      "noteText": "低血糖應急小果汁與葡萄糖糖果已放置在餐桌與隨身包中，全家照護看板已同步註記更新。",
+      "noteType": "備忘落實"
+    },
+    {
+      "authorLocation": "海外",
+      "authorName": "長女 (新加坡)",
+      "noteText": "每天在全家看板看到爸爸的餐前餐後血糖數據逐漸回穩，遠在海外也感到非常踏實安心！",
+      "noteType": "雲端陪伴"
+    }
+  ]
+}

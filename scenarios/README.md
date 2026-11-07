@@ -1,80 +1,72 @@
-# CareNav 智護領航 - 臨床 Demo 情境檔案庫 (Demo Scenarios)
+# CareNav 智護領航 - 全方位健康軌跡 Demo 情境檔案庫
 
-本目錄存放用於商業競賽、課堂展示（Demo）與系統測試的擬真臨床情境 JSON 檔案。
-您可以自由修改現有情境，或新增自訂情境檔案（如 `scenario-d-custom.json`），系統提供 API 與前台「載入情境檔案」功能，便於隨時匯入展示。
+本目錄存放用於商業提案、評審審查與團隊展示的真實臨床「居家健康軌跡」JSON 檔案。
 
 ---
 
-## 現有情境檔案列表
+## 核心臨床哲學與定位理念
 
-1. **`scenario-a-hypertension-nocturia.json`**
-   - **主角**：王奶奶 (82歲)
-   - **臨床衝突**：利尿劑 (Lasix) 睡前服用引發每晚起夜 3-4 次，造成嚴重夜間跌倒骨折風險；晨起晨峰高血壓反覆達 162 mmHg。
-   - **核心價值**：展示「診前臨床指引卡 20s 備忘」、「口頭醫囑轉譯 (SBP < 110 停脈優)」、「處方逆向推導 (QD HS -> QD AM)」與「DrugBank MCP CCB+ARB 協同降壓」。
+依據臨床一線專科醫師深度訪談回饋：
+1. **全力聚焦「全方位健康軌跡 (Health Trajectory)」**：
+   長輩離開醫院後的 99% 居家真實生活（每日晨間血壓/脈搏波形、夜尿時序分佈、血糖低谷、日間活動步數、出診間口頭醫囑落實），是門診醫師在 3 分鐘有限看診時間內最渴望取得、卻最難以窺見的**「真實世界數據 (RWD)」**。
+2. **高度尊重專科醫師的處方自主與臨床權威**：
+   醫院內部 HIS (醫院資訊系統) 與健保雲端藥歷已具備嚴謹的處方檢核機制。CareNav **不涉入、不越權進行爭議性的「藥物衝突干涉或處方批判」**，而是專注於：
+   - **「醫病溝通橋樑」**：將零碎居家生活軌跡提煉為醫師 20 秒即懂的臨床摘要。
+   - **「生活服藥排程落實」**：將醫師的專業醫囑與藥袋代碼（如 QD HS 調整為 QD AM）逆向對應到長輩晨、中、晚、睡前四時段，確保不漏服、不重服。
+   - **「手足跨地域同步」**：讓台北、新竹、海外手足在同一健康時間軸上同步協作，杜絕家庭照護內耗。
 
-2. **`scenario-b-diabetes-ddi-alert.json`**
-   - **主角**：陳爺爺 (76歲)
-   - **臨床衝突**：晨間低血糖 (62 mg/dL)；自行服用骨科消炎止痛藥 (NSAID)，與心血管抗血小板藥 (Aspirin) 發生致命 Major DDI 胃大出血交互作用。
-   - **核心價值**：展示「口頭醫囑低血糖急救處理」、「DrugBank MCP 攔截 Major DDI 致命多重用藥衝突」與「加開 Nexium 胃壁保護劑」。
+---
 
-3. **`scenario-c-elderly-beers-criteria.json`**
-   - **主角**：林伯伯 (79歲)
-   - **臨床衝突**：頑固性失眠要求開立 Stilnox (使蒂諾斯 Zolpidem)，服藥後夜間夢遊、神智恍惚差點跌倒。
-   - **核心價值**：展示「DrugBank MCP 觸發高齡 Beers Criteria 高跌倒骨折致命風險警示」與「漸進式減量停藥」。
+## 現行三大健康軌跡情境檔案
+
+| 檔案名稱 | 長輩個案背景 | 核心追蹤之居家健康軌跡 | CareNav 呈現的臨床協同價值 |
+| :--- | :--- | :--- | :--- |
+| **`scenario-a-hypertension-nocturia.json`** | 王奶奶 (82歲)<br>心臟內科・慢性腎病 | **晨峰血壓與夜尿時序軌跡**<br>連續 12 天晨間 162 mmHg，記錄每晚 3-4 次起夜時段。 | 協助醫師直觀看見利尿劑與降壓藥排程在夜間造成的起夜負擔，精準調整為早晨投藥，消除夜尿跌倒危機。 |
+| **`scenario-b-diabetes-glycemic-trajectory.json`** | 陳爺爺 (76歲)<br>新陳代謝科・糖尿病 | **長周期血糖波動與活動力軌跡**<br>連續三週餐前後血糖日誌、清晨 62 mg/dL 低血糖紀錄與關節步數降幅。 | 忠實提供長輩清晨低血糖時序，讓新陳代謝專科醫師依據真實軌跡調降促泌劑劑量，避免低血糖昏厥。 |
+| **`scenario-c-elderly-sleep-circadian.json`** | 林伯伯 (79歲)<br>神經內科・高齡醫學 | **睡眠作息、入睡時差與日間精神軌跡**<br>客觀記錄入睡躺床時間、夜間踱步次數與次日早晨宿醉嗜睡時數。 | 呈現非藥物與作息全貌，協助醫師建立漸進式用藥調整與日間日照活動排程，促進長輩自然節律。 |
 
 ---
 
 ## 自訂情境檔案 JSON 格式規範
 
-若要新增您自己的情境，請建立一個 `.json` 檔案，包含以下欄位：
+您可以複製現有檔案並重命名（例如 `scenario-d-custom.json`），只需維持以下 JSON 結構：
 
 ```json
 {
   "scenarioId": "scenario-custom-01",
-  "title": "情境標題（例如：張爺爺 - 痛風併高血壓）",
-  "description": "簡要描述個案臨床痛點與核心衝突",
+  "title": "情境名稱 (例如：張爺爺 - 痛風與關節活動軌跡)",
+  "description": "簡述個案居家追蹤背景與全方位紀錄核心",
   "patient": {
-    "id": 1,
-    "name": "病患長輩姓名",
+    "name": "長輩姓名",
     "age": 80,
     "gender": "男/女",
-    "careCategory": "照護類別標籤",
-    "primaryHospital": "醫院名稱",
+    "careCategory": "追蹤類別",
+    "primaryHospital": "責任醫院",
     "department": "就診科別",
-    "doctorName": "主治醫師姓名",
+    "doctorName": "主治醫師",
     "visitDate": "2026-12-01",
-    "chronicConditions": [
-      "慢性病1",
-      "慢性病2"
-    ]
+    "chronicConditions": ["慢性病1", "慢性病2"]
   },
   "doctorDiscussionGuide": {
-    "morningBp": "晨間血壓紀錄趨勢",
-    "nocturiaCount": "夜尿次數與嚴重度",
-    "symptoms": "生活困擾與自述表徵"
+    "morningBp": "客觀生理量測趨勢紀錄",
+    "nocturiaCount": "夜尿時序與睡眠影響紀錄",
+    "symptoms": "居家自述生活困擾與活動表徵"
   },
   "verbalOrder": {
-    "rawInput": "主治醫師在診間的急促口頭交代語音文字",
-    "recordedBy": "紀錄護理特助姓名",
-    "department": "科別・醫師"
+    "rawInput": "出診間醫師交代的生活實踐指引文字",
+    "recordedBy": "紀錄責任特助",
+    "department": "看診科別・醫師"
   },
   "prescriptions": {
     "previous": [
-      { "name": "舊藥名", "code": "QD HS", "ind": "舊適應症" }
+      { "name": "前期用藥品名", "code": "QD HS", "ind": "前期生活服藥紀錄" }
     ],
     "current": [
-      { "name": "新藥名", "code": "QD AM", "ind": "新用法說明" }
+      { "name": "本期用藥品名", "code": "QD AM", "ind": "醫師專業指示之生活服藥時段" }
     ]
   },
   "familyNotes": [
-    { "authorLocation": "台北", "authorName": "大女兒", "noteText": "家屬留言", "noteType": "日常叮嚀" }
+    { "authorLocation": "城市", "authorName": "手足身分", "noteText": "生活落實回報", "noteType": "備忘類別" }
   ]
 }
 ```
-
----
-
-## 如何在系統中載入情境
-
-1. **直接由前台載入**：在 CareNav 前台頂部點擊「📂 載入情境檔案」，選擇本目錄下的任何情境檔，或直接上傳您本機編輯好的 JSON 檔案。
-2. **透過 API 取得**：後端提供 `GET /api/scenarios` 取得所有檔案清單，以及 `GET /api/scenarios/:id` 讀取特定情境內容。

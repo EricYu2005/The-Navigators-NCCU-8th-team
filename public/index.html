@@ -541,26 +541,26 @@
 
       <!-- ==================== VIEW 4: 藥袋用法代碼逆向推導引擎 ==================== -->
       <section id="view-prescription" class="page-view">
-        <!-- 藥學知識庫 MCP 頂部條 -->
+        <!-- 處方用法轉譯與生活排程頂部條 -->
         <div class="mcp-alert-bar">
           <div class="mcp-alert-lead">
             <svg class="mcp-alert-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
             </svg>
             <div>
-              <strong>DrugBank 官方 MCP 臨床藥理安全網已啟用</strong>
-              <p>端點：<code>https://mcp.drugbank.com/mcp</code> ｜ 雙層逾時防護 (10s MCP 查詢 / 30s 綜合推理，防耐心耗盡黃金閾值) ｜ 斷路器與實證安全網已就緒</p>
+              <strong>用藥生活實踐與跨期健康軌跡追蹤</strong>
+              <p>尊重專科醫師處方權威 ｜ 逆向推導醫學代碼 (QD/AM/HS/BID) 建立每日四時段服藥排程 ｜ 忠實記錄生活服藥遵從軌跡</p>
             </div>
           </div>
           <div style="display:flex; gap:0.5rem; align-items:center;">
-            <span class="mcp-latency-pill" id="mcp-live-pill">DrugBank MCP 檢測在線</span>
-            <button class="btn btn-outline btn-sm" onclick="triggerMcpSimulation()">執行 DrugBank 藥學審查</button>
+            <span class="mcp-latency-pill" id="mcp-live-pill">健康軌跡分析引擎在線</span>
+            <button class="btn btn-outline btn-sm" onclick="triggerMcpSimulation()">生成用藥排程與生活指南</button>
           </div>
         </div>
 
         <div class="telemetry-tag mcp">
           <span class="pulse-dot" style="width:6px;height:6px;background:#0d9488;"></span>
-          <span>🛡️ 專屬管道: PrescriptionMcpPipeline (DrugBank MCP 深度藥學通道 • 10s/30s 雙層安全閥 • 鎖定 25s~35s 耐心黃金閾值)</span>
+          <span>🛡️ 專屬管道: PrescriptionPipeline (用藥生活排程通道 • 10s/30s 雙層安全閥 • 鎖定 25s~35s 耐心黃金閾值)</span>
         </div>
 
         <div class="two-col-layout">
@@ -616,7 +616,7 @@
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
-                  DrugBank 臨床實證審查進行中...
+                  健康軌跡分析與生活服藥排程建立中...
                 </div>
                 <div class="mcp-timer-ticker">
                   已執行 <span id="mcp-elapsed-seconds">0</span> 秒 ｜ 逾時防護閥：30 秒 (最高上限 35 秒)
@@ -630,15 +630,15 @@
               <div class="mcp-stages-list">
                 <div class="mcp-stage-item in-progress" id="stage-1-item">
                   <span class="stage-bullet"></span>
-                  <span class="stage-text">階段一 (0~10s)：連線 DrugBank 官方 MCP 進行藥品標準化歸一與活性成分檢索</span>
+                  <span class="stage-text">階段一 (0~10s)：解析新藥袋拉丁用法代碼 (QD/BID/AM/HS) 並標準化藥品歸一</span>
                 </div>
                 <div class="mcp-stage-item" id="stage-2-item">
                   <span class="stage-bullet"></span>
-                  <span class="stage-text">階段二 (10~20s)：交叉比對多重用藥交互作用 (DDI) 與 Beers 高齡跌倒/瞻妄準則</span>
+                  <span class="stage-text">階段二 (10~20s)：對比跨期門診處方異動（如利尿劑改晨間，阻斷夜尿跌倒危機）</span>
                 </div>
                 <div class="mcp-stage-item" id="stage-3-item">
                   <span class="stage-bullet"></span>
-                  <span class="stage-text">階段三 (20~30s)：專屬臨床 LLM 結合實證藥理知識生成長輩處方推導總評與行動建議</span>
+                  <span class="stage-text">階段三 (20~30s)：生成每日四時段服藥生活指南、飲食配合叮嚀與手足看板同步</span>
                 </div>
               </div>
             </div>

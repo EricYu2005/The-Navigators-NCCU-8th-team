@@ -117,16 +117,16 @@ const DrugBankMcpPipeline = {
     console.log(`[DrugBankMcpPipeline] 啟動 Stage 1: 藥學 MCP 查詢 (逾時安全閥: ${this.mcpLookupTimeoutMs}ms)...`);
     const mcpResult = await queryDrugInteractionsAndAdrs(medications, this.mcpLookupTimeoutMs);
 
-    // 步驟 2：將 DrugBank 權威知識構建為臨床脈絡 (Evidence Grounding)
+    // 步驟 2：將臨床藥學與生活作息事實構建為對話脈絡 (Evidence Grounding)
     const pharmacologyEvidenceContext = `
-【DrugBank 官方 MCP 臨床藥學檢驗事實 (來源: ${mcpResult.source})】：
+【臨床藥理與生活服藥實證參考 (來源: ${mcpResult.source})】：
 - 藥品標準化：${mcpResult.normalizedMeds.map(m => `${m.rawName} -> 學名: ${m.genericName} [${m.drugClass}]`).join('; ')}
-- 藥物交互作用 (DDI) 檢測：${mcpResult.detectedInteractions.length > 0 
+- 專科處方生活配合事項：${mcpResult.detectedInteractions.length > 0 
     ? mcpResult.detectedInteractions.map(i => `[${i.severityLabel}] ${i.drugA} + ${i.drugB}: ${i.description}`).join(' | ') 
-    : '未發現危急交互作用'}
-- 高齡 Beers Criteria 警示：${mcpResult.beersAlerts.length > 0 
+    : '處方配合良好，依醫囑落實服藥'}
+- 高齡生活作息與時段指引：${mcpResult.beersAlerts.length > 0 
     ? mcpResult.beersAlerts.map(b => `[${b.riskLevel}] ${b.drug}: ${b.warning}`).join(' | ') 
-    : '無 Beers 高風險藥物'}
+    : '服藥時段安排得宜'}
 - 臨床主訴副作用比對：${mcpResult.adrNotes.map(a => `${a.drug}: 常見副作用包括 ${a.typicalAdrs.join(', ')} (${a.clinicalAdvice})`).join(' | ')}
 `;
 
@@ -371,10 +371,10 @@ const PrescriptionMcpPipeline = {
       };
     });
 
-    // 2. 透過 DrugBank MCP 專屬管道執行藥理檢索與 DDI 分析
+    // 2. 透過專屬管道執行藥理檢索與生活排程分析
     const mcpPipelineResult = await DrugBankMcpPipeline.execute({
       medications: analyzedMeds,
-      systemPrompt: `你是一位資深高齡臨床藥師與心血管照護顧問。請結合 DrugBank 提供的實證藥理知識，對本期處方進行逆向推導與用藥安全總評。直接輸出 JSON。`,
+      systemPrompt: `你是一位資深高齡臨床藥師與生活照護顧問。請高度尊重專科醫師的處方自主與專業判斷，將專科醫囑代碼 (QD/BID/AM/HS) 逆向推導為每日四時段生活排程，並對照居家健康軌跡提供生活服藥配合事項。直接輸出 JSON。`,
       userPrompt: `
 【處方資訊】
 - 醫院科別：${hospitalName || '長庚醫院'} - ${department || '心臟內科'}
@@ -383,8 +383,8 @@ ${analyzedMeds.map(m => `- ${m.name} [用法: ${m.code} -> ${m.frequencyChinese}
 
 請綜合推導出包含以下欄位的 JSON:
 {
-  "inferenceSummary": "一段約 80-120 字的白話處方診斷總結，說明新舊處方變動目的與臨床益處 (如移至晨間預防夜尿跌倒)",
-  "clinicalActions": ["照護行動建議1", "照護行動建議2", "照護行動建議3"]
+  "inferenceSummary": "一段約 80-120 字的白話處方生活排程總結，說明處方在生活時段上的安排目的與健康效益 (如利尿劑改晨間有助於改善夜尿頻率與維護睡眠軌跡)",
+  "clinicalActions": ["生活服藥行動建議1", "生活服藥行動建議2", "生活服藥行動建議3"]
 }
 `
     });

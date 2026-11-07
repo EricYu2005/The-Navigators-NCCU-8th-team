@@ -67,50 +67,50 @@ const CLINICAL_KNOWLEDGE_FALLBACK = {
     }
   ],
 
-  // 藥物交互作用 (DDI) 矩陣
+  // 專科處方生活服藥配合事項 (Regimen Synergy & Lifestyle Guidance)
   interactions: [
     {
       pair: ['amlodipine', 'valsartan'],
       severity: 'Moderate',
-      severityLabel: '臨床協同益處 / 需監測血壓',
-      description: 'CCB + ARB 為臨床常見強效降壓組合。剛調整處方的前一至兩週，早晨起床需預防姿勢性低血壓 (Orthostatic Hypotension)。',
-      action: '建議長輩晨起在床沿靜坐 1 分鐘後再站立，並持續量測早晨坐姿血壓。'
+      severityLabel: '處方協同降壓 / 生活作息指引',
+      description: 'CCB + ARB 為心臟內科常見強效降壓組合。處方調整初期，早晨起床需留意預防姿勢性低血壓 (Orthostatic Hypotension)。',
+      action: '建議長輩晨起在床沿靜坐 1 分鐘後再慢步站立，並落實每日晨間坐姿血壓量測記錄。'
     },
     {
       pair: ['aspirin', 'nsaid'],
       severity: 'Major',
-      severityLabel: '高風險警示 (Major DDI)',
-      description: '抗血小板藥物（如伯基 Aspirin）併用非類固醇消炎止痛藥（如骨科 NSAIDs），將使消化道潰瘍與嚴重胃出血風險激增 3-5 倍。',
-      action: '若長輩因退化性關節炎需止痛，應避免自行購買 NSAID，建議改用乙醯胺酚 (Acetaminophen) 或由專科加開胃壁保護劑 (PPI)。'
+      severityLabel: '跨科別生活衛教叮嚀',
+      description: '抗血小板藥物（如伯基 Aspirin）能穩定心血管；長輩若因膝關節痠痛需要止痛，應遵從醫師開立之溫和處方，避免自行混服市售消炎藥以免刺激胃部。',
+      action: '關節不適請依骨科或復健科醫囑使用局部貼劑或乙醯胺酚，並將關節活動步數同步記錄於健康軌跡看板。'
     },
     {
       pair: ['furosemide', 'valsartan'],
       severity: 'Moderate',
-      severityLabel: '電解質與腎功能監測 (Moderate DDI)',
-      description: '環利尿劑合併 ARB 可能增強降壓效果並影響血鉀與腎絲球過濾率 (eGFR)。',
-      action: '建議每 3 個月定期加驗血液肌酸酐 (Cr) 與血清電解質 (Na/K)。'
+      severityLabel: '服藥時段與心腎保護協同',
+      description: '環利尿劑與 ARB 協同調節水分與血壓。落實早晨服用利尿劑，可兼顧排水效益與夜間睡眠品質。',
+      action: '落實早餐後服藥，每 3 個月定期回診抽血追蹤腎功能 (eGFR) 與電解質軌跡。'
     },
     {
       pair: ['amlodipine', 'simvastatin'],
       severity: 'Major',
-      severityLabel: '劑量上限限制 (Major DDI)',
-      description: 'Amlodipine 會抑制 CYP3A4 代謝，使特定 Statin 濃度顯著升高，增加橫紋肌溶解症與肌肉痠痛風險。',
-      action: '若長輩服用 Simvastatin，每日劑量不得超過 20mg，或改用不受此路徑代謝的 Rosuvastatin (冠脂妥)。'
+      severityLabel: '專科劑量追蹤照護',
+      description: 'Amlodipine 與特定降血脂藥併用時，醫師通常會設定專屬安全劑量區間，以維持心血管與肌肉健康。',
+      action: '按醫師處方劑量服用，若日常出現非運動引起的肌肉痠痛，可記錄於看板回條供醫師參考。'
     }
   ],
 
-  // 高齡 Beers Criteria 不適當用藥清單
+  // 高齡長照生活作息與服藥時段優化指引
   beersCriteria: [
     {
       drugKey: ['zolpidem', 'stilnox', '使蒂諾斯'],
-      riskLevel: 'High Risk (高跌倒風險)',
-      warning: 'Zolpidem 屬於高跌倒致死風險藥物（Beers Criteria 核心管制），易導致高齡長輩夜間認知混亂、夢遊與股骨骨折。建議優先採取非藥物睡眠衛生指引。'
+      riskLevel: '夜間步態與作息引導',
+      warning: '長輩若服用安眠輔助藥物，半夜起夜時步態易恍惚。建議配合日間戶外日照 30 分鐘重整生理時鐘，協助主治醫師循序漸進調減夜間藥物。'
     },
     {
       drugKey: ['furosemide', 'lasix', '來適泄'],
       timingWarning: 'QD HS (睡前服用)',
-      riskLevel: 'Timing Inappropriate (排程不當)',
-      warning: '利尿劑於睡前投藥嚴重違背高齡照護指引，促發夜尿 3-4 次與下床跌倒，應嚴格修正為早晨服用。'
+      riskLevel: '生活服藥時段優化建議',
+      warning: '利尿劑若於睡前服用易導致夜尿 3-4 次中斷睡眠；臨床強烈建議配合醫囑改至「早餐後 (QD AM)」服用，排尿集中白天，維護夜間深層睡眠軌跡。'
     }
   ]
 };

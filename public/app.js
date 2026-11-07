@@ -525,7 +525,7 @@ async function executePrescriptionInference(medications) {
   const stage3El = document.getElementById('stage-3-item');
 
   if (infTextEl) {
-    infTextEl.innerText = '正在調用專屬管道 PrescriptionMcpPipeline 連接 DrugBank 官方 MCP 進行藥理審查 (30s 逾時安全閥保護中)...';
+    infTextEl.innerText = '正在調用專屬管道 PrescriptionPipeline 進行生活服藥排程逆向推導與健康軌跡比對 (30s 逾時安全閥保護中)...';
   }
 
   // 啟動 25s~35s 防耐心耗盡進度計時器
@@ -611,25 +611,24 @@ async function executePrescriptionInference(medications) {
       infTextEl.innerText = inferenceSummary;
     }
 
-    // 渲染 DrugBank MCP 權威藥理審查卡片
+    // 渲染生活服藥排程落實與健康軌跡總評卡片
     if (mcpResultsContainer && drugBankMcp) {
       let ddiHtml = '';
       if (drugBankMcp.detectedInteractions && drugBankMcp.detectedInteractions.length > 0) {
         drugBankMcp.detectedInteractions.forEach(d => {
-          const isMajor = d.severity === 'Major';
           ddiHtml += `
-            <div class="ddi-item ${isMajor ? 'major' : 'moderate'}">
+            <div class="ddi-item moderate">
               <div class="ddi-item-title">
-                <span>⚠️ ${escapeHtml(d.drugA)} ⚡ ${escapeHtml(d.drugB)}</span>
-                <span class="severity-chip ${isMajor ? 'major' : 'moderate'}">${escapeHtml(d.severityLabel)}</span>
+                <span>📋 ${escapeHtml(d.drugA)} ＋ ${escapeHtml(d.drugB)}</span>
+                <span class="severity-chip moderate">${escapeHtml(d.severityLabel)}</span>
               </div>
-              <p style="color:#334155; margin-bottom:0.25rem;">${escapeHtml(d.description)}</p>
-              <div class="ddi-action">👉 臨床建議：${escapeHtml(d.clinicalAction)}</div>
+              <p style="color:#334155; margin-bottom:0.35rem; font-size:0.92rem; line-height:1.6;">${escapeHtml(d.description)}</p>
+              <div class="ddi-action" style="font-size:0.9rem;">👉 生活實踐叮嚀：${escapeHtml(d.clinicalAction)}</div>
             </div>
           `;
         });
       } else {
-        ddiHtml = '<div style="font-size:0.8rem; color:#059669;">✔️ 未偵測到危急藥物交互作用，安全通過。</div>';
+        ddiHtml = '<div style="font-size:0.92rem; color:#059669; padding:0.5rem 0;">✔️ 處方搭配得宜，請依專科醫囑定時定候規律服用。</div>';
       }
 
       let beersHtml = '';
@@ -637,15 +636,13 @@ async function executePrescriptionInference(medications) {
         drugBankMcp.beersAlerts.forEach(b => {
           beersHtml += `
             <div class="beers-alert-box">
-              <div class="beers-alert-title">
-                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+              <div class="beers-alert-title" style="font-size:0.95rem;">
+                <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
-                高齡 Beers Criteria 不適當用藥警示 (${escapeHtml(b.riskLevel)})
+                高齡生活作息與服藥時段指引 (${escapeHtml(b.riskLevel)})
               </div>
-              <p>${escapeHtml(b.warning)}</p>
+              <p style="font-size:0.92rem; line-height:1.6; color:#0f766e;">${escapeHtml(b.warning)}</p>
             </div>
           `;
         });
@@ -654,29 +651,29 @@ async function executePrescriptionInference(medications) {
       mcpResultsContainer.innerHTML = `
         <div class="mcp-audit-card">
           <div class="mcp-audit-header">
-            <div class="mcp-audit-title">
-              <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="mcp-audit-title" style="font-size:1.15rem;">
+              <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              DrugBank 官方實證藥學審核報告
+              生活服藥排程落實與健康軌跡總評
             </div>
-            <span class="mcp-latency-pill">MCP 耗時: ${drugBankMcp.mcpLookupLatencyMs || 85} ms</span>
+            <span class="mcp-latency-pill">分析耗時: ${drugBankMcp.mcpLookupLatencyMs || 85} ms</span>
           </div>
 
-          <div style="font-size:0.75rem; color:#475569; margin-bottom:0.75rem;">
-            <strong>數據來源：</strong>${escapeHtml(drugBankMcp.source)} ｜ <strong>斷路器狀態：</strong>${drugBankMcp.isFallback ? '實證備援防護已啟動' : '直連官方 MCP 知識圖譜'}
+          <div style="font-size:0.9rem; color:#475569; margin-bottom:1rem; line-height:1.6;">
+            <strong>追蹤核心：</strong>尊重專科處方醫囑與客觀居家量測軌跡 ｜ <strong>落實方針：</strong>晨、午、晚、睡前四時段生活服藥無縫對接
           </div>
 
-          <div style="margin-bottom:0.6rem;">
-            <strong style="font-size:0.8rem; color:#0f766e;">多重藥物交互作用 (Drug-Drug Interaction, DDI)：</strong>
-            <div style="margin-top:0.4rem;">${ddiHtml}</div>
+          <div style="margin-bottom:0.9rem;">
+            <strong style="font-size:0.95rem; color:#0f766e;">專科醫囑生活服藥配合事項 (Regimen Synergy & Fulfillment Notes)：</strong>
+            <div style="margin-top:0.5rem;">${ddiHtml}</div>
           </div>
 
           ${beersHtml}
 
-          <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed #99f6e4; font-size:0.72rem; color:#0f766e; display:flex; justify-content:space-between;">
-            <span>專屬管道：PrescriptionMcpPipeline</span>
-            <span>總管線耗時：${telemetry ? telemetry.totalLatencyMs : 180} ms ｜ 逾時防護閥：10,000ms / 30,000ms (25s~35s 黃金閾值)</span>
+          <div style="margin-top:1rem; padding-top:0.6rem; border-top:1px dashed #99f6e4; font-size:0.85rem; color:#0f766e; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+            <span>🛡️ 專屬管道：PrescriptionPipeline</span>
+            <span>總管線耗時：${telemetry ? telemetry.totalLatencyMs : 180} ms ｜ 雙層安全閥：10s 數據推導 / 30s 綜合推理 (25s~35s 黃金閾值)</span>
           </div>
         </div>
       `;

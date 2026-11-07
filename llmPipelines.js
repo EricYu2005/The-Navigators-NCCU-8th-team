@@ -23,11 +23,11 @@ const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
 
 // 系統全域逾時配置 (依臨床實證與使用者耐心模型設定 25s~35s 黃金閾值)
 const PIPELINE_TIMEOUTS = {
-  FAST_LOCAL_MS: parseInt(process.env.LLM_FAST_TIMEOUT_MS || '8000', 10),
+  FAST_LOCAL_MS: parseInt(process.env.LLM_FAST_TIMEOUT_MS || '28000', 10),
   MCP_LOOKUP_MS: parseInt(process.env.DRUGBANK_TIMEOUT_MS || '10000', 10),
-  MCP_TOTAL_MS: parseInt(process.env.LLM_MCP_TIMEOUT_MS || '30000', 10),
-  VERBAL_ORDER_MS: 6000,
-  FAMILY_CARE_MS: 5000
+  MCP_TOTAL_MS: parseInt(process.env.LLM_MCP_TIMEOUT_MS || '35000', 10),
+  VERBAL_ORDER_MS: parseInt(process.env.LLM_FAST_TIMEOUT_MS || '28000', 10),
+  FAMILY_CARE_MS: 15000
 };
 
 /**
@@ -202,8 +202,15 @@ const GuidePipeline = {
       try {
         const parsed = JSON.parse(res.content);
         if (parsed.keyComplaint && parsed.triageOptions) {
+          let doctorQuestions = parsed.doctorQuestions || '';
+          if (Array.isArray(doctorQuestions)) {
+            doctorQuestions = doctorQuestions.map((q, idx) => `${idx + 1}. ${String(q).replace(/^(\d+[\.、]\s*)/, '')}`).join('\n');
+          }
+          let triageOptions = Array.isArray(parsed.triageOptions) ? parsed.triageOptions : [parsed.triageOptions];
           return {
-            ...parsed,
+            keyComplaint: parsed.keyComplaint,
+            doctorQuestions,
+            triageOptions,
             telemetry: {
               dedicatedPipeline: this.pipelineName,
               underlyingChannel: 'FastLocalPipeline (Ollama)',
@@ -268,9 +275,14 @@ const VerbalOrderPipeline = {
     if (res.success) {
       try {
         const parsed = JSON.parse(res.content);
-        if (parsed.conditionText && parsed.actionText) {
+        const conditionText = parsed.conditionText || parsed.condition;
+        const actionText = parsed.actionText || parsed.action;
+        const redFlags = parsed.redFlags || parsed.warning || parsed.red_flags;
+        if (conditionText && actionText) {
           return {
-            ...parsed,
+            conditionText,
+            actionText,
+            redFlags: redFlags || '若症狀未緩解或出現不適，請提早回診或就醫。',
             telemetry: {
               dedicatedPipeline: this.pipelineName,
               underlyingChannel: 'FastLocalPipeline (Ollama)',

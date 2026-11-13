@@ -22,10 +22,6 @@ const VIEW_METAS = {
     title: '全家照護雲端看板 (Family Care Hub)',
     desc: '手足同步瀏覽跨科就醫履歷、最新處方異動與口頭醫囑，杜絕照護內耗'
   },
-  'view-guide': {
-    title: '專案護理師臨床提問卡 (Doctor Discussion Guide)',
-    desc: '由專案責任護理師審核長輩兩週客觀生理趨勢，親自擬定主訴焦點與門診提問卡，杜絕 AI 醫療黑盒'
-  },
   'view-orders': {
     title: '口頭醫囑結構化轉譯 (Verbal Orders Digitization)',
     desc: '診後極速語音/文字錄入，自動轉譯為全家皆懂的【觸發條件 - 具體行動 - 危急紅旗】'
@@ -36,7 +32,7 @@ const VIEW_METAS = {
   },
   'view-hub': {
     title: '在地醫院 Hub 陪診媒合 (Hospital Hub)',
-    desc: '鎖定林口長庚、台大、榮總 15~20 分鐘半徑，專業執業護理特助攜指引卡進診間'
+    desc: '鎖定林口長庚、台大、榮總 15~20 分鐘半徑，專業執業護理特助攜健康數據軌跡進診間焦點溝通'
   }
 };
 
@@ -80,7 +76,7 @@ async function loadDashboardData() {
     const result = await res.json();
     if (!result.success) return;
 
-    const { patient, latestGuide, latestOrder, currentPrescription, familyNotes } = result.data;
+    const { patient, latestOrder, currentPrescription, familyNotes } = result.data;
 
     // 渲染時間軸
     const timelineEl = document.getElementById('dashboard-timeline');
@@ -89,7 +85,7 @@ async function loadDashboardData() {
         <div class="timeline-entry">
           <div class="timeline-pin"></div>
           <div class="timeline-header">
-            <span class="timeline-title">心臟內科門診・最新口頭醫囑</span>
+            <span class="timeline-title">心臟內科門診・最新口頭醫囑轉譯</span>
             <span class="timeline-date">${latestOrder ? latestOrder.created_at.slice(0, 10) : '2026-11-05'}</span>
           </div>
           <div class="timeline-card-box">
@@ -102,11 +98,12 @@ async function loadDashboardData() {
         <div class="timeline-entry">
           <div class="timeline-pin"></div>
           <div class="timeline-header">
-            <span class="timeline-title">專案護理師診前提問卡・決策備忘</span>
-            <span class="timeline-date">${latestGuide && latestGuide.nurse_name ? latestGuide.nurse_name : '專案護理師審核'}</span>
+            <span class="timeline-title">客觀健康數據軌跡・晨峰血壓與夜尿監測</span>
+            <span class="timeline-date">連續 14 天動態彙整</span>
           </div>
           <div class="timeline-card-box">
-            <p>${latestGuide ? latestGuide.key_complaint : '近兩週晨間收縮壓反覆升高且夜尿增加，疑似利尿劑投藥時間不當。'}</p>
+            <strong style="color:#0f172a;">晨間收縮壓反覆達 148-162 mmHg ｜ 夜尿 3-4 次/晚</strong>
+            <p style="margin-top:0.25rem;">系統客觀生理軌跡顯示早晨 7:00-9:00 呈現顯著晨峰高壓，夜尿集中於凌晨 1:30~5:00；完整數據軌跡已留存，供陪診護理師隨時調閱並於診間專業溝通。</p>
           </div>
         </div>
 
@@ -224,101 +221,7 @@ async function refreshFamilyNotes() {
 }
 
 // ========================================================
-// 3. 專案護理師診前提問卡 (Doctor Discussion Guide)
-// ========================================================
-const guideForm = document.getElementById('guide-form');
-if (guideForm) {
-  guideForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const nurseName = document.getElementById('guide-nurse-name') ? document.getElementById('guide-nurse-name').value.trim() : '王思婷 專科護理師';
-    const department = document.getElementById('guide-department').value;
-    const doctorName = document.getElementById('guide-doctor').value;
-    const visitDate = document.getElementById('guide-date').value;
-    const morningBp = document.getElementById('guide-morning-bp').value.trim();
-    const nocturiaCount = document.getElementById('guide-nocturia').value.trim();
-    const symptoms = document.getElementById('guide-symptoms').value.trim();
-    const keyComplaint = document.getElementById('guide-key-complaint') ? document.getElementById('guide-key-complaint').value.trim() : '';
-    const doctorQuestions = document.getElementById('guide-questions') ? document.getElementById('guide-questions').value.trim() : '';
-    const triageRaw = document.getElementById('guide-triage-options-input') ? document.getElementById('guide-triage-options-input').value.trim() : '';
-
-    const triageOptions = triageRaw ? triageRaw.split('\n').map(s => s.trim()).filter(Boolean) : [
-      "原處方續開維持",
-      "調整脈優服藥時段至晨間 (QD AM)",
-      "利尿劑改早餐後吃 (防夜尿跌倒)",
-      "安排兩週後複查心臟超音波與生化抽血"
-    ];
-
-    const btn = document.getElementById('save-guide-btn') || document.getElementById('generate-guide-btn');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerText = '正在由專案護理師簽核建立提問卡...';
-    }
-
-    try {
-      const res = await fetch('/api/guides', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nurseName,
-          department,
-          doctorName,
-          visitDate,
-          morningBp,
-          nocturiaCount,
-          symptoms,
-          keyComplaint,
-          doctorQuestions,
-          triageOptions
-        })
-      });
-
-      const result = await res.json();
-      if (result.success) {
-        document.getElementById('card-dept-meta').innerHTML = `<strong>科別：</strong>${result.data.department}・${result.data.doctorName}`;
-        document.getElementById('card-date-meta').innerHTML = `<strong>看診日期：</strong>${result.data.visitDate}`;
-        if (document.getElementById('card-nurse-meta')) {
-          document.getElementById('card-nurse-meta').innerHTML = `<strong>審核護理師：</strong>${result.data.nurseName}`;
-        }
-        document.getElementById('card-complaint').innerText = result.data.keyComplaint;
-        document.getElementById('card-questions').innerText = result.data.doctorQuestions;
-
-        const triageContainer = document.getElementById('card-triage-options');
-        triageContainer.innerHTML = '';
-        result.data.triageOptions.forEach((opt, idx) => {
-          const checked = (idx === 1 || idx === 2) ? 'checked' : '';
-          triageContainer.innerHTML += `
-            <label class="triage-item"><input type="checkbox" ${checked}> ${opt}</label>
-          `;
-        });
-
-        alert('✅ 專案護理師已成功簽核並發布門診提問卡！已同步至陪診特助與全家照護看板。');
-        loadDashboardData();
-        loadFamilyNotes();
-      } else {
-        alert('儲存失敗: ' + result.message);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('伺服器連線異常: ' + err.message);
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `
-          <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/>
-            <polyline points="7 3 7 8 15 8"/>
-          </svg>
-          專案護理師簽核建立診前提問卡 ➜ 同步全家看板與特助
-        `;
-      }
-    }
-  });
-}
-
-// ========================================================
-// 4. 口頭醫囑結構化轉譯 (Verbal Orders Digitization)
+// 3. 口頭醫囑結構化轉譯 (Verbal Orders Digitization)
 // ========================================================
 const verbalForm = document.getElementById('verbal-order-form');
 const rawInputEl = document.getElementById('raw-verbal-input');
@@ -1108,68 +1011,9 @@ if (confirmLoadScenarioBtn) {
           if (ageEl) ageEl.innerText = `${p.age}歲`;
           if (subEl) subEl.innerText = `${p.primaryHospital} (${p.department})`;
           if (hubEl) hubEl.innerText = p.careCategory || '高齡慢性照護';
-
-          // 2. 更新診前指引表單欄位與預覽卡片
-          const bpEl = document.getElementById('guide-morning-bp');
-          const nocturiaEl = document.getElementById('guide-nocturia');
-          const symEl = document.getElementById('guide-symptoms');
-          const deptEl = document.getElementById('guide-department');
-          const docEl = document.getElementById('guide-doctor');
-
-          if (selectedScenarioData.doctorDiscussionGuide) {
-            const dg = selectedScenarioData.doctorDiscussionGuide;
-            if (bpEl) bpEl.value = dg.morningBp || '';
-            if (nocturiaEl) nocturiaEl.value = dg.nocturiaCount || '';
-            if (symEl) symEl.value = dg.symptoms || '';
-
-            const nurseEl = document.getElementById('guide-nurse-name');
-            const compInputEl = document.getElementById('guide-key-complaint');
-            const qInputEl = document.getElementById('guide-questions');
-            const triageInputEl = document.getElementById('guide-triage-options-input');
-
-            if (nurseEl) nurseEl.value = dg.nurseName || '王思婷 專科護理師 (林口長庚 Hub)';
-            if (compInputEl && dg.keyComplaint) compInputEl.value = dg.keyComplaint;
-            if (qInputEl && dg.doctorQuestions) {
-              qInputEl.value = Array.isArray(dg.doctorQuestions) ? dg.doctorQuestions.join('\n') : dg.doctorQuestions;
-            }
-            if (triageInputEl && dg.triageOptions) {
-              triageInputEl.value = Array.isArray(dg.triageOptions) ? dg.triageOptions.join('\n') : dg.triageOptions;
-            }
-
-            // 即時更新右側臨床提問卡
-            if (dg.keyComplaint) {
-              const compEl = document.getElementById('card-complaint');
-              if (compEl) compEl.innerText = dg.keyComplaint;
-            }
-            if (dg.doctorQuestions) {
-              const qEl = document.getElementById('card-questions');
-              if (qEl) qEl.innerText = Array.isArray(dg.doctorQuestions) ? dg.doctorQuestions.join('\n') : dg.doctorQuestions;
-            }
-            if (dg.triageOptions) {
-              const triageContainer = document.getElementById('card-triage-options');
-              if (triageContainer) {
-                triageContainer.innerHTML = '';
-                dg.triageOptions.forEach((opt, idx) => {
-                  const checked = (idx === 1 || idx === 2) ? 'checked' : '';
-                  triageContainer.innerHTML += `<label class="triage-item"><input type="checkbox" ${checked}> ${escapeHtml(opt)}</label>`;
-                });
-              }
-            }
-            const deptMetaEl = document.getElementById('card-dept-meta');
-            const dateMetaEl = document.getElementById('card-date-meta');
-            const nurseMetaEl = document.getElementById('card-nurse-meta');
-            const patientMetaEl = document.getElementById('card-patient-meta');
-
-            if (deptMetaEl) deptMetaEl.innerHTML = `<strong>科別：</strong>${escapeHtml(p.department)}・${escapeHtml(p.doctorName)}`;
-            if (dateMetaEl) dateMetaEl.innerHTML = `<strong>看診日期：</strong>${escapeHtml(p.visitDate || '2026-11-20')}`;
-            if (nurseMetaEl) nurseMetaEl.innerHTML = `<strong>審核護理師：</strong>${escapeHtml(dg.nurseName || '王思婷 (專案護理師)')}`;
-            if (patientMetaEl) patientMetaEl.innerText = `${p.name} (${p.age}歲)`;
-          }
-          if (deptEl) deptEl.value = p.department;
-          if (docEl) docEl.value = p.doctorName;
         }
 
-        // 3. 更新口頭醫囑輸入框
+        // 2. 更新口頭醫囑輸入框
         if (selectedScenarioData.verbalOrder) {
           const rawInputEl = document.getElementById('raw-verbal-input');
           if (rawInputEl) rawInputEl.value = selectedScenarioData.verbalOrder.rawInput || '';

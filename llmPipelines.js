@@ -526,10 +526,10 @@ async function getPipelinesStatus() {
     },
     dedicatedChannels: [
       {
-        feature: '診前臨床指引卡 (Doctor Discussion Guide)',
-        channel: GuidePipeline.pipelineName,
-        timeoutMs: GuidePipeline.timeoutMs,
-        role: '晨間血壓/夜尿/副作用臨床關聯'
+        feature: '專案護理師診前提問卡 (Doctor Discussion Guide)',
+        channel: '專案護理師臨床審定通道 (Nurse Assessment)',
+        timeoutMs: '專業人工簽核',
+        role: '由專案護理師依長輩兩週客觀生理軌跡親自擬定提問卡與回條'
       },
       {
         feature: '口頭醫囑結構化轉譯 (Verbal Orders)',

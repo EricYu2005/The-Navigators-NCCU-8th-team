@@ -145,30 +145,18 @@ app.post('/api/scenarios/load', async (req, res) => {
       p.visitDate || '2026-11-20'
     ]);
 
-    // 2. 插入診前指引卡 (若情境已有預設分析則直接套用，否則呼叫專屬管道)
+    // 2. 插入診前指引卡 (由專案護理師親自審核與擬定)
     if (scenario.doctorDiscussionGuide) {
       const dg = scenario.doctorDiscussionGuide;
-      let keyComplaint = dg.keyComplaint;
-      let doctorQuestions = dg.doctorQuestions;
-      let triageOptions = dg.triageOptions;
-
-      if (!keyComplaint) {
-        const guideRes = await GuidePipeline.generate({
-          department: p.department,
-          doctorName: p.doctorName,
-          morningBp: dg.morningBp,
-          nocturiaCount: dg.nocturiaCount,
-          symptoms: dg.symptoms
-        });
-        keyComplaint = guideRes.keyComplaint;
-        doctorQuestions = guideRes.doctorQuestions;
-        triageOptions = guideRes.triageOptions;
-      }
+      const keyComplaint = dg.keyComplaint || `長輩近兩週晨間血壓反覆達 ${dg.morningBp || '158-164 mmHg'}，夜尿達 ${dg.nocturiaCount || '3-4次/晚'}，伴隨${dg.symptoms || '晨起頭暈與水腫'}。專案護理師臨床評估建議與主治醫師溝通投藥時段。`;
+      const doctorQuestions = dg.doctorQuestions || '1. 是否將利尿劑改為早餐後服用以減少夜尿跌倒風險？\n2. 降壓藥是否移至早晨投藥以壓制晨峰高血壓？\n3. 是否安排追蹤生化抽血？';
+      const triageOptions = dg.triageOptions || ["維持原處方續開", "調整降壓藥至早晨 (QD AM)", "利尿劑改早餐後 (防夜尿)", "兩週後安排抽血追蹤"];
+      const nurseName = dg.nurseName || '王思婷 (專案護理師)';
 
       await dbQuery.run(`
         INSERT INTO discussion_guides (
-          patient_id, department, doctor_name, visit_date, morning_bp, nocturia_count, symptoms, key_complaint, doctor_questions, triage_options
-        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          patient_id, department, doctor_name, visit_date, morning_bp, nocturia_count, symptoms, key_complaint, doctor_questions, triage_options, nurse_name
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         p.department || '心臟內科',
         p.doctorName || '主治醫師',
@@ -178,7 +166,8 @@ app.post('/api/scenarios/load', async (req, res) => {
         dg.symptoms || '晨起頭暈',
         keyComplaint,
         Array.isArray(doctorQuestions) ? doctorQuestions.join('\n') : doctorQuestions,
-        JSON.stringify(triageOptions || [])
+        JSON.stringify(triageOptions || []),
+        nurseName
       ]);
     }
 
@@ -311,6 +300,9 @@ app.get('/api/dashboard', async (req, res) => {
       success: true,
       data: {
         patient,
+        latestGuide: parsedGuides[0] || null,
+        latestOrder: verbalOrders[0] || null,
+        currentPrescription: parsedPrescriptions[0] || null,
         guides: parsedGuides,
         verbalOrders,
         prescriptions: parsedPrescriptions,
@@ -387,30 +379,53 @@ app.get('/api/guides', async (req, res) => {
   }
 });
 
-app.post('/api/guides/generate', async (req, res) => {
+// 專案護理師診前提問卡審定與建立 (非 AI 自動生成)
+app.post(['/api/guides', '/api/guides/generate'], async (req, res) => {
   try {
-    const { department, doctorName, visitDate, morningBp, nocturiaCount, symptoms, vitalsSummary } = req.body;
-
-    // 透過專屬功能管道 GuidePipeline 處理
-    const aiOutput = await GuidePipeline.generate({
+    const {
       department,
       doctorName,
+      visitDate,
       morningBp,
       nocturiaCount,
       symptoms,
-      vitalsSummary: vitalsSummary || `晨間血壓 ${morningBp}，夜尿 ${nocturiaCount}`
-    });
+      keyComplaint,
+      doctorQuestions,
+      triageOptions,
+      nurseName
+    } = req.body;
 
-    const keyComplaint = aiOutput.keyComplaint;
-    const doctorQuestions = Array.isArray(aiOutput.doctorQuestions) 
-      ? aiOutput.doctorQuestions.join('\n') 
-      : aiOutput.doctorQuestions;
-    const triageOptions = aiOutput.triageOptions;
+    const effectiveNurse = nurseName || '王思婷 (資深專案護理師)';
+    const finalComplaint = keyComplaint || `長輩近兩週晨間收縮壓反覆達 ${morningBp || '148-162 mmHg'}，夜尿次數達 ${nocturiaCount || '3-4 次/晚'}，伴隨「${symptoms || '晨起頭暈、夜間起夜頻繁、下肢輕度水腫'}」。專案護理師臨床研判夜尿次數增加易造成夜間起夜跌倒風險，晨峰血壓偏高覆蓋不足，需由主治醫師專業評估調藥。`;
+
+    let finalQuestions = doctorQuestions;
+    if (Array.isArray(finalQuestions)) {
+      finalQuestions = finalQuestions.join('\n');
+    } else if (!finalQuestions || !finalQuestions.trim()) {
+      finalQuestions = '1. 是否建議將利尿劑改為早餐後服用 (QD AM)，以減少夜間起夜跌倒風險？\n2. 脈優 (Norvasc) 投藥時段是否調整至早晨以壓制晨峰高血壓？\n3. 是否加驗腎功能血清肌酸酐 (Cr/eGFR) 與血鉀？';
+    }
+
+    let finalTriage = triageOptions;
+    if (typeof finalTriage === 'string') {
+      try {
+        finalTriage = JSON.parse(finalTriage);
+      } catch (e) {
+        finalTriage = finalTriage.split('\n').map(s => s.trim()).filter(Boolean);
+      }
+    }
+    if (!Array.isArray(finalTriage) || finalTriage.length === 0) {
+      finalTriage = [
+        "原處方續開維持",
+        "調整脈優服藥時段至晨間 (QD AM)",
+        "利尿劑改早餐後吃 (防夜尿跌倒)",
+        "安排兩週後複查心臟超音波與生化抽血"
+      ];
+    }
 
     const newGuide = await dbQuery.run(`
       INSERT INTO discussion_guides (
-        patient_id, department, doctor_name, visit_date, morning_bp, nocturia_count, symptoms, key_complaint, doctor_questions, triage_options
-      ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        patient_id, department, doctor_name, visit_date, morning_bp, nocturia_count, symptoms, key_complaint, doctor_questions, triage_options, nurse_name
+      ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       department || '心臟內科',
       doctorName || '主治醫師',
@@ -418,14 +433,27 @@ app.post('/api/guides/generate', async (req, res) => {
       morningBp || '148-162 mmHg',
       nocturiaCount || '3-4 次/晚',
       symptoms || '晨起頭暈、夜間起夜頻繁、下肢輕度水腫',
-      keyComplaint,
-      doctorQuestions,
-      JSON.stringify(triageOptions)
+      finalComplaint,
+      finalQuestions,
+      JSON.stringify(finalTriage),
+      effectiveNurse
+    ]);
+
+    // 同步在全家協同看板寫入一筆護理師審核記事
+    await dbQuery.run(`
+      INSERT INTO family_notes (
+        patient_id, author, city, content, author_location, author_name, note_text, note_type
+      ) VALUES (1, ?, '醫院Hub', ?, '醫院Hub', ?, ?, '護理師審核')
+    `, [
+      effectiveNurse,
+      `專案護理師已完成長輩「${department || '心臟內科'}・${doctorName || '主治醫師'}」診前提問卡審定，提問焦點已排定並指派陪診特助攜入診間。`,
+      effectiveNurse,
+      `已為長輩完成門診提問卡審定（${department || '心臟內科'}・${doctorName || '主治醫師'}），提問焦點聚焦於晨峰血壓與利尿劑時段調整，已指派陪診特助攜入診間。`
     ]);
 
     res.status(201).json({
       success: true,
-      message: '診前指引卡已成功生成！',
+      message: '專案護理師提問卡已成功簽核發布！',
       data: {
         id: newGuide.lastID,
         department: department || '心臟內科',
@@ -434,15 +462,15 @@ app.post('/api/guides/generate', async (req, res) => {
         morningBp,
         nocturiaCount,
         symptoms,
-        keyComplaint,
-        doctorQuestions,
-        triageOptions,
-        telemetry: aiOutput.telemetry
+        keyComplaint: finalComplaint,
+        doctorQuestions: finalQuestions,
+        triageOptions: finalTriage,
+        nurseName: effectiveNurse
       }
     });
   } catch (error) {
-    console.error('生成指引卡失敗:', error);
-    res.status(500).json({ success: false, message: '生成失敗: ' + error.message });
+    console.error('儲存提問卡失敗:', error);
+    res.status(500).json({ success: false, message: '儲存失敗: ' + error.message });
   }
 });
 

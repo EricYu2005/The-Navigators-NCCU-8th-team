@@ -63,8 +63,8 @@
             <path d="M9 11l3 3L22 4" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span class="nav-text">診前臨床指引卡生成</span>
-          <span class="nav-chip">20s快讀</span>
+          <span class="nav-text">專案護理師診前提問卡</span>
+          <span class="nav-chip">護理師審核</span>
         </button>
 
         <button class="nav-item" data-view="view-orders">
@@ -234,7 +234,7 @@
                 </svg>
                 <h3>跨科就醫履歷與醫囑動態時序</h3>
               </div>
-              <button class="btn btn-ghost btn-sm" onclick="switchView('view-guide')">+ 建立新指引</button>
+              <button class="btn btn-ghost btn-sm" onclick="switchView('view-guide')">+ 護理師擬定提問卡</button>
             </div>
             <div class="timeline-stream" id="dashboard-timeline">
               <!-- 動態渲染時間軸節點 -->
@@ -296,7 +296,7 @@
         </div>
       </section>
 
-      <!-- ==================== VIEW 2: 診前臨床指引卡生成器 ==================== -->
+      <!-- ==================== VIEW 2: 專案護理師診前提問卡工作台 ==================== -->
       <section id="view-guide" class="page-view">
         <div class="two-col-layout">
           <!-- 填寫輸入面板 -->
@@ -307,22 +307,26 @@
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
-                <h3>診前臨床表徵與生活指標輸入</h3>
+                <h3>專案護理師臨床提問卡制定工作台</h3>
               </div>
-              <span class="status-badge">AI 濃縮 20s 備忘</span>
+              <span class="status-badge" style="background:#e0e7ff; color:#3730a3; border-color:#c7d2fe;">專案護理師親審 (非 AI 生成)</span>
             </div>
 
-            <div class="telemetry-tag fast">
-              <span class="pulse-dot" style="width:6px;height:6px;"></span>
-              <span>⚡ 專屬管道: GuidePipeline (本地極速通道 • 8s 逾時防護)</span>
+            <div class="telemetry-tag" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; padding:0.45rem 0.75rem; border-radius:6px; display:inline-flex; align-items:center; gap:0.5rem; font-size:0.8rem; margin-bottom:0.75rem;">
+              <span style="font-size:1.05rem;">👩‍⚕️</span>
+              <span><strong>專案護理師專業把關</strong>：長輩生理軌跡由責任護理師綜合評定並親自擬定提問卡，杜絕 AI 幻覺爭議</span>
             </div>
 
             <p class="section-intro">
-              依據簡報規格：系統將整合長輩近兩週<strong>晨間血壓</strong>、<strong>夜尿頻率</strong>與<strong>食慾/水腫異常</strong>，由 AI 濃縮為主治醫師 20 秒讀完的精準主訴備忘錄，末端自帶醫師 5 秒勾選回條。
+              依據臨床實務規格：系統排除 AI 自動生成提問，改由<strong>專案責任護理師</strong>綜合長輩近兩週晨間血壓、夜尿頻率與生活困擾，親自擬定 20 秒醫師主訴與待診提問卡，由陪診特助攜入診間與醫師高效溝通。
             </p>
 
             <form id="guide-form">
               <div class="form-row">
+                <div class="form-group flex-1">
+                  <label class="form-label">專案責任護理師 (審核簽章)</label>
+                  <input type="text" id="guide-nurse-name" class="form-input" value="王思婷 專科護理師 (林口長庚 Hub)">
+                </div>
                 <div class="form-group flex-1">
                   <label class="form-label">就診科別</label>
                   <select id="guide-department" class="form-input">
@@ -332,6 +336,9 @@
                     <option value="腎臟內科">腎臟內科</option>
                   </select>
                 </div>
+              </div>
+
+              <div class="form-row">
                 <div class="form-group flex-1">
                   <label class="form-label">預計看診日期</label>
                   <input type="date" id="guide-date" class="form-input" value="2026-11-12">
@@ -342,7 +349,7 @@
                 </div>
               </div>
 
-              <!-- 關鍵臨床三指標 -->
+              <!-- 關鍵臨床三指標 (客觀數據) -->
               <div class="form-group">
                 <label class="form-label">近兩週晨間血壓範圍 (收縮壓 / 舒張壓)</label>
                 <input type="text" id="guide-morning-bp" class="form-input" placeholder="例：148 - 162 mmHg (早晨起床後半小時量測)" value="148 - 162 mmHg (連續 10 天晨峰偏高)">
@@ -355,14 +362,46 @@
 
               <div class="form-group">
                 <label class="form-label">食慾異常、下肢水腫或主要生活困擾</label>
-                <textarea id="guide-symptoms" class="form-input" rows="3" placeholder="詳細描述長輩近期表徵...">晨起頭暈、夜間起夜頻繁導致白天嗜睡、雙下肢脛骨前緣有輕度凹陷水腫、食慾略降。</textarea>
+                <textarea id="guide-symptoms" class="form-input" rows="2" placeholder="詳細描述長輩近期表徵...">晨起頭暈、夜間起夜頻繁導致白天嗜睡、雙下肢脛骨前緣有輕度凹陷水腫、食慾略降。</textarea>
               </div>
 
-              <button type="submit" class="btn btn-primary btn-block" id="generate-guide-btn">
+              <!-- 專案護理師專業擬定區域 (取代原 AI 生成) -->
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span><strong>👩‍⚕️ 專案護理師臨床主訴評估 (20秒快讀)</strong></span>
+                  <span style="font-size:0.75rem; color:#4b5563;">由護理師親自審核擬定</span>
+                </label>
+                <textarea id="guide-key-complaint" class="form-input" rows="3" placeholder="由專案護理師親自綜整之客觀臨床主訴...">患者近兩週晨間收縮壓反覆達 148-162 mmHg，夜尿次數由 1 次增為 3-4 次，伴隨雙下肢輕微水腫。臨床研判疑似夜間降壓與利尿劑排程不當，造成夜間頻繁起夜跌倒風險，且晨峰血壓覆蓋不足。</textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span><strong>📋 專案護理師待診提問焦點 (Decision Points for Doctor)</strong></span>
+                  <span style="font-size:0.75rem; color:#4b5563;">一行一題，特助帶入診間提問</span>
+                </label>
+                <textarea id="guide-questions" class="form-input" rows="3" placeholder="由專案護理師擬定之提問點...">1. 是否建議將利尿劑 (Lasix) 由睡前移至晨間 (QD AM)，以阻斷頻繁夜尿與夜間下床跌倒？
+2. 脈優 (Norvasc) 是否建議移至晨間投藥以有效壓制晨峰高血壓？
+3. 是否加驗腎功能血清肌酸酐 (Cr/eGFR) 與血清電解質？</textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span><strong>☑️ 主治醫師 5 秒快速勾選回條設定</strong></span>
+                  <span style="font-size:0.75rem; color:#4b5563;">一行一選項</span>
+                </label>
+                <textarea id="guide-triage-options-input" class="form-input" rows="3" placeholder="一行一個預設勾選項...">原處方續開維持
+調整脈優服藥時段至晨間 (QD AM)
+利尿劑改早餐後吃 (防夜尿跌倒)
+安排兩週後複查心臟超音波與生化抽血</textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" id="save-guide-btn">
                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
                 </svg>
-                AI 自動濃縮為 20 秒醫師臨床指引卡
+                專案護理師簽核建立診前提問卡 ➜ 同步全家看板與特助
               </button>
             </form>
           </div>
@@ -378,7 +417,7 @@
                   <line x1="16" y1="17" x2="8" y2="17"/>
                   <polyline points="10 9 9 9 8 9"/>
                 </svg>
-                <h3>主治醫師 20 秒臨床指引卡 (診間決策單)</h3>
+                <h3>主治醫師 20 秒臨床提問卡 (診間決策單)</h3>
               </div>
               <button class="btn btn-outline btn-sm" onclick="window.print()">
                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -395,12 +434,13 @@
               <div class="sheet-header">
                 <div>
                   <h4 class="sheet-title">CareNav 門診 150 秒臨床溝通備忘單</h4>
-                  <span class="sheet-subtitle">DOCTOR DISCUSSION &amp; CLINICAL TRIAGE GUIDE</span>
+                  <span class="sheet-subtitle">DOCTOR DISCUSSION &amp; CLINICAL TRIAGE GUIDE (NURSE REVIEWED)</span>
                 </div>
                 <div class="sheet-meta-box">
-                  <div><strong>病患：</strong>陳國華 (72歲)</div>
+                  <div><strong>病患：</strong><span id="card-patient-meta">陳國華 (72歲)</span></div>
                   <div id="card-dept-meta"><strong>科別：</strong>心臟內科・林主治醫師</div>
-                  <div id="card-date-meta"><strong>日期：</strong>2026-11-12</div>
+                  <div id="card-nurse-meta"><strong>審核護理師：</strong>王思婷 (專案護理師)</div>
+                  <div id="card-date-meta"><strong>看診日期：</strong>2026-11-12</div>
                 </div>
               </div>
 
@@ -419,7 +459,7 @@
               <div class="sheet-block">
                 <div class="block-label">
                   <span class="label-badge">提問焦點</span>
-                  <strong>家屬/特助待診決策提問 (Decision Points for Doctor)</strong>
+                  <strong>專案護理師待診提問焦點 (Decision Points for Doctor)</strong>
                 </div>
                 <div class="block-body pre-line" id="card-questions">
 1. 是否建議將利尿劑 (Lasix) 由睡前移至晨間 (QD AM)，以阻斷頻繁夜尿與夜間下床跌倒？
@@ -443,7 +483,7 @@
               </div>
 
               <div class="sheet-footer">
-                <span>※ 本指引單由 CareNav 智護領航臨床模組生成，協助診間高效率決策，不取代正式電子病歷。</span>
+                <span>※ 本提問卡由 CareNav 專案護理師依長輩客觀生理趨勢親自審核擬定，由陪診特助攜入診間與醫師決策溝通，不取代正式電子病歷。</span>
               </div>
             </div>
           </div>

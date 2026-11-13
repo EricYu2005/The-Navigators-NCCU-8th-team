@@ -33,7 +33,7 @@ function initDatabase() {
       )
     `);
 
-    // 2. 診前臨床指引卡 (Doctor Discussion Guides)
+    // 2. 診前臨床指引卡 (Doctor Discussion Guides / 專案護理師提問卡)
     db.run(`
       CREATE TABLE IF NOT EXISTS discussion_guides (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,6 +47,7 @@ function initDatabase() {
         key_complaint TEXT,
         doctor_questions TEXT,
         triage_options TEXT,
+        nurse_name TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -121,6 +122,7 @@ function initDatabase() {
         { table: 'discussion_guides', col: 'morning_bp TEXT' },
         { table: 'discussion_guides', col: 'nocturia_count TEXT' },
         { table: 'discussion_guides', col: 'symptoms TEXT' },
+        { table: 'discussion_guides', col: 'nurse_name TEXT' },
         { table: 'prescriptions', col: 'bag_image_url TEXT' },
         { table: 'family_notes', col: 'author_location TEXT' },
         { table: 'family_notes', col: 'author_name TEXT' },
@@ -148,10 +150,10 @@ function seedInitialData() {
       VALUES (1, '陳國華 (爸爸)', 72, '男', '高血壓第二期、慢性腎臟病第3期、夜尿症', '林口長庚紀念醫院')
     `);
 
-    // 注入示範診前指引卡
+    // 注入示範診前指引卡 (專案護理師親自審核)
     db.run(`
       INSERT INTO discussion_guides (
-        patient_id, department, doctor_name, visit_date, morning_bp, nocturia_count, symptoms, key_complaint, doctor_questions, triage_options
+        patient_id, department, doctor_name, visit_date, morning_bp, nocturia_count, symptoms, key_complaint, doctor_questions, triage_options, nurse_name
       ) VALUES (
         1, '心臟內科', '林主治醫師', '2026-11-12',
         '148 - 162 mmHg (連續10天晨峰偏高)',
@@ -159,7 +161,8 @@ function seedInitialData() {
         '晨起頭暈、夜間起夜頻繁、下肢輕度凹陷水腫',
         '患者晨間收縮壓反覆達 148-162 mmHg 且夜尿次數由 1 次激增為 3-4 次，疑似夜間投用利尿劑排程不當，晨間降壓藥保護力不足。',
         '1. 是否將利尿劑 (Lasix) 由睡前移至早餐後服用？\n2. 脈優 (Norvasc) 是否改為早晨服用以覆蓋晨峰血壓？\n3. 是否加驗腎功能血清肌酸酐 (Cr/eGFR)？',
-        '["原處方維持續開", "調整脈優/利尿劑至晨間 (QD AM)", "加開保護心腎之血管張力素阻斷劑 (ARB)", "安排兩週後複查腎功能與超音波"]'
+        '["原處方維持續開", "調整脈優/利尿劑至晨間 (QD AM)", "加開保護心腎之血管張力素阻斷劑 (ARB)", "安排兩週後複查腎功能與超音波"]',
+        '王思婷 專科護理師'
       )
     `);
 

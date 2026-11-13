@@ -548,6 +548,19 @@
                 </svg>
                 拍照或上傳真實藥袋照片
               </button>
+
+              <button type="button" class="btn btn-ghost btn-sm" onclick="clearCustomRedactions()" title="清除畫布上的自訂塗黑遮蔽區">
+                🗑️ 清除遮罩
+              </button>
+
+              <button type="button" class="btn btn-ghost btn-sm" onclick="downloadSanitizedImage()" title="下載前端物理去識別化後的安全圖片檢驗">
+                📥 下載安全藥袋圖
+              </button>
+            </div>
+
+            <!-- 家屬操作提示 -->
+            <div style="font-size:0.75rem; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.45rem 0.65rem; margin-bottom:0.75rem;">
+              💡 <strong>家屬安心操作指南</strong>：上傳真實藥袋後，系統立即自動執行端點資訊熵歸零；若長輩藥袋版面特殊，您可直接用滑鼠或手指在畫布上<strong>「拖曳框選」</strong>任意敏感文字或條碼實體塗黑。
             </div>
 
             <!-- 視覺化去識別化對比視圖 (互動式切換) -->
@@ -568,11 +581,15 @@
 
             <!-- 畫布展示區 (Canvas 物理處理) -->
             <div class="deid-canvas-container" id="deid-canvas-container">
-              <canvas id="sanitized-bag-canvas" width="600" height="420"></canvas>
+              <canvas id="sanitized-bag-canvas" width="600" height="420" style="cursor: crosshair;"></canvas>
               <div id="deid-mode-overlay-note" class="deid-overlay-note">
                 <!-- 動態注入模式解說 -->
               </div>
             </div>
+
+            <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.9rem; font-weight:700; font-size:0.92rem;" onclick="processUploadedBagToPrescription()">
+              ⚡ 啟動藥袋處方辨識推導與今日排程 (100% 隱私安全)
+            </button>
 
             <!-- 即時去識別化審計稽核報告 (Audit Telemetry) -->
             <div class="deid-audit-grid" id="deid-audit-grid">

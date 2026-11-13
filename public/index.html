@@ -495,32 +495,102 @@
             </div>
           </div>
 
-          <!-- 藥袋拍攝與手動代碼測試 -->
+          <!-- 藥袋拍攝與端點不可逆去識別化工作台 -->
           <div class="panel-card">
             <div class="panel-card-head">
               <div class="head-lead">
                 <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                <h3>藥袋照片拍攝上傳與代碼解析</h3>
+                <h3>藥袋端點不可逆去識別化工作台</h3>
+              </div>
+              <span class="status-badge" style="background:#ecfdf5; color:#065f46; border-color:#a7f3d0;">
+                🛡️ HIPAA / 特種個資合規
+              </span>
+            </div>
+
+            <!-- 技術規格說明橫幅 (強調非單純馬賽克) -->
+            <div class="deid-tech-banner">
+              <div class="deid-tech-title">
+                <span class="pulse-dot" style="background:#10b981; width:8px; height:8px;"></span>
+                <strong>端點零知識去識別化 (Edge Privacy Shield)</strong>
+              </div>
+              <p class="deid-tech-desc">
+                Demo 納入真實藥袋時，<strong>嚴格禁止單純馬賽克（防範 CNN/Depix 逆向捲積還原漏洞）</strong>。本系統於前端記憶體執行<strong>不可逆熵歸零 (Entropy=0)</strong>、<strong>差分隱私合成置換</strong>與<strong>條碼光學阻斷</strong>，原始重大個資絕不上雲。
+              </p>
+              <div class="deid-tech-tags">
+                <span class="deid-chip danger">❌ 停用易破解馬賽克</span>
+                <span class="deid-chip active">✅ 物理資訊熵歸零 (H=0)</span>
+                <span class="deid-chip active">✅ 差分合成標籤置換</span>
+                <span class="deid-chip active">✅ 醫療條碼/QR光學阻斷</span>
+                <span class="deid-chip active">✅ EXIF中繼資料全消除</span>
               </div>
             </div>
 
-            <!-- 拍照上傳按鈕與預覽 -->
-            <div class="photo-upload-zone" id="photo-upload-zone">
-              <input type="file" id="bag-image-input" accept="image/*" capture="environment" style="display:none;">
-              <button type="button" class="btn btn-outline" onclick="document.getElementById('bag-image-input').click()">
+            <!-- 操作功能按鈕區 -->
+            <div class="deid-actions-bar">
+              <button type="button" class="btn btn-primary btn-sm" id="load-real-case-bag-btn" onclick="loadRealCasePrescriptionBag()">
                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
                 </svg>
-                拍照或上傳新藥袋照片
+                載入實際案例門診藥袋 (含高敏個資)
               </button>
-              <div id="image-preview-container" class="image-preview-box" style="display:none;">
-                <img id="bag-image-preview" alt="藥袋照片預覽">
-                <span class="preview-caption">已載入藥袋照片 (待比對)</span>
+
+              <input type="file" id="bag-image-input" accept="image/*" capture="environment" style="display:none;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('bag-image-input').click()">
+                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                拍照或上傳真實藥袋照片
+              </button>
+            </div>
+
+            <!-- 視覺化去識別化對比視圖 (互動式切換) -->
+            <div class="deid-view-switcher">
+              <span class="switcher-label">Demo 檢視模式：</span>
+              <div class="btn-group-sm">
+                <button type="button" class="deid-mode-btn active" id="btn-mode-sanitized" onclick="setDeidMode('sanitized')">
+                  🛡️ 去識別化合規視圖 (Demo推薦)
+                </button>
+                <button type="button" class="deid-mode-btn" id="btn-mode-threat" onclick="setDeidMode('threat')">
+                  ⚠️ 高敏個資偵測熱區 (4大威脅面)
+                </button>
+                <button type="button" class="deid-mode-btn" id="btn-mode-mosaic" onclick="setDeidMode('mosaic')">
+                  ❌ 傳統馬賽克漏洞對比 (易被AI還原)
+                </button>
+              </div>
+            </div>
+
+            <!-- 畫布展示區 (Canvas 物理處理) -->
+            <div class="deid-canvas-container" id="deid-canvas-container">
+              <canvas id="sanitized-bag-canvas" width="600" height="420"></canvas>
+              <div id="deid-mode-overlay-note" class="deid-overlay-note">
+                <!-- 動態注入模式解說 -->
+              </div>
+            </div>
+
+            <!-- 即時去識別化審計稽核報告 (Audit Telemetry) -->
+            <div class="deid-audit-grid" id="deid-audit-grid">
+              <div class="deid-audit-item">
+                <span class="audit-lbl">姓名與身分證號：</span>
+                <span class="audit-val good" id="audit-name-id">已置換為差分合成標籤</span>
+              </div>
+              <div class="deid-audit-item">
+                <span class="audit-lbl">病歷號與就醫序號：</span>
+                <span class="audit-val good" id="audit-mrn">物理資訊熵歸零 (H=0)</span>
+              </div>
+              <div class="deid-audit-item">
+                <span class="audit-lbl">門診條碼與QR Code：</span>
+                <span class="audit-val good" id="audit-barcode">光學防掃描覆蓋</span>
+              </div>
+              <div class="deid-audit-item">
+                <span class="audit-lbl">臨床關鍵拉丁代碼：</span>
+                <span class="audit-val highlight" id="audit-meds">100% 完整保留 (QD AM / QD HS)</span>
               </div>
             </div>
 

@@ -1209,6 +1209,204 @@ textarea.form-input {
   margin-top: 0.25rem;
 }
 
+/* ========================================================
+   端點不可逆去識別化工作台 (EDGE DE-IDENTIFICATION WORKSTATION)
+   ======================================================== */
+.deid-tech-banner {
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #1e293b;
+}
+
+.deid-tech-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 0.35rem;
+}
+
+.deid-tech-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin-bottom: 0.6rem;
+}
+
+.deid-tech-desc strong {
+  color: #f1f5f9;
+}
+
+.deid-tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.deid-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+.deid-chip.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.deid-chip.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.deid-actions-bar {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.deid-view-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.switcher-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.deid-mode-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deid-mode-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-dark);
+}
+
+.deid-mode-btn.active#btn-mode-sanitized {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #6ee7b7;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
+}
+
+.deid-mode-btn.active#btn-mode-threat {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fca5a5;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.2);
+}
+
+.deid-mode-btn.active#btn-mode-mosaic {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.2);
+}
+
+.deid-canvas-container {
+  border: 2px solid #0f172a;
+  border-radius: var(--radius-xs);
+  background: #1e293b;
+  overflow: hidden;
+  margin-bottom: 0.9rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.deid-canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fdfbf7;
+}
+
+.deid-overlay-note {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.deid-overlay-note.sanitized {
+  background: #064e3b;
+  color: #a7f3d0;
+  border-top: 1px solid #059669;
+}
+
+.deid-overlay-note.threat {
+  background: #7f1d1d;
+  color: #fecaca;
+  border-top: 1px solid #dc2626;
+}
+
+.deid-overlay-note.mosaic {
+  background: #78350f;
+  color: #fef3c7;
+  border-top: 1px solid #d97706;
+}
+
+.deid-audit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  background: var(--bg-main);
+  padding: 0.75rem;
+  border-radius: var(--radius-xs);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+
+.deid-audit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.74rem;
+}
+
+.audit-lbl {
+  color: var(--text-muted);
+}
+
+.audit-val {
+  font-weight: 700;
+}
+
+.audit-val.good {
+  color: #059669;
+}
+
+.audit-val.highlight {
+  color: #0284c7;
+}
+
+.audit-val.danger {
+  color: #dc2626;
+}
+
 .code-ref-box {
   background: var(--bg-main);
   border-radius: var(--radius-xs);

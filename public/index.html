@@ -77,14 +77,6 @@
           </svg>
           <span class="nav-text">藥袋用法逆向推導</span>
         </button>
-
-        <button class="nav-item" data-view="view-hub">
-          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 9h6M9 13h6M9 17h6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="nav-text">醫院 Hub 陪診媒合</span>
-          <span class="nav-chip">特助就近</span>
-        </button>
       </nav>
 
       <!-- 側邊欄底部系統運行指示 -->
@@ -629,116 +621,6 @@
 
               <button type="submit" class="btn btn-secondary btn-block">
                 加入本期處方並執行逆向比對
-              </button>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 5: 在地醫院 Hub 陪診媒合 ==================== -->
-      <section id="view-hub" class="page-view">
-        <div class="two-col-layout">
-          <!-- 在地 Hub 網格 -->
-          <div class="panel-card">
-            <div class="panel-card-head">
-              <div class="head-lead">
-                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
-                <h3>在地醫學中心 Hub 網格錨定（零通勤損耗）</h3>
-              </div>
-              <span class="status-badge">15~20分鐘半徑</span>
-            </div>
-
-            <p class="section-intro">
-              依據簡報第 5 頁：高齡長輩就醫高度鎖定特定區域醫學中心。我們不隨機全台派遣，而是依醫院半徑錨定網格，招募居住於院區周圍之執業護理師，專職進診間溝通。
-            </p>
-
-            <div class="hub-list">
-              <div class="hub-item current">
-                <div class="hub-badge-main">常去主院</div>
-                <div class="hub-content">
-                  <h4>林口長庚紀念醫院 Hub</h4>
-                  <p class="hub-meta">涵蓋半徑：林口、龜山、桃園交流道生活圈</p>
-                  <div class="hub-escort-info">責任特助：王思婷 (資深心臟血管專科護理師)</div>
-                </div>
-              </div>
-
-              <div class="hub-item">
-                <div class="hub-content">
-                  <h4>國立臺灣大學醫學院附設醫院 (台大總院) Hub</h4>
-                  <p class="hub-meta">涵蓋半徑：中正、大安、萬華、永和</p>
-                  <div class="hub-escort-info">責任特助：林欣蓓 (高齡醫學兼任護理師)</div>
-                </div>
-              </div>
-
-              <div class="hub-item">
-                <div class="hub-content">
-                  <h4>臺北榮民總醫院 (榮總) Hub</h4>
-                  <p class="hub-meta">涵蓋半徑：北投、士林、天母、石牌</p>
-                  <div class="hub-escort-info">責任特助：張宇哲 (急重症加護專科護理師)</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 派案履歷 -->
-            <div class="hub-history-section">
-              <h4>近期陪診派案與就醫紀錄</h4>
-              <div id="hub-bookings-list">
-                <!-- 動態注入派案 -->
-              </div>
-            </div>
-          </div>
-
-          <!-- 陪診特助預約 -->
-          <div class="panel-card">
-            <div class="panel-card-head">
-              <div class="head-lead">
-                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                <h3>預約在地臨床特助就近陪診</h3>
-              </div>
-              <span class="status-badge-outline">高客單隨選</span>
-            </div>
-
-            <div class="pricing-card">
-              <div class="pricing-label">訂閱用戶專屬加購價</div>
-              <div class="pricing-amount">NT$ 2,000 <span class="pricing-unit">/ 次 (原價 3,200)</span></div>
-              <p class="pricing-desc">包含攜帶診前指引卡進診間焦點決策溝通、診後 15 分鐘系統產出白話結構化報告書直傳全家看板。</p>
-            </div>
-
-            <form id="hub-booking-form">
-              <div class="form-group">
-                <label class="form-label">選擇在地醫院 Hub</label>
-                <select id="booking-hospital" class="form-input">
-                  <option value="林口長庚紀念醫院" selected>林口長庚紀念醫院 Hub (陳爸爸主要就醫)</option>
-                  <option value="國立臺灣大學醫學院附設醫院">台大醫院總院 Hub</option>
-                  <option value="臺北榮民總醫院">台北榮總 Hub</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">看診科別與指定主治醫師</label>
-                <input type="text" id="booking-dept" class="form-input" value="新陳代謝科・張主治醫師">
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">門診日期與報到時段</label>
-                <input type="text" id="booking-date" class="form-input" value="2026-11-20 (週五 09:30)">
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">指定責任特助護理師</label>
-                <input type="text" id="booking-escort" class="form-input" value="林口 Hub 專屬特助 - 陳雅琪 (專科護理師)">
-              </div>
-
-              <button type="submit" class="btn btn-primary btn-block">
-                確認預約並錨定在地特助
               </button>
             </form>
           </div>

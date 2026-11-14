@@ -28,11 +28,7 @@ const VIEW_METAS = {
   },
   'view-prescription': {
     title: '藥袋用法代碼逆向推導 (Prescription Inference Engine)',
-    desc: '拍照上傳新藥袋，自動比對前後期用法標籤 (QD HS ➜ QD AM)，預留藥學知識庫 MCP 接口'
-  },
-  'view-hub': {
-    title: '在地醫院 Hub 陪診媒合 (Hospital Hub)',
-    desc: '鎖定林口長庚、台大、榮總 15~20 分鐘半徑，專業執業護理特助攜健康數據軌跡進診間焦點溝通'
+    desc: '拍照上傳新藥袋，端點不可逆物理去識別化，自動比對跨期門診處方異動並建立今日服藥生活排程'
   }
 };
 
@@ -1205,63 +1201,6 @@ if (rxManualForm) {
 }
 
 // ========================================================
-// 6. 在地醫院 Hub 陪診媒合 (Hospital Hub)
-// ========================================================
-async function loadHubBookings() {
-  const container = document.getElementById('hub-bookings-list');
-  if (!container) return;
-
-  try {
-    const res = await fetch('/api/hub-bookings');
-    const result = await res.json();
-    if (result.success && result.data.length > 0) {
-      container.innerHTML = '';
-      result.data.forEach(item => {
-        container.innerHTML += `
-          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:0.75rem; margin-top:0.5rem; font-size:0.82rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong>${escapeHtml(item.hospital_name)} (${escapeHtml(item.department)})</strong>
-              <span class="status-badge">${escapeHtml(item.status)}</span>
-            </div>
-            <div style="color:#64748b; font-size:0.78rem; margin-top:0.25rem;">
-              就醫時段：${escapeHtml(item.visit_date)} | 指定護理特助：${escapeHtml(item.escort_name)}
-            </div>
-          </div>
-        `;
-      });
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-const bookingForm = document.getElementById('hub-booking-form');
-if (bookingForm) {
-  bookingForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const hospitalName = document.getElementById('booking-hospital').value;
-    const department = document.getElementById('booking-dept').value;
-    const visitDate = document.getElementById('booking-date').value;
-    const escortName = document.getElementById('booking-escort').value;
-
-    try {
-      const res = await fetch('/api/hub-bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hospitalName, department, visitDate, escortName })
-      });
-      const result = await res.json();
-      if (result.success) {
-        alert('在地護理特助陪診已預約成功！特助將攜帶診前指引卡陪同就診。');
-        await loadHubBookings();
-      }
-    } catch (e) {
-      alert('預約失敗');
-    }
-  });
-}
-
-// ========================================================
 // 7. Ollama 連線狀態與初始化
 // ========================================================
 async function checkOllamaStatus() {
@@ -1300,14 +1239,12 @@ function escapeHtml(str) {
 document.getElementById('refresh-all-btn').addEventListener('click', () => {
   loadDashboardData();
   loadVerbalOrdersList();
-  loadHubBookings();
   checkOllamaStatus();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboardData();
   loadVerbalOrdersList();
-  loadHubBookings();
   checkOllamaStatus();
 });
 

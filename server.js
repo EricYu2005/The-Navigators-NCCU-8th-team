@@ -633,7 +633,7 @@ app.post('/api/auth/mock-login', async (req, res) => {
   res.json({ success: true, data: mockUser });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(`🚀 CareNav 智護領航 - 核心伺服器運行中！`);
   console.log(`⚡ 雙 LLM 呼叫管道就緒：`);

@@ -38,6 +38,18 @@
       <span>CareNav 智護領航</span>
     </div>
     <div class="mobile-header-actions">
+      <!-- 手機版 LINE 登入 / 使用者頭像 -->
+      <div id="mobile-user-auth" class="mobile-user-auth">
+        <button type="button" class="btn-line-login-sm" id="btn-mobile-line-login" onclick="startLineLogin()">
+          <svg class="line-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
+          </svg>
+          登入
+        </button>
+        <div id="mobile-user-chip" class="mobile-user-chip" style="display:none;" onclick="showUserAuthModal()">
+          <img id="mobile-user-avatar" class="user-avatar-mini" src="" alt="LINE 頭像" />
+        </div>
+      </div>
       <button type="button" class="btn btn-primary btn-sm" id="mobile-pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
         📲 安裝
       </button>
@@ -151,6 +163,24 @@
             <span class="member-tag">竹科・小兒子</span>
             <span class="member-tag">海外・長子</span>
           </div>
+          <!-- LINE 一鍵登入 / 家屬使用者身分 -->
+          <div class="user-auth-area" id="user-auth-area">
+            <button type="button" class="btn-line-login" id="btn-line-login" onclick="startLineLogin()">
+              <svg class="line-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
+              </svg>
+              LINE 一鍵登入
+            </button>
+            <div class="user-logged-in-chip" id="user-logged-in-chip" style="display:none;">
+              <img id="user-avatar-img" class="user-avatar-mini" src="" alt="LINE 頭像" />
+              <div class="user-info-text">
+                <span class="user-name" id="user-display-name">LINE 家屬</span>
+                <span class="user-badge-line">已綁定</span>
+              </div>
+              <button type="button" class="btn-logout-mini" onclick="logoutLine()" title="切換帳號 / 登出">&times;</button>
+            </div>
+          </div>
+
           <button class="btn btn-primary btn-sm" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
             <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
@@ -861,6 +891,56 @@
       <span>藥袋推導</span>
     </button>
   </nav>
+
+  <!-- ==================== LINE 登入設定與身分切換視窗 (MODAL) ==================== -->
+  <div id="line-auth-modal" class="pipeline-modal-backdrop">
+    <div class="pipeline-modal-content" style="max-width: 520px;">
+      <div class="pipeline-modal-header" style="border-bottom: 1px solid #e2e8f0;">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; color: #0f172a;">
+          <svg style="width: 22px; height: 22px; fill: #06C755;" viewBox="0 0 24 24">
+            <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
+          </svg>
+          LINE 登入設定與手足身分管理
+        </h3>
+        <button type="button" class="modal-close-btn" id="close-line-modal-btn">&times;</button>
+      </div>
+
+      <div class="pipeline-modal-body" style="padding: 1.25rem;">
+        <div id="line-config-status-box" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.85rem; margin-bottom:1rem; font-size:0.85rem;">
+          <div style="font-weight:700; color:#166534; margin-bottom:0.25rem;">🌐 LINE Developers 回呼網址 (Callback URL)</div>
+          <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
+            <input type="text" id="line-callback-copy-input" class="form-input" style="font-size:0.8rem; background:#fff;" value="https://carenav-demo.loca.lt/auth/line/callback" readonly>
+            <button type="button" class="btn btn-outline btn-sm" onclick="copyLineCallbackUrl()">複製網址</button>
+          </div>
+          <div style="font-size:0.75rem; color:#475569; margin-top:0.35rem;">
+            ※ 請將上方網址貼至 LINE Developers Console ➔「LINE Login」頻道 ➔「LINE 登入」分頁下的 <strong>Callback URL</strong>。
+          </div>
+        </div>
+
+        <div style="font-weight:700; font-size:0.92rem; color:#0f172a; margin-bottom:0.5rem;">
+          👥 快速以家屬身分測試 (免等 LINE 審核即刻體驗)：
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.25rem;">
+          <button type="button" class="btn btn-outline btn-block" style="text-align:left; justify-content:flex-start; padding:0.6rem 0.85rem;" onclick="mockFamilyLogin('Alice 大女兒 (台北)', '台北')">
+            👩‍💼 <strong>Alice 大女兒 (台北)</strong> <span style="font-size:0.75rem; color:#64748b; margin-left:auto;">台北生活圈</span>
+          </button>
+          <button type="button" class="btn btn-outline btn-block" style="text-align:left; justify-content:flex-start; padding:0.6rem 0.85rem;" onclick="mockFamilyLogin('David 小兒子 (竹科)', '竹科')">
+            👨‍💻 <strong>David 小兒子 (竹科)</strong> <span style="font-size:0.75rem; color:#64748b; margin-left:auto;">新竹園區</span>
+          </button>
+          <button type="button" class="btn btn-outline btn-block" style="text-align:left; justify-content:flex-start; padding:0.6rem 0.85rem;" onclick="mockFamilyLogin('James 長子 (海外)', '海外')">
+            ✈️ <strong>James 長子 (海外)</strong> <span style="font-size:0.75rem; color:#64748b; margin-left:auto;">跨時區同步</span>
+          </button>
+        </div>
+
+        <div style="border-top:1px solid #e2e8f0; padding-top:0.85rem; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.75rem; color:#64748b;">真機金鑰於 .env 設定後生效</span>
+          <button type="button" class="btn btn-primary btn-sm" style="background:#06C755; border-color:#06C755;" onclick="window.location.href='/auth/line'">
+            前往 LINE 官方真機授權
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

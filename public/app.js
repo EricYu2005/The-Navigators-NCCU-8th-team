@@ -1292,6 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadVerbalOrdersList();
   checkOllamaStatus();
   checkIosPwaPrompt();
+  initUserAuth();
 });
 
 // ========================================================
@@ -1681,3 +1682,163 @@ function dismissIosBanner() {
   localStorage.setItem('carenav_ios_banner_dismissed', '1');
 }
 window.dismissIosBanner = dismissIosBanner;
+
+// ========================================================
+// 11. LINE 第三方登入與手足身分管理 (LINE Login & Family Auth)
+// ========================================================
+function initUserAuth() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const lineLogin = urlParams.get('line_login');
+  const authNotice = urlParams.get('auth_notice');
+  const authError = urlParams.get('auth_error');
+
+  if (lineLogin === 'success') {
+    const user = {
+      displayName: urlParams.get('name') || 'LINE 家屬',
+      pictureUrl: urlParams.get('pic') || '',
+      userId: urlParams.get('uid') || ''
+    };
+    localStorage.setItem('carenav_user', JSON.stringify(user));
+
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+    alert(`🎉 歡迎！已成功透過 LINE 登入：${user.displayName}`);
+  } else if (authNotice === 'line_config_needed') {
+    showUserAuthModal();
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  } else if (authError) {
+    alert('LINE 授權提示: ' + authError);
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const userJson = localStorage.getItem('carenav_user');
+  const btnLogin = document.getElementById('btn-line-login');
+  const chipLoggedIn = document.getElementById('user-logged-in-chip');
+  const avatarImg = document.getElementById('user-avatar-img');
+  const nameEl = document.getElementById('user-display-name');
+
+  const btnMobileLogin = document.getElementById('btn-mobile-line-login');
+  const mobileUserChip = document.getElementById('mobile-user-chip');
+  const mobileAvatar = document.getElementById('mobile-user-avatar');
+
+  if (userJson) {
+    try {
+      const user = JSON.parse(userJson);
+      if (btnLogin) btnLogin.style.display = 'none';
+      if (chipLoggedIn) chipLoggedIn.style.display = 'inline-flex';
+      if (nameEl) nameEl.innerText = user.displayName;
+      if (avatarImg) {
+        avatarImg.src = user.pictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face';
+      }
+
+      if (btnMobileLogin) btnMobileLogin.style.display = 'none';
+      if (mobileUserChip) mobileUserChip.style.display = 'flex';
+      if (mobileAvatar) {
+        mobileAvatar.src = user.pictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face';
+      }
+
+      // 同步自動更新手足協同留話簿作者
+      const noteAuthorSelect = document.getElementById('note-author');
+      if (noteAuthorSelect) {
+        let matched = false;
+        for (let i = 0; i < noteAuthorSelect.options.length; i++) {
+          if (noteAuthorSelect.options[i].text.includes(user.displayName)) {
+            noteAuthorSelect.selectedIndex = i;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          const opt = document.createElement('option');
+          opt.value = user.displayName;
+          opt.text = `${user.displayName} (LINE登入)`;
+          opt.selected = true;
+          noteAuthorSelect.insertBefore(opt, noteAuthorSelect.firstChild);
+        }
+      }
+    } catch (e) {
+      console.warn('使用者身分解析異常', e);
+    }
+  } else {
+    if (btnLogin) btnLogin.style.display = 'inline-flex';
+    if (chipLoggedIn) chipLoggedIn.style.display = 'none';
+    if (btnMobileLogin) btnMobileLogin.style.display = 'inline-flex';
+    if (mobileUserChip) mobileUserChip.style.display = 'none';
+  }
+}
+
+async function startLineLogin() {
+  try {
+    const res = await fetch('/api/auth/config');
+    const result = await res.json();
+    if (result.success && result.data.lineConfigured) {
+      window.location.href = '/auth/line';
+    } else {
+      showUserAuthModal();
+    }
+  } catch (e) {
+    showUserAuthModal();
+  }
+}
+window.startLineLogin = startLineLogin;
+
+function showUserAuthModal() {
+  const modal = document.getElementById('line-auth-modal');
+  if (modal) modal.classList.add('open');
+}
+window.showUserAuthModal = showUserAuthModal;
+
+function closeUserAuthModal() {
+  const modal = document.getElementById('line-auth-modal');
+  if (modal) modal.classList.remove('open');
+}
+window.closeUserAuthModal = closeUserAuthModal;
+
+const closeLineModalBtn = document.getElementById('close-line-modal-btn');
+if (closeLineModalBtn) closeLineModalBtn.addEventListener('click', closeUserAuthModal);
+
+function copyLineCallbackUrl() {
+  const copyInput = document.getElementById('line-callback-copy-input');
+  if (copyInput) {
+    copyInput.select();
+    navigator.clipboard.writeText(copyInput.value).then(() => {
+      alert('✅ 已複製 LINE 回呼網址 (Callback URL)！\n請直接至 LINE Developers Console 貼上。');
+    });
+  }
+}
+window.copyLineCallbackUrl = copyLineCallbackUrl;
+
+async function mockFamilyLogin(roleName, location) {
+  try {
+    const res = await fetch('/api/auth/mock-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roleName, location })
+    });
+    const result = await res.json();
+    if (result.success) {
+      localStorage.setItem('carenav_user', JSON.stringify(result.data));
+      updateAuthUI();
+      closeUserAuthModal();
+      alert(`✅ 已成功以【${roleName}】身分登入！您現在發布的所有手足備忘都會具名記錄。`);
+    }
+  } catch (e) {
+    alert('模擬登入失敗');
+  }
+}
+window.mockFamilyLogin = mockFamilyLogin;
+
+function logoutLine() {
+  if (confirm('確定要登出目前帳號嗎？')) {
+    localStorage.removeItem('carenav_user');
+    updateAuthUI();
+    alert('已登出。');
+  }
+}
+window.logoutLine = logoutLine;

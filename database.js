@@ -112,6 +112,19 @@ function initDatabase() {
         note_type TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // 7. 使用者帳號與第三方登入表 (Users)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider TEXT DEFAULT 'line',
+        provider_id TEXT UNIQUE,
+        display_name TEXT NOT NULL,
+        picture_url TEXT,
+        family_role TEXT DEFAULT '家屬',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
     `, () => {
       // 安全欄位補齊遷移 (確保舊版 SQLite 自動升級)
       const safeAddColumns = [

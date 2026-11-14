@@ -506,6 +506,133 @@ app.get('/api/ollama/status', async (req, res) => {
   }
 });
 
+// ========================================================
+// 7. LINE 第三方登入認證 (LINE Login OAuth 2.0)
+// ========================================================
+app.get('/api/auth/config', (req, res) => {
+  const lineConfigured = !!(process.env.LINE_CHANNEL_ID && process.env.LINE_CHANNEL_SECRET);
+  const host = req.get('host');
+  const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+  const defaultCallback = `${protocol}://${host}/auth/line/callback`;
+
+  res.json({
+    success: true,
+    data: {
+      lineConfigured,
+      channelId: process.env.LINE_CHANNEL_ID ? `${process.env.LINE_CHANNEL_ID.slice(0, 4)}****` : null,
+      callbackUrl: process.env.LINE_CALLBACK_URL || defaultCallback,
+      localtunnelUrl: 'https://carenav-demo.loca.lt'
+    }
+  });
+});
+
+// 發起 LINE 授權轉跳
+app.get('/auth/line', (req, res) => {
+  const channelId = process.env.LINE_CHANNEL_ID;
+  const channelSecret = process.env.LINE_CHANNEL_SECRET;
+
+  if (!channelId || !channelSecret) {
+    // 尚未在 .env 填入 LINE 憑證時，重定向回前台並給予配置指引
+    return res.redirect('/?auth_notice=line_config_needed');
+  }
+
+  const host = req.get('host');
+  const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+  const callbackUrl = process.env.LINE_CALLBACK_URL || `${protocol}://${host}/auth/line/callback`;
+  const state = Math.random().toString(36).substring(2, 15);
+
+  const authUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${channelId}&redirect_uri=${encodeURIComponent(callbackUrl)}&state=${state}&scope=profile%20openid`;
+  res.redirect(authUrl);
+});
+
+// LINE 授權成功回呼端點 (Callback)
+app.get('/auth/line/callback', async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+
+  if (error) {
+    console.warn('LINE 授權取消或失敗:', error, error_description);
+    return res.redirect(`/?auth_error=${encodeURIComponent(error_description || error)}`);
+  }
+
+  if (!code) {
+    return res.redirect('/?auth_error=no_code');
+  }
+
+  try {
+    const channelId = process.env.LINE_CHANNEL_ID;
+    const channelSecret = process.env.LINE_CHANNEL_SECRET;
+    const host = req.get('host');
+    const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+    const callbackUrl = process.env.LINE_CALLBACK_URL || `${protocol}://${host}/auth/line/callback`;
+
+    // 1. 向 LINE 換取 Access Token
+    const tokenRes = await fetch('https://api.line.me/oauth2/v2.1/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: callbackUrl,
+        client_id: channelId,
+        client_secret: channelSecret
+      }).toString()
+    });
+
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      console.error('LINE Token 換取失敗:', tokenData);
+      return res.redirect(`/?auth_error=${encodeURIComponent(tokenData.error_description || '換取 Token 失敗')}`);
+    }
+
+    // 2. 取得 LINE 個人檔案資訊 (姓名、頭像)
+    const profileRes = await fetch('https://api.line.me/v2/profile', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+    const profile = await profileRes.json();
+
+    // 3. 儲存或更新至 SQLite users 表
+    const existing = await dbQuery.get('SELECT id FROM users WHERE provider_id = ?', [profile.userId]);
+    if (existing) {
+      await dbQuery.run(
+        'UPDATE users SET display_name = ?, picture_url = ? WHERE id = ?',
+        [profile.displayName || 'LINE 用戶', profile.pictureUrl || null, existing.id]
+      );
+    } else {
+      await dbQuery.run(
+        'INSERT INTO users (provider, provider_id, display_name, picture_url, family_role) VALUES (\'line\', ?, ?, ?, \'家屬\')',
+        [profile.userId, profile.displayName || 'LINE 用戶', profile.pictureUrl || null]
+      );
+    }
+
+    // 4. 重導向回前台，帶入身分資訊並完成登入
+    res.redirect(`/?line_login=success&name=${encodeURIComponent(profile.displayName || 'LINE 家屬')}&pic=${encodeURIComponent(profile.pictureUrl || '')}&uid=${encodeURIComponent(profile.userId)}`);
+  } catch (err) {
+    console.error('LINE Callback 處理異常:', err);
+    res.redirect(`/?auth_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+// 模擬快速登入 (方便開發與尚未取得 LINE Developers 審核時測試)
+app.post('/api/auth/mock-login', async (req, res) => {
+  const { roleName, location } = req.body;
+  const mockUser = {
+    displayName: roleName || 'Alice 大女兒 (台北)',
+    pictureUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop&crop=face',
+    userId: 'mock_line_' + Date.now(),
+    location: location || '台北'
+  };
+
+  const existing = await dbQuery.get('SELECT id FROM users WHERE provider_id = ?', [mockUser.userId]);
+  if (!existing) {
+    await dbQuery.run(
+      'INSERT INTO users (provider, provider_id, display_name, picture_url, family_role) VALUES (\'mock_line\', ?, ?, ?, ?)',
+      [mockUser.userId, mockUser.displayName, mockUser.pictureUrl, mockUser.location]
+    );
+  }
+
+  res.json({ success: true, data: mockUser });
+});
+
 app.listen(PORT, () => {
   console.log(`====================================================`);
   console.log(`🚀 CareNav 智護領航 - 核心伺服器運行中！`);

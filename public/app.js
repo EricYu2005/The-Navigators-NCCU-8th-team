@@ -1246,6 +1246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDashboardData();
   loadVerbalOrdersList();
   checkOllamaStatus();
+  checkIosPwaPrompt();
 });
 
 // ========================================================
@@ -1565,3 +1566,69 @@ if (confirmLoadScenarioBtn) {
     }
   });
 }
+
+// ========================================================
+// 10. PWA 漸進式網頁應用 (加入主畫面 & 離線 Service Worker)
+// ========================================================
+let deferredPwaPrompt = null;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((reg) => console.log('✅ CareNav PWA Service Worker 註冊成功，範圍:', reg.scope))
+      .catch((err) => console.warn('PWA Service Worker 註冊警示:', err));
+  });
+}
+
+// Android / Chrome / Edge: 擷取系統安裝提示事件
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  const installBtn = document.getElementById('pwa-install-btn');
+  if (installBtn) {
+    installBtn.style.display = 'inline-flex';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  console.log('✅ CareNav 已成功加入至使用者手機/電腦桌面！');
+  const installBtn = document.getElementById('pwa-install-btn');
+  if (installBtn) installBtn.style.display = 'none';
+  deferredPwaPrompt = null;
+});
+
+async function triggerPwaInstall() {
+  if (deferredPwaPrompt) {
+    deferredPwaPrompt.prompt();
+    const choiceResult = await deferredPwaPrompt.userChoice;
+    console.log('使用者安裝回覆:', choiceResult.outcome);
+    if (choiceResult.outcome === 'accepted') {
+      const installBtn = document.getElementById('pwa-install-btn');
+      if (installBtn) installBtn.style.display = 'none';
+    }
+    deferredPwaPrompt = null;
+  } else {
+    alert('提示：您的瀏覽器已支援將 CareNav 加至桌面，請點選網址列右側的「安裝」圖示，或手機瀏覽器選單中的「加入主畫面」。');
+  }
+}
+window.triggerPwaInstall = triggerPwaInstall;
+
+// iOS Safari 專屬：浮現「加入主畫面」指引
+function checkIosPwaPrompt() {
+  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  const isDismissed = localStorage.getItem('carenav_ios_banner_dismissed');
+
+  if (isIos && !isStandalone && !isDismissed) {
+    const banner = document.getElementById('ios-pwa-banner');
+    if (banner) banner.style.display = 'block';
+  }
+}
+window.checkIosPwaPrompt = checkIosPwaPrompt;
+
+function dismissIosBanner() {
+  const banner = document.getElementById('ios-pwa-banner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('carenav_ios_banner_dismissed', '1');
+}
+window.dismissIosBanner = dismissIosBanner;

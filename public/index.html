@@ -2,8 +2,20 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CareNav 智護領航 - 診間決策 Copilot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CareNav 智護領航 - 全家照護雲端看板</title>
+  
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="theme-color" content="#0284c7">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CareNav">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,6 +120,12 @@
             <span class="member-tag">竹科・小兒子</span>
             <span class="member-tag">海外・長子</span>
           </div>
+          <button class="btn btn-primary btn-sm" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
+            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            📲 安裝 App
+          </button>
           <button class="btn btn-outline btn-sm" id="open-scenario-modal-btn" title="從 scenarios/ 目錄載入情境或自行輸入 JSON 檔案">
             <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -768,6 +786,18 @@
           確認載入此情境至全系統
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- iOS 加入主畫面引導提示條 (僅於 iOS Safari 未安裝時自動浮現) -->
+  <div id="ios-pwa-banner" class="ios-install-banner" style="display:none;">
+    <div class="ios-banner-content">
+      <span class="ios-icon">📲</span>
+      <div class="ios-text">
+        <strong>將 CareNav 加到手機主畫面</strong>
+        <p>點擊 Safari 下方的「分享」圖標 <svg style="display:inline;width:13px;height:13px;vertical-align:baseline;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>，再滑動點選<strong>「加入主畫面」</strong>，即可享受免下載的原生 App 全螢幕體驗！</p>
+      </div>
+      <button type="button" class="ios-close-btn" onclick="dismissIosBanner()" aria-label="關閉">&times;</button>
     </div>
   </div>
 

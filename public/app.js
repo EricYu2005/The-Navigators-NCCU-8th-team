@@ -32,8 +32,18 @@ const VIEW_METAS = {
   }
 };
 
+const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+
 function switchView(targetViewId) {
   navItems.forEach(item => {
+    if (item.getAttribute('data-view') === targetViewId) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+
+  bottomNavItems.forEach(item => {
     if (item.getAttribute('data-view') === targetViewId) {
       item.classList.add('active');
     } else {
@@ -50,10 +60,14 @@ function switchView(targetViewId) {
   });
 
   const meta = VIEW_METAS[targetViewId];
-  if (meta) {
+  if (meta && pageTitleEl && pageDescEl) {
     pageTitleEl.innerText = meta.title;
     pageDescEl.innerText = meta.desc;
   }
+
+  // 手機版：切換視圖後自動收起側邊欄抽屜並滑動至頂部
+  closeMobileSidebar();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 navItems.forEach(item => {
@@ -62,6 +76,37 @@ navItems.forEach(item => {
     switchView(target);
   });
 });
+
+bottomNavItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const target = item.getAttribute('data-view');
+    switchView(target);
+  });
+});
+
+// 手機側邊欄抽屜 (Off-canvas Drawer) 開關控制
+const mobileHamburgerBtn = document.getElementById('mobile-hamburger-btn');
+const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+const sidebarEl = document.querySelector('.sidebar');
+
+function openMobileSidebar() {
+  if (sidebarEl) sidebarEl.classList.add('open');
+  if (sidebarBackdrop) sidebarBackdrop.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+window.openMobileSidebar = openMobileSidebar;
+
+function closeMobileSidebar() {
+  if (sidebarEl) sidebarEl.classList.remove('open');
+  if (sidebarBackdrop) sidebarBackdrop.classList.remove('open');
+  document.body.style.overflow = '';
+}
+window.closeMobileSidebar = closeMobileSidebar;
+
+if (mobileHamburgerBtn) mobileHamburgerBtn.addEventListener('click', openMobileSidebar);
+if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeMobileSidebar);
+if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
 
 // ========================================================
 // 2. 全家照護雲端看板 (Family Care Hub) 資料載入
@@ -1585,15 +1630,17 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPwaPrompt = e;
   const installBtn = document.getElementById('pwa-install-btn');
-  if (installBtn) {
-    installBtn.style.display = 'inline-flex';
-  }
+  const mobileInstallBtn = document.getElementById('mobile-pwa-install-btn');
+  if (installBtn) installBtn.style.display = 'inline-flex';
+  if (mobileInstallBtn) mobileInstallBtn.style.display = 'inline-flex';
 });
 
 window.addEventListener('appinstalled', () => {
   console.log('✅ CareNav 已成功加入至使用者手機/電腦桌面！');
   const installBtn = document.getElementById('pwa-install-btn');
+  const mobileInstallBtn = document.getElementById('mobile-pwa-install-btn');
   if (installBtn) installBtn.style.display = 'none';
+  if (mobileInstallBtn) mobileInstallBtn.style.display = 'none';
   deferredPwaPrompt = null;
 });
 
@@ -1604,7 +1651,9 @@ async function triggerPwaInstall() {
     console.log('使用者安裝回覆:', choiceResult.outcome);
     if (choiceResult.outcome === 'accepted') {
       const installBtn = document.getElementById('pwa-install-btn');
+      const mobileInstallBtn = document.getElementById('mobile-pwa-install-btn');
       if (installBtn) installBtn.style.display = 'none';
+      if (mobileInstallBtn) mobileInstallBtn.style.display = 'none';
     }
     deferredPwaPrompt = null;
   } else {

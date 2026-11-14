@@ -76,7 +76,6 @@
             <line x1="12" y1="4" x2="12" y2="20"/>
           </svg>
           <span class="nav-text">藥袋用法逆向推導</span>
-          <span class="nav-chip mcp">MCP接口</span>
         </button>
 
         <button class="nav-item" data-view="view-hub">
@@ -98,15 +97,7 @@
           <span class="sys-dot online" id="ollama-status-dot"></span>
           <span class="sys-label" id="ollama-status-label">Ollama 本地容器 (:11434)</span>
         </div>
-        <div class="mcp-panel-mini">
-          <div class="mcp-mini-head">
-            <svg class="mcp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <strong>藥學知識庫 MCP</strong>
-          </div>
-          <span class="mcp-mini-status">擴充掛載點已就緒</span>
-        </div>
+
       </div>
     </aside>
 
@@ -389,15 +380,9 @@
               <p>尊重專科醫師處方權威 ｜ 逆向推導醫學代碼 (QD/AM/HS/BID) 建立每日四時段服藥排程 ｜ 忠實記錄生活服藥遵從軌跡</p>
             </div>
           </div>
-          <div style="display:flex; gap:0.5rem; align-items:center;">
-            <span class="mcp-latency-pill" id="mcp-live-pill">健康軌跡分析引擎在線</span>
+          <div>
             <button class="btn btn-outline btn-sm" onclick="triggerMcpSimulation()">生成用藥排程與生活指南</button>
           </div>
-        </div>
-
-        <div class="telemetry-tag mcp">
-          <span class="pulse-dot" style="width:6px;height:6px;background:#0d9488;"></span>
-          <span>🛡️ 專屬管道: PrescriptionPipeline (用藥生活排程通道 • 10s/30s 雙層安全閥 • 鎖定 25s~35s 耐心黃金閾值)</span>
         </div>
 
         <div class="two-col-layout">

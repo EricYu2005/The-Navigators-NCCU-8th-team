@@ -1372,10 +1372,7 @@ async function fetchPipelinesStatus() {
       if (elTotal) elTotal.innerText = `${pipelines.mcpAugmented.totalTimeoutConfigMs} ms (綜合推理)`;
       if (elStatus) elStatus.innerText = pipelines.mcpAugmented.status;
       
-      const mcpLivePill = document.getElementById('mcp-live-pill');
-      if (mcpLivePill) {
-        mcpLivePill.innerText = `DrugBank MCP: ${pipelines.mcpAugmented.latencyMs || 85}ms (${pipelines.mcpAugmented.status.includes('Online') ? '在線' : '實證安全網'})`;
-      }
+
     }
 
     // 專屬隔離管道表格

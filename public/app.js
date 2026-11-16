@@ -140,6 +140,15 @@ async function loadDashboardData() {
       if (ageEl) ageEl.innerText = patient.age ? `${patient.age}歲` : '';
       if (condEl) condEl.innerText = patient.conditions || '尚無慢性病紀錄 (點選可編輯)';
       if (hospEl) hospEl.innerText = patient.primary_hospital || '常看診醫院 (點選可編輯)';
+
+      const updaterEl = document.getElementById('sidebar-patient-updater');
+      if (updaterEl) {
+        if (patient.updated_by) {
+          updaterEl.innerHTML = `<span style="color:#059669; font-weight:600;">👥 ${escapeHtml(patient.updated_by)}</span>`;
+        } else {
+          updaterEl.innerHTML = `<span style="color:#0284c7;">👥 平台組員共享雲端案例</span>`;
+        }
+      }
     }
 
     // 2. 動態更新 4 大 KPI 卡片
@@ -2060,6 +2069,23 @@ function openEditPatientModal() {
   const ageInput = document.getElementById('edit-patient-age');
   const condInput = document.getElementById('edit-patient-conditions');
   const hospInput = document.getElementById('edit-patient-hospital');
+  const lineStatusEl = document.getElementById('edit-patient-line-status');
+
+  const userJson = localStorage.getItem('carenav_user');
+  let user = null;
+  if (userJson) {
+    try { user = JSON.parse(userJson); } catch (e) {}
+  }
+
+  if (lineStatusEl) {
+    if (user && user.displayName) {
+      lineStatusEl.innerText = `已綁定：${user.displayName} (LINE 登入)`;
+      lineStatusEl.style.color = '#15803d';
+    } else {
+      lineStatusEl.innerText = '平台雲端共享 (全組同步)';
+      lineStatusEl.style.color = '#0284c7';
+    }
+  }
 
   if (activePatientData) {
     if (nameInput) nameInput.value = (activePatientData.name && activePatientData.name !== '自家長輩') ? activePatientData.name : '';
@@ -2091,6 +2117,14 @@ async function handleEditPatientSubmit(event) {
     return;
   }
 
+  const userJson = localStorage.getItem('carenav_user');
+  let user = null;
+  if (userJson) {
+    try { user = JSON.parse(userJson); } catch (e) {}
+  }
+  const updated_by = user && user.displayName ? `${user.displayName} (LINE)` : '政大創創團隊組員';
+  const line_user_id = user ? (user.id || user.provider_id) : 'nccu_team';
+
   try {
     const res = await fetch('/api/patient', {
       method: 'PUT',
@@ -2098,15 +2132,17 @@ async function handleEditPatientSubmit(event) {
       body: JSON.stringify({
         name,
         age: age ? parseInt(age, 10) : null,
-        conditions: conditions || '尚無慢性病紀錄',
-        primary_hospital: primary_hospital || '常看診醫院'
+        conditions: conditions || '原發性高血壓二期、退化性膝關節炎、心血管日常保養',
+        primary_hospital: primary_hospital || '台北市立萬芳醫院 (政大生活圈首選)',
+        updated_by,
+        line_user_id
       })
     });
     const result = await res.json();
     if (result.success) {
       closeEditPatientModal();
       await loadDashboardData();
-      alert('✅ 長輩資料已成功更新！');
+      alert(`✅ 長輩資料已成功儲存至雲端平台！\n\n・長輩稱謂：${name}\n・綁定責任者：${updated_by}\n\n已永久同步至雲端，所有組員開網頁或做報告時皆可直接同步查閱！`);
     } else {
       alert('更新失敗：' + (result.error || '未知錯誤'));
     }

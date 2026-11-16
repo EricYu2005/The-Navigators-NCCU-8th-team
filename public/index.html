@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 
-  <link rel="stylesheet" href="style.css?v=2.0.3">
+  <link rel="stylesheet" href="style.css?v=2.0.4">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -96,8 +96,11 @@
             <span class="case-age" id="sidebar-patient-age">72歲</span>
             <span style="font-size: 0.72rem; color: #38bdf8; margin-left: auto;" title="編輯長輩資料">✏️</span>
           </div>
-          <div class="case-sub" id="sidebar-patient-conditions">高血壓二期・腎臟病3期</div>
-          <div class="case-hub-tag" id="sidebar-patient-hospital">林口長庚紀念醫院</div>
+          <div class="case-sub" id="sidebar-patient-conditions">原發性高血壓二期・退化性膝關節炎</div>
+          <div class="case-hub-tag" id="sidebar-patient-hospital">台北市立萬芳醫院 (政大生活圈)</div>
+          <div class="case-updater-tag" id="sidebar-patient-updater" style="font-size: 0.72rem; color: #0284c7; margin-top: 0.25rem;">
+            <span>👥 平台組員共享雲端案例</span>
+          </div>
         </div>
       </div>
 
@@ -668,6 +671,29 @@
           </div>
         </div>
       </section>
+
+      <!-- ==================== 法律專家與合規免責聲明 (LEGAL DISCLAIMER) ==================== -->
+      <footer class="legal-disclaimer-footer">
+        <div class="legal-disclaimer-card">
+          <div class="legal-badge-row">
+            <svg class="legal-shield-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+            <span class="legal-badge-title">法律專家聲明與學術教學合規告示 (Legal &amp; Regulatory Compliance)</span>
+          </div>
+          <p class="legal-statement-core">
+            ⚖️ 本網頁僅供政治大學創創入門課程使用，非正式平台。
+          </p>
+          <p class="legal-statement-desc">
+            本平台（CareNav 智護領航）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示與概念驗證（PoC）模型，非屬我國《醫療法》或《醫療器材管理法》規範之正式醫療軟體或診斷器材。網頁所載之所有長輩就醫履歷、醫囑結構化轉譯、藥袋拉丁代碼推導與服藥時段排程，均僅供課堂教學演練與小組專題報告展示用途，不具備任何實質臨床醫療診斷、處方調劑、治療指示或急救效力。若真實生活中有長輩身體不適或急性醫療需求，請務必立即諮詢合格執業醫師或前往就近醫療機構急診救治。
+          </p>
+          <div class="legal-footer-meta">
+            <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
+            <span>版權所有 © 2026 Academic Project • All Rights Reserved.</span>
+          </div>
+        </div>
+      </footer>
     </main>
   </div>
 
@@ -914,6 +940,20 @@
         <button type="button" class="modal-close-btn" onclick="closeEditPatientModal()">&times;</button>
       </div>
       <div class="pipeline-modal-body" style="padding: 1.25rem;">
+        <!-- LINE 帳號綁定與全組共享狀態提示 -->
+        <div class="form-group" style="margin-bottom: 0.95rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.65rem 0.85rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 0.35rem;">
+              <svg class="line-icon-svg" style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="#00c300"><path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/></svg>
+              LINE 帳號綁定與雲端共享
+            </span>
+            <span id="edit-patient-line-status" style="font-size: 0.75rem; color: #15803d; font-weight: 700;">已綁定目前登入帳號</span>
+          </div>
+          <div style="font-size: 0.73rem; color: #475569; margin-top: 0.3rem; line-height: 1.45;">
+            ✨ 儲存後將同步永久保存至雲端平台，全體組員開網頁或做簡報時皆可直接查閱共享！
+          </div>
+        </div>
+
         <form id="edit-patient-form" onsubmit="handleEditPatientSubmit(event)">
           <div class="form-group" style="margin-bottom: 0.85rem;">
             <label class="form-label" for="edit-patient-name">長輩稱謂 / 姓名</label>
@@ -940,6 +980,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.0.3"></script>
+  <script src="app.js?v=2.0.4"></script>
 </body>
 </html>

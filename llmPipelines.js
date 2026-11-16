@@ -17,9 +17,12 @@
 
 require('dotenv').config();
 const { queryDrugInteractionsAndAdrs, testDrugBankMcpConnection, DRUGBANK_MCP_URL } = require('./drugbankMcpClient');
+const { parseVerbalOrderWithRules } = require('./ollamaService');
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 // 系統全域逾時配置 (依臨床實證與使用者耐心模型設定 25s~35s 黃金閾值)
 const PIPELINE_TIMEOUTS = {
@@ -29,6 +32,68 @@ const PIPELINE_TIMEOUTS = {
   VERBAL_ORDER_MS: parseInt(process.env.LLM_FAST_TIMEOUT_MS || '28000', 10),
   FAMILY_CARE_MS: 15000
 };
+
+/**
+ * Google Gemini 雲端 API 調用器 (支援 Render 雲端 24/7 直連，極速 1-2 秒響應)
+ */
+async function callGeminiWithTimeout(systemPrompt, userPrompt, timeoutMs = 15000) {
+  if (!GEMINI_API_KEY) return { success: false, error: 'GEMINI_API_KEY not configured' };
+
+  const startTime = Date.now();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+    const body = {
+      contents: [{
+        role: 'user',
+        parts: [{ text: userPrompt }]
+      }],
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: "application/json"
+      }
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    const latencyMs = Date.now() - startTime;
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      return {
+        success: true,
+        content,
+        latencyMs,
+        model: GEMINI_MODEL,
+        provider: 'gemini',
+        timedOut: false
+      };
+    }
+    const errText = await response.text();
+    throw new Error(`Gemini API 響應錯誤: HTTP ${response.status} - ${errText}`);
+  } catch (error) {
+    clearTimeout(timeoutId);
+    const latencyMs = Date.now() - startTime;
+    const isTimeout = error.name === 'AbortError';
+    return {
+      success: false,
+      error: isTimeout ? `Gemini 推理逾時 (${timeoutMs}ms)` : error.message,
+      latencyMs,
+      timedOut: isTimeout
+    };
+  }
+}
 
 /**
  * 底層：通用 Ollama 請求發送器（自帶精確毫秒逾時防護）
@@ -88,6 +153,21 @@ const FastLocalPipeline = {
 
   async execute({ systemPrompt, userPrompt, timeoutMs, format = 'json' }) {
     const finalTimeout = timeoutMs || this.defaultTimeoutMs;
+
+    // 1. 若配置了 GEMINI_API_KEY，優先使用 Google Gemini 雲端模型 (極速、適用 Render 雲端環境)
+    if (GEMINI_API_KEY) {
+      const geminiRes = await callGeminiWithTimeout(systemPrompt, userPrompt, Math.min(finalTimeout, 15000));
+      if (geminiRes.success) {
+        return {
+          ...geminiRes,
+          pipelineUsed: `GeminiCloudPipeline (${GEMINI_MODEL})`,
+          timeoutThresholdMs: finalTimeout
+        };
+      }
+      console.warn(`[FastLocalPipeline] Gemini 調用未成功: ${geminiRes.error}，嘗試切換至 Ollama...`);
+    }
+
+    // 2. 本機或通道 Ollama 推理
     const res = await callOllamaWithTimeout([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -135,10 +215,16 @@ const DrugBankMcpPipeline = {
     console.log(`[DrugBankMcpPipeline] 啟動 Stage 2: 臨床綜合推理 (剩餘逾時閥值: ${remainingTimeMs}ms)...`);
 
     const augmentedUserPrompt = `${userPrompt}\n\n${pharmacologyEvidenceContext}`;
-    const llmRes = await callOllamaWithTimeout([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: augmentedUserPrompt }
-    ], remainingTimeMs, 'json');
+    let llmRes;
+    if (GEMINI_API_KEY) {
+      llmRes = await callGeminiWithTimeout(systemPrompt, augmentedUserPrompt, Math.min(remainingTimeMs, 20000));
+    }
+    if (!llmRes || !llmRes.success) {
+      llmRes = await callOllamaWithTimeout([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: augmentedUserPrompt }
+      ], remainingTimeMs, 'json');
+    }
 
     const totalLatencyMs = Date.now() - overallStartTime;
 
@@ -295,24 +381,15 @@ const VerbalOrderPipeline = {
       } catch (e) {}
     }
 
-    // 專屬臨床規則備援
-    let conditionText = "清晨量測收縮壓 < 110 mmHg，或自覺頭暈眼前發黑時。";
-    let actionText = "暫停當天早晨的「脈優 (Norvasc 5mg)」一次，其餘慢性藥物正常服用。";
-    let redFlags = "若停藥後下午血壓仍低於 95 mmHg，或心率 < 50 bpm，請立即致電護理特助或就醫。";
-
-    if (rawInput.includes('水腫') || rawInput.includes('尿') || rawInput.includes('利尿')) {
-      conditionText = "雙下肢脛骨前緣有凹陷水腫，或夜尿次數每晚大於 2 次。";
-      actionText = "利尿劑嚴格改至早餐後 30 分鐘內服用，下午 4 點後嚴禁服用以杜絕夜間頻繁起夜。";
-      redFlags = "三天內體重快速增加超過 2 公斤、或夜間平躺感覺呼吸窘迫喘促時需立即提早回診。";
-    }
-
+    // 專屬臨床規則備援 (使用動態 NLP 規則抽取組員輸入之條件、行動與紅旗警訊)
+    const ruleResult = parseVerbalOrderWithRules(rawInput);
     return {
-      conditionText,
-      actionText,
-      redFlags,
+      conditionText: ruleResult.conditionText,
+      actionText: ruleResult.actionText,
+      redFlags: ruleResult.redFlags,
       telemetry: {
         dedicatedPipeline: this.pipelineName,
-        underlyingChannel: 'Clinical Rule Fallback Engine',
+        underlyingChannel: 'Clinical Rule NLP Engine',
         latencyMs: Date.now() - startTime,
         timeoutThresholdMs: this.timeoutMs,
         status: res.timedOut ? 'timeout_fallback' : 'offline_fallback'

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carenav-pwa-v1';
+const CACHE_NAME = 'carenav-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -12,15 +12,16 @@ const STATIC_ASSETS = [
 
 // 1. 安裝 Service Worker 並快取核心 App Shell 靜態資源
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[CareNav SW] Pre-caching offline app shell');
       return cache.addAll(STATIC_ASSETS);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// 2. 啟用並清除舊版本快取
+// 2. 啟用並強制清除舊版本快取
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -36,11 +37,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. 攔截請求：API 走 Network-First；靜態檔案走 Cache-First + Stale-While-Revalidate
+// 3. 攔截請求：網路優先 (Network First)，保證線上隨時取得 Render 最新版本，離線才回退快取
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 若為 API 請求，強制網路優先 (Network First) 確保長輩最新處方與醫囑即時性
+  // API 請求強制網路優先
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -56,10 +57,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 靜態資源：快取優先 + 背景更新 (Stale While Revalidate)
+  // 靜態核心檔案與網頁：網路優先 (Network First)
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -67,9 +68,10 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        // 離線時回退至本地快取
+        return caches.match(event.request);
+      })
   );
 });

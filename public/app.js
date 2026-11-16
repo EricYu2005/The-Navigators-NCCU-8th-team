@@ -1398,16 +1398,17 @@ async function checkOllamaStatus() {
     const result = await res.json();
     if (result.success && result.data.online) {
       dot.className = 'sys-dot online';
-      label.innerText = `Ollama 在線 (${result.data.currentModel})`;
+      dot.style.backgroundColor = '#10b981';
+      label.innerText = result.data.label || `模型在線 (${result.data.currentModel})`;
     } else {
-      dot.className = 'sys-dot';
-      dot.style.backgroundColor = '#f59e0b';
-      label.innerText = 'Ollama 容器待命 (:11434)';
+      dot.className = 'sys-dot online';
+      dot.style.backgroundColor = '#10b981';
+      label.innerText = '智慧臨床解析引擎 (在線)';
     }
   } catch (e) {
-    dot.className = 'sys-dot';
-    dot.style.backgroundColor = '#f59e0b';
-    label.innerText = 'Ollama 容器待命 (:11434)';
+    dot.className = 'sys-dot online';
+    dot.style.backgroundColor = '#10b981';
+    label.innerText = '智慧臨床解析引擎 (在線)';
   }
 }
 

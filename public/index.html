@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 
-  <link rel="stylesheet" href="style.css?v=2.0.6">
+  <link rel="stylesheet" href="style.css?v=2.0.7">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -50,7 +50,7 @@
           <img id="mobile-user-avatar" class="user-avatar-mini" src="" alt="LINE 頭像" />
         </div>
       </div>
-      <button type="button" class="btn btn-primary btn-sm" id="mobile-pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
+      <button type="button" class="btn-install-mobile" id="mobile-pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
         📲 安裝
       </button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="loadDashboardData()" title="即時同步">
@@ -672,26 +672,15 @@
         </div>
       </section>
 
-      <!-- ==================== 法律專家與合規免責聲明 (LEGAL DISCLAIMER) ==================== -->
+      <!-- ==================== 課程專題聲明 ==================== -->
       <footer class="legal-disclaimer-footer">
-        <div class="legal-disclaimer-card">
-          <div class="legal-badge-row">
-            <svg class="legal-shield-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <path d="M9 12l2 2 4-4"/>
-            </svg>
-            <span class="legal-badge-title">法律專家聲明與學術教學合規告示 (Legal &amp; Regulatory Compliance)</span>
-          </div>
+        <div class="legal-disclaimer-card simple-disclaimer">
           <p class="legal-statement-core">
             ⚖️ 本網頁僅供政治大學創創入門課程使用，非正式平台。
           </p>
-          <p class="legal-statement-desc">
-            本平台（CareNav 智護領航）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示與概念驗證（PoC）模型，非屬我國《醫療法》或《醫療器材管理法》規範之正式醫療軟體或診斷器材。網頁所載之所有長輩就醫履歷、醫囑結構化轉譯、藥袋拉丁代碼推導與服藥時段排程，均僅供課堂教學演練與小組專題報告展示用途，不具備任何實質臨床醫療診斷、處方調劑、治療指示或急救效力。若真實生活中有長輩身體不適或急性醫療需求，請務必立即諮詢合格執業醫師或前往就近醫療機構急診救治。
+          <p class="legal-statement-sub">
+            國立政治大學 創新創業入門 第八組團隊（The Navigators）專案展示
           </p>
-          <div class="legal-footer-meta">
-            <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
-            <span>版權所有 © 2026 Academic Project • All Rights Reserved.</span>
-          </div>
         </div>
       </footer>
     </main>
@@ -980,6 +969,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.0.6"></script>
+  <script src="app.js?v=2.0.7"></script>
 </body>
 </html>

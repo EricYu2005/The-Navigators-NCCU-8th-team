@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 
-  <link rel="stylesheet" href="style.css?v=2.0.2">
+  <link rel="stylesheet" href="style.css?v=2.0.3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -192,18 +192,11 @@
             <span id="demo-mode-icon">🧹</span>
             <span id="demo-mode-text">清空範例 (打自家數據)</span>
           </button>
-          <button class="btn btn-outline btn-sm" id="open-scenario-modal-btn" title="從 scenarios/ 目錄載入情境或自行輸入 JSON 檔案">
+          <button class="btn btn-outline btn-sm" id="open-scenario-modal-btn" title="切換長輩示範案例情境">
             <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
-            載入情境檔案
-          </button>
-          <button class="btn btn-outline btn-sm pipeline-monitor-btn" id="open-pipeline-modal-btn" title="查看雙 LLM 呼叫管道與各功能逾時安全閥狀態">
-            <span class="pulse-dot"></span>
-            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            雙管道與逾時監控
+            📋 示範案例切換
           </button>
           <button class="btn btn-outline btn-sm" id="refresh-all-btn">
             <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -367,18 +360,12 @@
                   <line x1="12" y1="19" x2="12" y2="23"/>
                   <line x1="8" y1="23" x2="16" y2="23"/>
                 </svg>
-                <h3>出診間極速口頭醫囑錄入</h3>
+                <h3>出診間口頭醫囑錄入</h3>
               </div>
-              <span class="status-badge">語音 / 文字雙模</span>
-            </div>
-
-            <div class="telemetry-tag fast">
-              <span class="pulse-dot" style="width:6px;height:6px;"></span>
-              <span>⚡ 專屬管道: VerbalOrderPipeline (診間語音即時通道 • 6s 逾時防護)</span>
             </div>
 
             <p class="section-intro">
-              依據簡報規格：診後快速語音輸入或特助勾選，系統自動將醫師口頭交代（如「血壓低於110暫停這顆」）轉為白話行動指引，並即時推播全家。
+              看診結束後，用語音口述或文字輸入醫師交代，系統將自動解析為家人與外傭秒懂的【觸發條件・具體行動・危急警訊】生活指引，並即時同步到全家看板。
             </p>
 
             <!-- 語音錄音控制座 -->
@@ -452,12 +439,12 @@
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
             </svg>
             <div>
-              <strong>用藥生活實踐與跨期健康軌跡追蹤</strong>
-              <p>尊重專科醫師處方權威 ｜ 逆向推導醫學代碼 (QD/AM/HS/BID) 建立每日四時段服藥排程 ｜ 忠實記錄生活服藥遵從軌跡</p>
+              <strong>長輩門診用藥分析與生活服藥排程</strong>
+              <p>自動比對前後期用藥標籤 ｜ 解析服藥時段（早、中、晚、睡前） ｜ 提供生活服藥與飲食配合叮嚀</p>
             </div>
           </div>
           <div>
-            <button class="btn btn-outline btn-sm" onclick="triggerMcpSimulation()">生成用藥排程與生活指南</button>
+            <button class="btn btn-primary btn-sm" onclick="triggerMcpSimulation()">產生服藥排程與生活指南</button>
           </div>
         </div>
 
@@ -473,13 +460,12 @@
                   <line x1="15" y1="15" x2="21" y2="21"/>
                   <line x1="4" y1="4" x2="9" y2="9"/>
                 </svg>
-                <h3>跨期門診處方標籤逆向比對</h3>
+                <h3>長輩前後期用藥處方比對</h3>
               </div>
-              <button class="btn btn-outline btn-sm" onclick="loadPrescriptionPreset('changed')">載入本期異動範例</button>
             </div>
 
             <p class="section-intro">
-              依據簡報規格：拍照上傳新藥袋，系統自動比對前後期標籤（如從 QD HS 改為 QD AM），自動推導出門診處方變更，彌補長輩自理就醫的資訊斷層。
+              拍照上傳新藥袋後，系統自動比對前後期處方標籤與時段調整（如利尿劑改至早晨服用），協助全家精準掌握長輩生活服藥時段。
             </p>
 
             <div class="rx-compare-flex">
@@ -498,7 +484,7 @@
               <div class="rx-column rx-curr">
                 <div class="rx-col-title">
                   <span>本期門診新處方 (2026/11/05)</span>
-                  <span class="tag-active">逆向推導診斷</span>
+                  <span class="tag-active">推導結果</span>
                 </div>
                 <div class="med-list" id="curr-meds-list">
                   <!-- 本期用藥列表 -->
@@ -506,7 +492,7 @@
               </div>
             </div>
 
-            <!-- MCP 臨床多階段推進與倒數計時器 (防使用者耐心耗盡) -->
+            <!-- MCP 臨床多階段推進與倒數計時器 -->
             <div class="mcp-progress-container" id="mcp-progress-container">
               <div class="mcp-progress-header">
                 <div class="mcp-progress-title">
@@ -514,10 +500,10 @@
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
-                  健康軌跡分析與生活服藥排程建立中...
+                  用藥生活指南與服藥排程建立中...
                 </div>
                 <div class="mcp-timer-ticker">
-                  已執行 <span id="mcp-elapsed-seconds">0</span> 秒 ｜ 逾時防護閥：30 秒 (最高上限 35 秒)
+                  正在進行用藥比對與排程分析...
                 </div>
               </div>
 
@@ -528,15 +514,15 @@
               <div class="mcp-stages-list">
                 <div class="mcp-stage-item in-progress" id="stage-1-item">
                   <span class="stage-bullet"></span>
-                  <span class="stage-text">階段一 (0~10s)：解析新藥袋拉丁用法代碼 (QD/BID/AM/HS) 並標準化藥品歸一</span>
+                  <span class="stage-text">階段一：解析新藥袋用法標籤 (早/中/晚/睡前)</span>
                 </div>
                 <div class="mcp-stage-item" id="stage-2-item">
                   <span class="stage-bullet"></span>
-                  <span class="stage-text">階段二 (10~20s)：對比跨期門診處方異動（如利尿劑改晨間，阻斷夜尿跌倒危機）</span>
+                  <span class="stage-text">階段二：比對前後期用藥調整（如利尿劑改晨間，防夜尿跌倒）</span>
                 </div>
                 <div class="mcp-stage-item" id="stage-3-item">
                   <span class="stage-bullet"></span>
-                  <span class="stage-text">階段三 (20~30s)：生成每日四時段服藥生活指南、飲食配合叮嚀與手足看板同步</span>
+                  <span class="stage-text">階段三：建立每日四時段生活服藥日程與飲食配合指引</span>
                 </div>
               </div>
             </div>
@@ -548,7 +534,7 @@
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                   <circle cx="12" cy="14" r="3"/>
                 </svg>
-                <strong>門診處方逆向推導診斷報告 (Inference Summary)</strong>
+                <strong>長輩門診用藥分析與生活指引</strong>
               </div>
               <p class="report-text" id="inference-summary-text">載入中...</p>
               <div id="mcp-notes-area"></div>
@@ -556,88 +542,60 @@
             </div>
           </div>
 
-          <!-- 藥袋拍攝與端點不可逆去識別化工作台 -->
+          <!-- 藥袋拍攝與隱私安全工作台 -->
           <div class="panel-card">
             <div class="panel-card-head">
               <div class="head-lead">
                 <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                <h3>藥袋端點不可逆去識別化工作台</h3>
+                <h3>藥袋拍攝與隱私安全遮蔽</h3>
               </div>
               <span class="status-badge" style="background:#ecfdf5; color:#065f46; border-color:#a7f3d0;">
-                🛡️ HIPAA / 特種個資合規
+                🛡️ 隱私安全保護
               </span>
             </div>
 
-            <!-- 技術規格說明橫幅 (強調非單純馬賽克) -->
+            <!-- 長輩隱私安全說明 -->
             <div class="deid-tech-banner">
               <div class="deid-tech-title">
                 <span class="pulse-dot" style="background:#10b981; width:8px; height:8px;"></span>
-                <strong>端點零知識去識別化 (Edge Privacy Shield)</strong>
+                <strong>長輩隱私安全防護 (手機端實體遮蔽)</strong>
               </div>
               <p class="deid-tech-desc">
-                Demo 納入真實藥袋時，<strong>嚴格禁止單純馬賽克（防範 CNN/Depix 逆向捲積還原漏洞）</strong>。本系統於前端記憶體執行<strong>不可逆熵歸零 (Entropy=0)</strong>、<strong>差分隱私合成置換</strong>與<strong>條碼光學阻斷</strong>，原始重大個資絕不上雲。
+                上傳藥袋照片前，系統會在您的手機端<strong>自動實體塗黑長輩姓名、身分證字號與就醫條碼</strong>，原始重要個資絕不上雲，僅辨識處方用法與服藥時段。
               </p>
               <div class="deid-tech-tags">
-                <span class="deid-chip danger">❌ 停用易破解馬賽克</span>
-                <span class="deid-chip active">✅ 物理資訊熵歸零 (H=0)</span>
-                <span class="deid-chip active">✅ 差分合成標籤置換</span>
-                <span class="deid-chip active">✅ 醫療條碼/QR光學阻斷</span>
-                <span class="deid-chip active">✅ EXIF中繼資料全消除</span>
+                <span class="deid-chip active">🛡️ 姓名自動遮蔽</span>
+                <span class="deid-chip active">🔒 個資不出手機</span>
+                <span class="deid-chip active">📵 條碼防掃描覆蓋</span>
+                <span class="deid-chip active">⏱️ 僅辨識藥品與服用時段</span>
               </div>
             </div>
 
             <!-- 操作功能按鈕區 -->
             <div class="deid-actions-bar">
-              <button type="button" class="btn btn-primary btn-sm" id="load-real-case-bag-btn" onclick="loadRealCasePrescriptionBag()">
-                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
-                </svg>
-                載入實際案例門診藥袋 (含高敏個資)
-              </button>
-
               <input type="file" id="bag-image-input" accept="image/*" capture="environment" style="display:none;">
-              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('bag-image-input').click()">
+              <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('bag-image-input').click()">
                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                   <circle cx="12" cy="13" r="4"/>
                 </svg>
-                拍照或上傳真實藥袋照片
+                📷 拍照或上傳真實藥袋照片
               </button>
 
               <button type="button" class="btn btn-ghost btn-sm" onclick="clearCustomRedactions()" title="清除畫布上的自訂塗黑遮蔽區">
                 🗑️ 清除遮罩
               </button>
 
-              <button type="button" class="btn btn-ghost btn-sm" onclick="downloadSanitizedImage()" title="下載前端物理去識別化後的安全圖片檢驗">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="downloadSanitizedImage()" title="下載安全藥袋圖">
                 📥 下載安全藥袋圖
               </button>
             </div>
 
             <!-- 家屬操作提示 -->
             <div style="font-size:0.75rem; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.45rem 0.65rem; margin-bottom:0.75rem;">
-              💡 <strong>家屬安心操作指南</strong>：上傳真實藥袋後，系統立即自動執行端點資訊熵歸零；若長輩藥袋版面特殊，您可直接用滑鼠或手指在畫布上<strong>「拖曳框選」</strong>任意敏感文字或條碼實體塗黑。
-            </div>
-
-            <!-- 視覺化去識別化對比視圖 (互動式切換) -->
-            <div class="deid-view-switcher">
-              <span class="switcher-label">Demo 檢視模式：</span>
-              <div class="btn-group-sm">
-                <button type="button" class="deid-mode-btn active" id="btn-mode-sanitized" onclick="setDeidMode('sanitized')">
-                  🛡️ 去識別化合規視圖 (Demo推薦)
-                </button>
-                <button type="button" class="deid-mode-btn" id="btn-mode-threat" onclick="setDeidMode('threat')">
-                  ⚠️ 高敏個資偵測熱區 (4大威脅面)
-                </button>
-                <button type="button" class="deid-mode-btn" id="btn-mode-mosaic" onclick="setDeidMode('mosaic')">
-                  ❌ 傳統馬賽克漏洞對比 (易被AI還原)
-                </button>
-              </div>
+              💡 <strong>安心操作指南</strong>：拍照或上傳真實藥袋後，系統立即自動塗黑個資；您也可以直接用手指在畫布上<strong>「拖曳框選」</strong>任意欲遮蔽的文字。
             </div>
 
             <!-- 畫布展示區 (Canvas 物理處理) -->
@@ -649,26 +607,26 @@
             </div>
 
             <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.9rem; font-weight:700; font-size:0.92rem;" onclick="processUploadedBagToPrescription()">
-              ⚡ 啟動藥袋處方辨識推導與今日排程 (100% 隱私安全)
+              ⚡ 啟動藥袋處方辨識與建立服藥排程 (100% 隱私安全)
             </button>
 
-            <!-- 即時去識別化審計稽核報告 (Audit Telemetry) -->
+            <!-- 即時隱私安全檢查 -->
             <div class="deid-audit-grid" id="deid-audit-grid">
               <div class="deid-audit-item">
-                <span class="audit-lbl">姓名與身分證號：</span>
-                <span class="audit-val good" id="audit-name-id">已置換為差分合成標籤</span>
+                <span class="audit-lbl">長輩姓名與身分資訊：</span>
+                <span class="audit-val good" id="audit-name-id">已安全遮蔽保護</span>
               </div>
               <div class="deid-audit-item">
                 <span class="audit-lbl">病歷號與就醫序號：</span>
-                <span class="audit-val good" id="audit-mrn">物理資訊熵歸零 (H=0)</span>
+                <span class="audit-val good" id="audit-mrn">已安全塗黑</span>
               </div>
               <div class="deid-audit-item">
-                <span class="audit-lbl">門診條碼與QR Code：</span>
-                <span class="audit-val good" id="audit-barcode">光學防掃描覆蓋</span>
+                <span class="audit-lbl">門診條碼與 QR Code：</span>
+                <span class="audit-val good" id="audit-barcode">防掃描遮蔽</span>
               </div>
               <div class="deid-audit-item">
-                <span class="audit-lbl">臨床關鍵拉丁代碼：</span>
-                <span class="audit-val highlight" id="audit-meds">100% 完整保留 (QD AM / QD HS)</span>
+                <span class="audit-lbl">藥品用法與生活時段：</span>
+                <span class="audit-val highlight" id="audit-meds">完整辨識 (早/中/晚/睡前)</span>
               </div>
             </div>
 
@@ -805,7 +763,7 @@
     </div>
   </div>
 
-  <!-- ==================== 載入臨床 DEMO 情境檔案 (MODAL) ==================== -->
+  <!-- ==================== 切換長輩示範情境案例 (MODAL) ==================== -->
   <div id="scenario-modal" class="pipeline-modal-backdrop">
     <div class="pipeline-modal-content" style="max-width: 820px;">
       <div class="pipeline-modal-header">
@@ -813,21 +771,21 @@
           <svg style="width:22px;height:22px;color:#0284c7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
           </svg>
-          載入臨床 Demo 情境檔案 (Scenarios)
+          切換長輩示範情境案例
         </h3>
         <button type="button" class="modal-close-btn" id="close-scenario-modal-btn">&times;</button>
       </div>
       <div class="pipeline-modal-body">
         <p style="font-size:0.92rem; color:#475569; margin-bottom:1.25rem; line-height:1.6;">
-          情境資料已分離儲存於專案根目錄之 <code>scenarios/</code> 資料夾內。您可以點選下方讀取自該目錄的 JSON 檔案，或點選「上傳自訂 JSON」由本機匯入您撰寫的情境檔，系統將自動同步更新所有模組！
+          您可以點選下方不同的長輩示範情境，系統將為您展示該情境之門診醫囑、藥袋用法比對與生活服藥排程：
         </p>
 
         <div style="font-size:0.95rem; font-weight:700; color:#0f172a; margin-bottom:0.75rem;">
-          現有情境檔案 (scenarios/*.json)：
+          示範案例列表：
         </div>
 
         <div class="scenario-list-grid" id="scenarios-list-container">
-          <div style="padding:1rem; color:#64748b;">正在讀取 scenarios/ 目錄檔案...</div>
+          <div style="padding:1rem; color:#64748b;">正在載入案例列表...</div>
         </div>
 
         <div class="scenario-upload-box">
@@ -838,9 +796,8 @@
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            從本機上傳自訂 JSON 情境檔
+            匯入自訂長輩 JSON 資料檔
           </button>
-          <p>支援任意符合 <code>scenarios/README.md</code> 規格的臨床情境 JSON 檔案</p>
         </div>
 
         <div id="scenario-active-preview" style="display:none; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:1.15rem; margin-bottom:1.25rem;">
@@ -849,7 +806,7 @@
         </div>
 
         <button type="button" class="btn btn-primary btn-block" id="confirm-load-scenario-btn" disabled>
-          確認載入此情境至全系統
+          確認切換至此長輩案例
         </button>
       </div>
     </div>
@@ -983,6 +940,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.0.2"></script>
+  <script src="app.js?v=2.0.3"></script>
 </body>
 </html>

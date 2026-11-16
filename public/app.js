@@ -1198,7 +1198,7 @@ async function executePrescriptionInference(medications) {
   const stage3El = document.getElementById('stage-3-item');
 
   if (infTextEl) {
-    infTextEl.innerText = '正在調用專屬管道 PrescriptionPipeline 進行生活服藥排程逆向推導與健康軌跡比對 (30s 逾時安全閥保護中)...';
+    infTextEl.innerText = '正在為長輩分析藥袋用法與生活服藥時段...';
   }
 
   // 啟動 25s~35s 防耐心耗盡進度計時器
@@ -1328,26 +1328,20 @@ async function executePrescriptionInference(medications) {
               <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              生活服藥排程落實與健康軌跡總評
+              長輩生活服藥指引與健康備忘
             </div>
-            <span class="mcp-latency-pill">分析耗時: ${drugBankMcp.mcpLookupLatencyMs || 85} ms</span>
           </div>
 
           <div style="font-size:0.9rem; color:#475569; margin-bottom:1rem; line-height:1.6;">
-            <strong>追蹤核心：</strong>尊重專科處方醫囑與客觀居家量測軌跡 ｜ <strong>落實方針：</strong>晨、午、晚、睡前四時段生活服藥無縫對接
+            <strong>服藥叮嚀：</strong>依專科醫囑定時定候規律服用 ｜ <strong>生活排程：</strong>早、中、晚、睡前四時段生活排程已建立
           </div>
 
           <div style="margin-bottom:0.9rem;">
-            <strong style="font-size:0.95rem; color:#0f766e;">專科醫囑生活服藥配合事項 (Regimen Synergy & Fulfillment Notes)：</strong>
+            <strong style="font-size:0.95rem; color:#0f766e;">生活服藥配合與飲食叮嚀：</strong>
             <div style="margin-top:0.5rem;">${ddiHtml}</div>
           </div>
 
           ${beersHtml}
-
-          <div style="margin-top:1rem; padding-top:0.6rem; border-top:1px dashed #99f6e4; font-size:0.85rem; color:#0f766e; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
-            <span>🛡️ 專屬管道：PrescriptionPipeline</span>
-            <span>總管線耗時：${telemetry ? telemetry.totalLatencyMs : 180} ms ｜ 雙層安全閥：10s 數據推導 / 30s 綜合推理 (25s~35s 黃金閾值)</span>
-          </div>
         </div>
       `;
     }

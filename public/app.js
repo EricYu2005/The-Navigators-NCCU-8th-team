@@ -109,89 +109,222 @@ if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeMobileSideba
 if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
 
 // ========================================================
-// 2. 全家照護雲端看板 (Family Care Hub) 資料載入
+// 2. 全家照護雲端看板 (Family Care Hub) 資料載入與長輩管理
 // ========================================================
+let activePatientData = null;
+
 async function loadDashboardData() {
   try {
     const res = await fetch('/api/dashboard');
     const result = await res.json();
-    if (!result.success) return;
+    if (!result.success || !result.data) return;
 
-    const { patient, latestOrder, currentPrescription, familyNotes } = result.data;
+    const { patient, latestOrder, currentPrescription, verbalOrders, prescriptions, hubBookings, familyNotes } = result.data;
+    activePatientData = patient;
 
-    // 渲染時間軸
+    // 判斷是否為自家長輩 (非陳國華展示範例)
+    const isCleared = !patient || patient.name !== '陳國華 (爸爸)';
+    window.isDemoCleared = isCleared;
+    if (typeof updateDemoToggleUI === 'function') {
+      updateDemoToggleUI(isCleared);
+    }
+
+    // 1. 動態更新側邊欄長輩個案卡
+    if (patient) {
+      const nameEl = document.getElementById('sidebar-patient-name');
+      const ageEl = document.getElementById('sidebar-patient-age');
+      const condEl = document.getElementById('sidebar-patient-conditions');
+      const hospEl = document.getElementById('sidebar-patient-hospital');
+
+      if (nameEl) nameEl.innerText = patient.name || '自家長輩';
+      if (ageEl) ageEl.innerText = patient.age ? `${patient.age}歲` : '';
+      if (condEl) condEl.innerText = patient.conditions || '尚無慢性病紀錄 (點選可編輯)';
+      if (hospEl) hospEl.innerText = patient.primary_hospital || '常看診醫院 (點選可編輯)';
+    }
+
+    // 2. 動態更新 4 大 KPI 卡片
+    const kpiDays = document.getElementById('kpi-visit-days');
+    const kpiVisitSub = document.getElementById('kpi-visit-sub');
+    if (kpiDays && kpiVisitSub) {
+      if (hubBookings && hubBookings.length > 0 && hubBookings[0].visit_date) {
+        kpiDays.innerText = '6 天';
+        kpiVisitSub.innerText = `${hubBookings[0].visit_date.slice(5, 10)} ${hubBookings[0].department || ''}・${hubBookings[0].hospital_name || ''}`;
+      } else {
+        kpiDays.innerText = '--';
+        kpiVisitSub.innerText = '尚未排程回診';
+      }
+    }
+
+    const kpiMedCount = document.getElementById('dash-med-count');
+    const kpiMedSub = document.getElementById('dash-med-sub');
+    if (kpiMedCount) {
+      const medCount = currentPrescription?.medications?.length || 0;
+      kpiMedCount.innerText = `${medCount} 種`;
+      if (kpiMedSub) {
+        kpiMedSub.innerText = medCount > 0 ? '本期已建立生活排程' : '尚無處方 (至藥袋推導上傳)';
+      }
+    }
+
+    const kpiOrderTitle = document.getElementById('kpi-order-title');
+    const kpiOrderSub = document.getElementById('kpi-order-sub');
+    if (kpiOrderTitle && kpiOrderSub) {
+      if (latestOrder) {
+        kpiOrderTitle.innerText = latestOrder.condition_text ? (latestOrder.condition_text.length > 12 ? latestOrder.condition_text.slice(0, 12) + '...' : latestOrder.condition_text) : '最新醫囑';
+        kpiOrderSub.innerText = latestOrder.action_text || '已同步至家庭看板';
+      } else {
+        kpiOrderTitle.innerText = '尚無醫囑';
+        kpiOrderSub.innerText = '至「口頭醫囑轉譯」錄入';
+      }
+    }
+
+    const kpiEscort = document.getElementById('kpi-escort-name');
+    const kpiEscortSub = document.getElementById('kpi-escort-sub');
+    if (kpiEscort && kpiEscortSub) {
+      if (latestOrder?.recorded_by) {
+        kpiEscort.innerText = latestOrder.recorded_by;
+        kpiEscortSub.innerText = '出診間責任指引紀錄';
+      } else {
+        kpiEscort.innerText = '家屬協同';
+        kpiEscortSub.innerText = '手足全天候守護中';
+      }
+    }
+
+    // 3. 動態渲染跨科就醫履歷動態時間軸
     const timelineEl = document.getElementById('dashboard-timeline');
     if (timelineEl) {
-      timelineEl.innerHTML = `
-        <div class="timeline-entry">
-          <div class="timeline-pin"></div>
-          <div class="timeline-header">
-            <span class="timeline-title">心臟內科門診・最新口頭醫囑轉譯</span>
-            <span class="timeline-date">${latestOrder ? latestOrder.created_at.slice(0, 10) : '2026-11-05'}</span>
-          </div>
-          <div class="timeline-card-box">
-            <strong style="color:#0f172a;">${latestOrder ? latestOrder.condition_text : '晨間血壓 < 110 mmHg 時'}</strong>
-            <p style="margin-top:0.25rem;">${latestOrder ? latestOrder.action_text : '暫停當天早晨脈優 Norvasc 5mg 一次。'}</p>
-            <div style="font-size:0.75rem; color:#0284c7; margin-top:0.35rem;">責任特助：${latestOrder ? latestOrder.recorded_by : '王思婷 護理師'}</div>
-          </div>
-        </div>
+      const hasOrders = verbalOrders && verbalOrders.length > 0;
+      const hasPrescription = !!currentPrescription;
 
-        <div class="timeline-entry">
-          <div class="timeline-pin"></div>
-          <div class="timeline-header">
-            <span class="timeline-title">客觀健康數據軌跡・晨峰血壓與夜尿監測</span>
-            <span class="timeline-date">連續 14 天動態彙整</span>
+      if (!hasOrders && !hasPrescription) {
+        // 示範資料已清空狀態：顯示友善引導
+        timelineEl.innerHTML = `
+          <div class="timeline-entry">
+            <div class="timeline-pin"></div>
+            <div class="timeline-header">
+              <span class="timeline-title">全家健康軌跡・就緒中</span>
+              <span class="timeline-date">今日</span>
+            </div>
+            <div class="timeline-card-box" style="background:#f8fafc; border:1px dashed #cbd5e1;">
+              <strong style="color:#0f172a;">✨ 示範資料已清空，現在您可以開始登打自家長輩的真實紀錄：</strong>
+              <p style="margin-top:0.4rem; color:#475569; line-height:1.6; font-size:0.85rem;">
+                • <strong>長輩資料</strong>：點擊左側長輩身分卡可修改姓名、年齡與就醫醫院。<br>
+                • <strong>口頭醫囑</strong>：帶長輩看完門診後，至左側「<a href="javascript:void(0)" onclick="switchView('view-orders')" style="color:#0284c7; font-weight:700;">口頭醫囑轉譯</a>」錄下醫師交代。<br>
+                • <strong>生活服藥排程</strong>：至左側「<a href="javascript:void(0)" onclick="switchView('view-prescription')" style="color:#0284c7; font-weight:700;">藥袋用法推導</a>」拍照上傳新藥袋，自動推導服藥時段。<br>
+                • <strong>手足留話</strong>：在下方手足留話簿直接發表照顧叮嚀。
+              </p>
+            </div>
           </div>
-          <div class="timeline-card-box">
-            <strong style="color:#0f172a;">晨間收縮壓反覆達 148-162 mmHg ｜ 夜尿 3-4 次/晚</strong>
-            <p style="margin-top:0.25rem;">系統客觀生理軌跡顯示早晨 7:00-9:00 呈現顯著晨峰高壓，夜尿集中於凌晨 1:30~5:00；完整數據軌跡已留存，供陪診護理師隨時調閱並於診間專業溝通。</p>
-          </div>
-        </div>
+        `;
+      } else {
+        let timelineHtml = '';
 
-        <div class="timeline-entry">
-          <div class="timeline-pin"></div>
-          <div class="timeline-header">
-            <span class="timeline-title">門診處方逆向推導優化</span>
-            <span class="timeline-date">本期最新處方</span>
-          </div>
-          <div class="timeline-card-box">
-            <p>已將利尿劑與脈優由夜間睡前 (QD HS) 成功改至早餐後 (QD AM)，防範夜尿與夜間下床跌倒。</p>
-          </div>
-        </div>
-      `;
+        // 渲染最新口頭醫囑
+        if (hasOrders) {
+          verbalOrders.forEach(order => {
+            timelineHtml += `
+              <div class="timeline-entry">
+                <div class="timeline-pin"></div>
+                <div class="timeline-header">
+                  <span class="timeline-title">${escapeHtml(order.department || '門診醫囑')}・最新口頭醫囑轉譯</span>
+                  <span class="timeline-date">${order.created_at ? order.created_at.slice(0, 10) : '近期'}</span>
+                </div>
+                <div class="timeline-card-box">
+                  <strong style="color:#0f172a;">【觸發條件】${escapeHtml(order.condition_text || '日常監測')}</strong>
+                  <p style="margin-top:0.25rem;"><strong>【具體行動】</strong>${escapeHtml(order.action_text || '')}</p>
+                  ${order.red_flags ? `<div style="font-size:0.75rem; color:#dc2626; margin-top:0.25rem;"><strong>【危急警訊】</strong>${escapeHtml(order.red_flags)}</div>` : ''}
+                  <div style="font-size:0.75rem; color:#0284c7; margin-top:0.35rem;">責任人員：${escapeHtml(order.recorded_by || '特助/家屬')}</div>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        // 渲染最新處方
+        if (hasPrescription) {
+          timelineHtml += `
+            <div class="timeline-entry">
+              <div class="timeline-pin"></div>
+              <div class="timeline-header">
+                <span class="timeline-title">${escapeHtml(currentPrescription.hospital_name || '門診處方')}・藥袋用法逆向推導</span>
+                <span class="timeline-date">${currentPrescription.prescription_date || '本期最新處方'}</span>
+              </div>
+              <div class="timeline-card-box">
+                <p>${escapeHtml(currentPrescription.inference_summary || '已建立處方用法生活排程。')}</p>
+              </div>
+            </div>
+          `;
+        }
+
+        timelineEl.innerHTML = timelineHtml;
+      }
     }
 
-    // 渲染今日四時段服藥排程
+    // 4. 動態渲染四時段服藥排程
     const scheduleEl = document.getElementById('dashboard-schedule');
     if (scheduleEl) {
-      scheduleEl.innerHTML = `
-        <div class="schedule-slot">
-          <div class="slot-heading">早晨 (AM) 飯後</div>
-          <span class="slot-pill">Norvasc 脈優 5mg (1顆)</span>
-          <span class="slot-pill">Lasix 利尿劑 40mg (1顆)</span>
-        </div>
-        <div class="schedule-slot">
-          <div class="slot-heading">中午 (Noon)</div>
-          <span style="font-size:0.75rem; color:#94a3b8;">無中午常規用藥</span>
-        </div>
-        <div class="schedule-slot">
-          <div class="slot-heading">傍晚 (PM) 飯後</div>
-          <span style="font-size:0.75rem; color:#94a3b8;">無晚餐常規用藥</span>
-        </div>
-        <div class="schedule-slot">
-          <div class="slot-heading">睡前 (HS)</div>
-          <span class="slot-pill">Diovan 得安穩 80mg (1顆)</span>
-          <span class="slot-pill">Crestor 冠脂妥 10mg (1顆)</span>
-        </div>
-      `;
+      const meds = currentPrescription?.medications;
+      if (!meds || !Array.isArray(meds) || meds.length === 0) {
+        scheduleEl.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: #64748b; font-size: 0.85rem; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+            💊 尚未建立長輩用藥處方。<br>
+            至左側「<a href="javascript:void(0)" onclick="switchView('view-prescription')" style="color: #0284c7; font-weight: 700;">藥袋用法逆向推導</a>」拍照上傳新藥袋，系統將自動解析生活服藥排程！
+          </div>
+        `;
+      } else {
+        const amMeds = [];
+        const noonMeds = [];
+        const pmMeds = [];
+        const hsMeds = [];
+
+        meds.forEach(m => {
+          const code = (m.code || '').toUpperCase();
+          const freq = m.frequency || '';
+          const label = `${m.name || '處方藥品'}`;
+
+          if (code.includes('QD AM') || code.includes('BID') || code.includes('TID') || code.includes('QID') || freq.includes('早') || freq.includes('晨')) {
+            amMeds.push(label);
+          }
+          if (code.includes('BID') || code.includes('TID') || code.includes('QID') || freq.includes('午')) {
+            noonMeds.push(label);
+          }
+          if (code.includes('TID') || code.includes('QID') || freq.includes('晚') || freq.includes('傍晚')) {
+            pmMeds.push(label);
+          }
+          if (code.includes('QD HS') || code.includes('QID') || freq.includes('睡前') || freq.includes('HS')) {
+            hsMeds.push(label);
+          }
+        });
+
+        scheduleEl.innerHTML = `
+          <div class="schedule-slot">
+            <div class="slot-heading">早晨 (AM) 飯後</div>
+            ${amMeds.length ? amMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無早晨常規用藥</span>'}
+          </div>
+          <div class="schedule-slot">
+            <div class="slot-heading">中午 (Noon)</div>
+            ${noonMeds.length ? noonMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無中午常規用藥</span>'}
+          </div>
+          <div class="schedule-slot">
+            <div class="slot-heading">傍晚 (PM) 飯後</div>
+            ${pmMeds.length ? pmMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無晚餐常規用藥</span>'}
+          </div>
+          <div class="schedule-slot">
+            <div class="slot-heading">睡前 (HS)</div>
+            ${hsMeds.length ? hsMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無睡前常規用藥</span>'}
+          </div>
+        `;
+      }
     }
 
-    // 渲染手足協同留話簿
+    // 5. 渲染手足協同留話簿
     renderFamilyNotes(familyNotes || []);
 
-    // 載入處方對比預設與去識別化藥袋畫布
+    // 6. 載入處方對比預設與去識別化藥袋畫布
     loadPrescriptionPreset('changed');
     renderPrescriptionBagCanvas('sanitized');
+
+    // 7. 更新示範狀態切換按鈕顯示
+    updateDemoToggleUI();
 
   } catch (err) {
     console.error('載入看板失敗:', err);
@@ -413,6 +546,13 @@ async function loadVerbalOrdersList() {
           </div>
         `;
       });
+    } else {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 2.5rem 1rem; color: #94a3b8; font-size: 0.88rem; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+          💡 目前此長輩尚無口頭醫囑紀錄。<br>
+          帶長輩看完門診後，可於上方口述或錄音輸入醫師交代，系統將自動結構化轉譯！
+        </div>
+      `;
     }
   } catch (e) {
     console.error(e);
@@ -1842,3 +1982,151 @@ function logoutLine() {
   }
 }
 window.logoutLine = logoutLine;
+
+// ========================================================
+// 8. 示範數據切換 & 長輩基本資料即時編輯管理
+// ========================================================
+
+function updateDemoToggleUI(isCleared) {
+  if (typeof isCleared === 'undefined') {
+    isCleared = window.isDemoCleared;
+  }
+  const btn = document.getElementById('btn-toggle-demo');
+  const icon = document.getElementById('demo-mode-icon');
+  const text = document.getElementById('demo-mode-text');
+  if (!btn || !icon || !text) return;
+
+  if (isCleared) {
+    icon.innerText = '🔄';
+    text.innerText = '恢復展示範例';
+    btn.className = 'btn btn-outline btn-sm';
+    btn.title = '點擊可重新載入示範臨床數據';
+  } else {
+    icon.innerText = '🧹';
+    text.innerText = '清空範例 (打自家數據)';
+    btn.className = 'btn btn-outline btn-sm';
+    btn.title = '清空示範數據，準備登打自家長輩資訊與真實醫囑';
+  }
+}
+window.updateDemoToggleUI = updateDemoToggleUI;
+
+async function toggleDemoMode() {
+  const isCleared = !!window.isDemoCleared;
+  const btn = document.getElementById('btn-toggle-demo');
+  if (btn) btn.disabled = true;
+
+  if (isCleared) {
+    if (!confirm('確定要恢復展示範例數據嗎？這將會載入示範長輩「陳國華 (爸爸)」的臨床模擬紀錄。')) {
+      if (btn) btn.disabled = false;
+      return;
+    }
+    try {
+      const res = await fetch('/api/demo/restore', { method: 'POST' });
+      const result = await res.json();
+      if (result.success) {
+        alert('✅ 已恢復展示範例數據！');
+        window.location.reload();
+      } else {
+        alert('恢復失敗：' + (result.error || '未知錯誤'));
+      }
+    } catch (e) {
+      alert('恢復請求失敗');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  } else {
+    if (!confirm('確定要清空示範數據嗎？\n清空後，您可以直接為自家長輩修改基本資料、錄入真實口頭醫囑與上傳藥袋！\n(隨時可以點擊「恢復展示範例」還原)')) {
+      if (btn) btn.disabled = false;
+      return;
+    }
+    try {
+      const res = await fetch('/api/demo/clear', { method: 'POST' });
+      const result = await res.json();
+      if (result.success) {
+        alert('✅ 已清空範例數據！\n\n您現在可以：\n1. 點擊左側長輩資料卡，設定長輩姓名與狀況。\n2. 在「口頭醫囑轉譯」錄下醫師交代。\n3. 在「藥袋用法推導」拍照上傳長輩藥袋。');
+        window.location.reload();
+      } else {
+        alert('清空失敗：' + (result.error || '未知錯誤'));
+      }
+    } catch (e) {
+      alert('清空請求失敗');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+}
+window.toggleDemoMode = toggleDemoMode;
+
+function openEditPatientModal() {
+  const modal = document.getElementById('edit-patient-modal');
+  if (!modal) return;
+
+  const nameInput = document.getElementById('edit-patient-name');
+  const ageInput = document.getElementById('edit-patient-age');
+  const condInput = document.getElementById('edit-patient-conditions');
+  const hospInput = document.getElementById('edit-patient-hospital');
+
+  if (activePatientData) {
+    if (nameInput) nameInput.value = (activePatientData.name && activePatientData.name !== '自家長輩') ? activePatientData.name : '';
+    if (ageInput) ageInput.value = activePatientData.age || '';
+    if (condInput) condInput.value = (activePatientData.conditions && !activePatientData.conditions.includes('尚無慢性病紀錄')) ? activePatientData.conditions : '';
+    if (hospInput) hospInput.value = (activePatientData.primary_hospital && !activePatientData.primary_hospital.includes('常看診醫院')) ? activePatientData.primary_hospital : '';
+  }
+
+  modal.classList.add('open');
+  if (nameInput) nameInput.focus();
+}
+window.openEditPatientModal = openEditPatientModal;
+
+function closeEditPatientModal() {
+  const modal = document.getElementById('edit-patient-modal');
+  if (modal) modal.classList.remove('open');
+}
+window.closeEditPatientModal = closeEditPatientModal;
+
+async function handleEditPatientSubmit(event) {
+  event.preventDefault();
+  const name = document.getElementById('edit-patient-name')?.value?.trim();
+  const age = document.getElementById('edit-patient-age')?.value?.trim();
+  const conditions = document.getElementById('edit-patient-conditions')?.value?.trim();
+  const primary_hospital = document.getElementById('edit-patient-hospital')?.value?.trim();
+
+  if (!name) {
+    alert('請填寫長輩稱謂或姓名');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/patient', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        age: age ? parseInt(age, 10) : null,
+        conditions: conditions || '尚無慢性病紀錄',
+        primary_hospital: primary_hospital || '常看診醫院'
+      })
+    });
+    const result = await res.json();
+    if (result.success) {
+      closeEditPatientModal();
+      await loadDashboardData();
+      alert('✅ 長輩資料已成功更新！');
+    } else {
+      alert('更新失敗：' + (result.error || '未知錯誤'));
+    }
+  } catch (err) {
+    console.error('更新長輩資料異常', err);
+    alert('儲存請求發生錯誤');
+  }
+}
+window.handleEditPatientSubmit = handleEditPatientSubmit;
+
+const editPatientModalEl = document.getElementById('edit-patient-modal');
+if (editPatientModalEl) {
+  editPatientModalEl.addEventListener('click', (e) => {
+    if (e.target === editPatientModalEl) {
+      closeEditPatientModal();
+    }
+  });
+}

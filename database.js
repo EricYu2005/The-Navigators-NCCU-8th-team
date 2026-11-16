@@ -154,12 +154,22 @@ function initDatabase() {
 function seedInitialData() {
   db.get("SELECT COUNT(*) as count FROM patients", [], (err, row) => {
     if (err || (row && row.count > 0)) return;
+    injectDemoData();
+  });
+}
 
-    console.log("🌱 正在注入 CareNav 專業示範臨床數據...");
+function injectDemoData(callback) {
+  console.log("🌱 正在注入 CareNav 專業示範臨床數據...");
+  db.serialize(() => {
+    db.run("DELETE FROM verbal_orders WHERE patient_id = 1");
+    db.run("DELETE FROM prescriptions WHERE patient_id = 1");
+    db.run("DELETE FROM discussion_guides WHERE patient_id = 1");
+    db.run("DELETE FROM hub_bookings WHERE patient_id = 1");
+    db.run("DELETE FROM family_notes WHERE patient_id = 1");
 
     // 注入預設長輩個案
     db.run(`
-      INSERT INTO patients (id, name, age, gender, conditions, primary_hospital)
+      INSERT OR REPLACE INTO patients (id, name, age, gender, conditions, primary_hospital)
       VALUES (1, '陳國華 (爸爸)', 72, '男', '高血壓第二期、慢性腎臟病第3期、夜尿症', '林口長庚紀念醫院')
     `);
 
@@ -240,9 +250,47 @@ function seedInitialData() {
       (1, 'Alice 大女兒', '台北', '今晨致電確認爸爸已將利尿劑改為早餐後服用，昨晚起夜降為1次，睡眠精神顯著好轉。'),
       (1, 'David 小兒子', '竹科', '已與林口 Hub 特助陳護理師確認 11/20 新陳代謝科回診時段，我會由竹科開車接送。'),
       (1, 'James 長子', '海外(舊金山)', '美西同步收到雲端推播，本期降壓藥改早晨很正確，請大家持續關注晨峰血壓記錄。')
-    `);
+    `, (err) => {
+      console.log("✅ CareNav 專業示範臨床數據已注入完成！");
+      if (callback) callback(err);
+    });
+  });
+}
 
-    console.log("✅ CareNav 專業示範臨床數據已注入完成！");
+function clearDemoData() {
+  return new Promise((resolve, reject) => {
+    console.log("🧹 正在清空 CareNav 示範資料以供登打自家數據...");
+    db.serialize(() => {
+      db.run("DELETE FROM verbal_orders WHERE patient_id = 1");
+      db.run("DELETE FROM prescriptions WHERE patient_id = 1");
+      db.run("DELETE FROM discussion_guides WHERE patient_id = 1");
+      db.run("DELETE FROM hub_bookings WHERE patient_id = 1");
+      db.run("DELETE FROM family_notes WHERE patient_id = 1");
+      db.run(`
+        UPDATE patients SET
+          name = '自家長輩',
+          age = NULL,
+          conditions = '尚無慢性病紀錄 (點選可編輯)',
+          primary_hospital = '常看診醫院 (點選可編輯)'
+        WHERE id = 1
+      `);
+      db.run(`
+        INSERT INTO family_notes (patient_id, author, city, content)
+        VALUES (1, '系統引導', '雲端看板', '✨ 示範資料已清空！組員現在可直接在「口頭醫囑轉譯」錄入醫囑、在「藥袋用法推導」上傳藥袋，並在下方發表照顧叮嚀。')
+      `, (err) => {
+        if (err) return reject(err);
+        resolve(true);
+      });
+    });
+  });
+}
+
+function restoreDemoData() {
+  return new Promise((resolve, reject) => {
+    injectDemoData((err) => {
+      if (err) return reject(err);
+      resolve(true);
+    });
   });
 }
 
@@ -262,5 +310,7 @@ const dbQuery = {
 
 module.exports = {
   db,
-  dbQuery
+  dbQuery,
+  clearDemoData,
+  restoreDemoData
 };

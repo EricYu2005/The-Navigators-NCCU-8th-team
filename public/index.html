@@ -82,8 +82,8 @@
         <p class="brand-descriptor">CLINICAL COPILOT &amp; CARE RETENTION</p>
       </div>
 
-      <!-- 長輩個案身分卡 -->
-      <div class="case-card">
+      <!-- 長輩個案身分卡 (點選可編輯) -->
+      <div class="case-card" id="sidebar-case-card" onclick="openEditPatientModal()" style="cursor: pointer;" title="點擊編輯長輩基本資料">
         <div class="case-avatar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -93,10 +93,11 @@
         <div class="case-details">
           <div class="case-name-row">
             <span class="case-name" id="sidebar-patient-name">陳國華 (爸爸)</span>
-            <span class="case-age">72歲</span>
+            <span class="case-age" id="sidebar-patient-age">72歲</span>
+            <span style="font-size: 0.72rem; color: #38bdf8; margin-left: auto;" title="編輯長輩資料">✏️</span>
           </div>
           <div class="case-sub" id="sidebar-patient-conditions">高血壓二期・腎臟病3期</div>
-          <div class="case-hub-tag" id="sidebar-patient-hospital">林口長庚紀念醫院 Hub</div>
+          <div class="case-hub-tag" id="sidebar-patient-hospital">林口長庚紀念醫院</div>
         </div>
       </div>
 
@@ -187,6 +188,10 @@
             </svg>
             📲 安裝 App
           </button>
+          <button class="btn btn-outline btn-sm" id="btn-toggle-demo" onclick="toggleDemoMode()" title="清空示範資料以登打自家長輩數據，或隨時點擊恢復">
+            <span id="demo-mode-icon">🧹</span>
+            <span id="demo-mode-text">清空範例 (打自家數據)</span>
+          </button>
           <button class="btn btn-outline btn-sm" id="open-scenario-modal-btn" title="從 scenarios/ 目錄載入情境或自行輸入 JSON 檔案">
             <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -224,8 +229,8 @@
             </div>
             <div class="kpi-content">
               <span class="kpi-title">下次回診倒數</span>
-              <h3 class="kpi-num">6 天</h3>
-              <span class="kpi-sub">11/20 新陳代謝科・長庚 Hub</span>
+              <h3 class="kpi-num" id="kpi-visit-days">6 天</h3>
+              <span class="kpi-sub" id="kpi-visit-sub">11/20 新陳代謝科・長庚 Hub</span>
             </div>
           </div>
 
@@ -240,7 +245,7 @@
             <div class="kpi-content">
               <span class="kpi-title">目前常規用藥</span>
               <h3 class="kpi-num" id="dash-med-count">4 種</h3>
-              <span class="kpi-sub text-teal">本期已逆向優化時段 (防跌)</span>
+              <span class="kpi-sub text-teal" id="dash-med-sub">本期已逆向優化時段 (防跌)</span>
             </div>
           </div>
 
@@ -254,8 +259,8 @@
             </div>
             <div class="kpi-content">
               <span class="kpi-title">最新口頭醫囑警示</span>
-              <h3 class="kpi-num text-amber">血壓 &lt; 110</h3>
-              <span class="kpi-sub">晨間暫停脈優 Norvasc 5mg 一次</span>
+              <h3 class="kpi-num text-amber" id="kpi-order-title">血壓 &lt; 110</h3>
+              <span class="kpi-sub" id="kpi-order-sub">晨間暫停脈優 Norvasc 5mg 一次</span>
             </div>
           </div>
 
@@ -270,8 +275,8 @@
             </div>
             <div class="kpi-content">
               <span class="kpi-title">門診特助錨定</span>
-              <h3 class="kpi-num">王思婷 護理師</h3>
-              <span class="kpi-sub">林口長庚 Hub 專屬責任派案</span>
+              <h3 class="kpi-num" id="kpi-escort-name">王思婷 護理師</h3>
+              <span class="kpi-sub" id="kpi-escort-sub">林口長庚 Hub 專屬責任派案</span>
             </div>
           </div>
         </div>
@@ -938,6 +943,42 @@
             前往 LINE 官方真機授權
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 編輯長輩基本資料視窗 (MODAL) ==================== -->
+  <div id="edit-patient-modal" class="pipeline-modal-backdrop">
+    <div class="pipeline-modal-content" style="max-width: 480px;">
+      <div class="pipeline-modal-header" style="border-bottom: 1px solid #e2e8f0;">
+        <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem; display: flex; align-items: center; gap: 0.4rem;">
+          ✏️ 編輯長輩基本資料
+        </h3>
+        <button type="button" class="modal-close-btn" onclick="closeEditPatientModal()">&times;</button>
+      </div>
+      <div class="pipeline-modal-body" style="padding: 1.25rem;">
+        <form id="edit-patient-form" onsubmit="handleEditPatientSubmit(event)">
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label class="form-label" for="edit-patient-name">長輩稱謂 / 姓名</label>
+            <input type="text" id="edit-patient-name" class="form-input" placeholder="例如: 陳國華 (爸爸)、李媽媽" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label class="form-label" for="edit-patient-age">年齡 (歲)</label>
+            <input type="number" id="edit-patient-age" class="form-input" placeholder="例如: 72" min="1" max="130">
+          </div>
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label class="form-label" for="edit-patient-conditions">主要慢性病史 / 照護焦點</label>
+            <input type="text" id="edit-patient-conditions" class="form-input" placeholder="例如: 高血壓二期、慢性腎病3期">
+          </div>
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label class="form-label" for="edit-patient-hospital">常就診醫院</label>
+            <input type="text" id="edit-patient-hospital" class="form-input" placeholder="例如: 林口長庚紀念醫院、台大醫院">
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeEditPatientModal()">取消</button>
+            <button type="submit" class="btn btn-primary btn-sm">儲存長輩資料</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

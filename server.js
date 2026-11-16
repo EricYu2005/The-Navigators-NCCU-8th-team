@@ -16,7 +16,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { dbQuery } = require('./database');
+const { dbQuery, clearDemoData, restoreDemoData } = require('./database');
 const { checkOllamaConnection } = require('./ollamaService');
 const {
   getPipelinesStatus,
@@ -249,6 +249,61 @@ app.post('/api/scenarios/load', async (req, res) => {
 // ========================================================
 // 1. 全家照護雲端看板模組 (Family Care Hub)
 // ========================================================
+
+// 清空示範資料（供組員登打自家長輩數據）
+app.post('/api/demo/clear', async (req, res) => {
+  try {
+    await clearDemoData();
+    res.json({ success: true, message: '已清空示範資料，現在可登打自家長輩數據！' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 恢復官方臨床示範資料
+app.post('/api/demo/restore', async (req, res) => {
+  try {
+    await restoreDemoData();
+    res.json({ success: true, message: '已恢復官方示範臨床案例！' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 編輯長輩基本檔案
+app.put('/api/patient', async (req, res) => {
+  try {
+    const { name, age, conditions, primary_hospital } = req.body;
+    await dbQuery.run(`
+      UPDATE patients SET
+        name = COALESCE(?, name),
+        age = ?,
+        conditions = COALESCE(?, conditions),
+        primary_hospital = COALESCE(?, primary_hospital)
+      WHERE id = 1
+    `, [
+      name || null,
+      age ? parseInt(age) : null,
+      conditions || null,
+      primary_hospital || null
+    ]);
+    const updated = await dbQuery.get("SELECT * FROM patients WHERE id = 1");
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 取得手足協同備忘
+app.get('/api/family-notes', async (req, res) => {
+  try {
+    const notes = await dbQuery.all("SELECT * FROM family_notes WHERE patient_id = 1 ORDER BY id DESC LIMIT 20");
+    res.json({ success: true, data: notes });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.get('/api/dashboard', async (req, res) => {
   try {
     const patient = await dbQuery.get("SELECT * FROM patients WHERE id = 1");

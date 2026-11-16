@@ -16,7 +16,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { dbQuery, clearDemoData, restoreDemoData, saveCustomPatientData } = require('./database');
+const { dbQuery, clearDemoData, restoreDemoData } = require('./database');
 const { checkOllamaConnection } = require('./ollamaService');
 const {
   getPipelinesStatus,
@@ -99,13 +99,6 @@ app.get('/api/scenarios', (req, res) => {
       } catch (e) {
         return { filename, error: '解析失敗' };
       }
-    });
-
-    // 將組員自訂長輩 (黃小姐) 置頂排列以方便做報告與展示
-    list.sort((a, b) => {
-      if (a.filename && a.filename.includes('huang-grandma')) return -1;
-      if (b.filename && b.filename.includes('huang-grandma')) return 1;
-      return 0;
     });
 
     res.json({ success: true, data: list });
@@ -286,7 +279,7 @@ app.post('/api/demo/restore', async (req, res) => {
   }
 });
 
-// 編輯長輩基本檔案 (支援綁定 LINE 帳號與跨組員雲端持久化)
+// 編輯長輩基本檔案 (支援綁定 LINE 帳號與跨組員雲端同步)
 app.put('/api/patient', async (req, res) => {
   try {
     const { name, age, conditions, primary_hospital, updated_by, line_user_id } = req.body;
@@ -304,21 +297,9 @@ app.put('/api/patient', async (req, res) => {
       age ? parseInt(age) : null,
       conditions || null,
       primary_hospital || null,
-      updated_by || '政大創創團隊 (LINE 綁定協同)',
-      line_user_id || 'line_bound_team'
+      updated_by || null,
+      line_user_id || null
     ]);
-
-    // 持久化至平台 JSON 檔案 (保證 Render 重啟或重新部署皆不遺失)
-    saveCustomPatientData({
-      id: 1,
-      name: name || '黃小姐 (奶奶)',
-      age: age ? parseInt(age) : 82,
-      gender: '女',
-      conditions: conditions || '原發性高血壓二期、退化性膝關節炎、心血管日常保養',
-      primary_hospital: primary_hospital || '台北市立萬芳醫院 (政大生活圈首選)',
-      updated_by: updated_by || '政大創創第八組 (LINE 綁定協同)',
-      line_user_id: line_user_id || 'line_bound_team'
-    });
 
     // 於全家看板自動同步推播廣播 (讓所有組員即時看見)
     if (name) {
@@ -328,7 +309,7 @@ app.put('/api/patient', async (req, res) => {
         VALUES (1, ?, '雲端同步', ?)
       `, [
         author,
-        `✨ 已將長輩設定為【${name}】${age ? ` (${age}歲)` : ''}，常就診醫院：${primary_hospital || '未指定'}。平台雲端已永久同步，組員做報告皆可共享使用！`
+        `✨ 已更新長輩身分資料為【${name}】${age ? ` (${age}歲)` : ''}，常就診醫院：${primary_hospital || '未指定'}。`
       ]);
     }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carenav-pwa-v4';
+const CACHE_NAME = 'carenav-pwa-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

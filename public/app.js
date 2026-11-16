@@ -143,10 +143,12 @@ async function loadDashboardData() {
 
       const updaterEl = document.getElementById('sidebar-patient-updater');
       if (updaterEl) {
-        if (patient.updated_by) {
-          updaterEl.innerHTML = `<span style="color:#059669; font-weight:600;">👥 ${escapeHtml(patient.updated_by)}</span>`;
+        if (patient.name === '陳國華 (爸爸)') {
+          updaterEl.innerHTML = `<span style="color:#64748b;">👥 官方臨床示範案例</span>`;
+        } else if (patient.updated_by) {
+          updaterEl.innerHTML = `<span style="color:#059669; font-weight:600;">👥 責任家屬：${escapeHtml(patient.updated_by)}</span>`;
         } else {
-          updaterEl.innerHTML = `<span style="color:#0284c7;">👥 平台組員共享雲端案例</span>`;
+          updaterEl.innerHTML = `<span style="color:#0284c7;">👥 自家長輩資料</span>`;
         }
       }
     }

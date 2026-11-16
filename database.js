@@ -6,27 +6,8 @@
 
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const fs = require('fs');
 
 const DB_PATH = path.resolve(__dirname, 'data.db');
-const customPatientPath = path.resolve(__dirname, 'custom_patient.json');
-
-function getCustomPatientData() {
-  if (fs.existsSync(customPatientPath)) {
-    try {
-      return JSON.parse(fs.readFileSync(customPatientPath, 'utf8'));
-    } catch (e) {}
-  }
-  return null;
-}
-
-function saveCustomPatientData(data) {
-  try {
-    fs.writeFileSync(customPatientPath, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.error('儲存 custom_patient.json 失敗:', e);
-  }
-}
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
@@ -174,36 +155,13 @@ function initDatabase() {
 
 function seedInitialData() {
   db.get("SELECT COUNT(*) as count FROM patients", [], (err, row) => {
-    if (err || (row && row.count > 0)) {
-      // 確保長輩資料同步 custom_patient.json (政大創創組員設定)
-      const custom = getCustomPatientData();
-      if (custom && custom.name) {
-        db.run(`
-          UPDATE patients SET
-            name = ?,
-            age = ?,
-            conditions = ?,
-            primary_hospital = ?,
-            updated_by = ?,
-            line_user_id = ?
-          WHERE id = 1
-        `, [
-          custom.name,
-          custom.age || 82,
-          custom.conditions || '原發性高血壓二期、退化性膝關節炎、心血管日常保養',
-          custom.primary_hospital || '台北市立萬芳醫院 (政大生活圈首選)',
-          custom.updated_by || '政大創創第八組 (LINE 綁定協同)',
-          custom.line_user_id || 'line_bound_team'
-        ]);
-      }
-      return;
-    }
+    if (err || (row && row.count > 0)) return;
     injectDemoData();
   });
 }
 
 function injectDemoData(callback) {
-  console.log("🌱 正在注入 CareNav 長輩數據 (優先載入平台共享組員自訂個案)...");
+  console.log("🌱 正在注入 CareNav 專業示範臨床數據 (陳國華先生案例)...");
   db.serialize(() => {
     db.run("DELETE FROM verbal_orders WHERE patient_id = 1");
     db.run("DELETE FROM prescriptions WHERE patient_id = 1");
@@ -211,21 +169,11 @@ function injectDemoData(callback) {
     db.run("DELETE FROM hub_bookings WHERE patient_id = 1");
     db.run("DELETE FROM family_notes WHERE patient_id = 1");
 
-    // 優先載入組員自訂長輩 (如奶奶黃小姐)
-    const custom = getCustomPatientData();
-    const elderName = custom?.name || '黃小姐 (奶奶)';
-    const elderAge = custom?.age || 82;
-    const elderGender = custom?.gender || '女';
-    const elderConditions = custom?.conditions || '原發性高血壓二期、退化性膝關節炎、心血管日常保養';
-    const elderHospital = custom?.primary_hospital || '台北市立萬芳醫院 (政大生活圈首選)';
-    const elderUpdater = custom?.updated_by || '政大創創第八組 (LINE 綁定協同)';
-    const elderLineId = custom?.line_user_id || 'line_bound_team';
-
-    // 注入長輩個案
+    // 注入預設官方示範長輩個案：陳國華 (爸爸)
     db.run(`
       INSERT OR REPLACE INTO patients (id, name, age, gender, conditions, primary_hospital, updated_by, line_user_id)
-      VALUES (1, ?, ?, ?, ?, ?, ?, ?)
-    `, [elderName, elderAge, elderGender, elderConditions, elderHospital, elderUpdater, elderLineId]);
+      VALUES (1, '陳國華 (爸爸)', 72, '男', '高血壓第二期、慢性腎臟病第3期、夜尿症', '林口長庚紀念醫院', '官方臨床示範', NULL)
+    `);
 
     // 注入示範診前指引卡 (專案護理師親自審核)
     db.run(`
@@ -325,12 +273,14 @@ function clearDemoData() {
           name = '自家長輩',
           age = NULL,
           conditions = '尚無慢性病紀錄 (點選可編輯)',
-          primary_hospital = '常看診醫院 (點選可編輯)'
+          primary_hospital = '常看診醫院 (點選可編輯)',
+          updated_by = NULL,
+          line_user_id = NULL
         WHERE id = 1
       `);
       db.run(`
         INSERT INTO family_notes (patient_id, author, city, content)
-        VALUES (1, '系統引導', '雲端看板', '✨ 示範資料已清空！組員現在可直接在「口頭醫囑轉譯」錄入醫囑、在「藥袋用法推導」上傳藥袋，並在下方發表照顧叮嚀。')
+        VALUES (1, '系統引導', '雲端看板', '✨ 示範資料已清空！登入 LINE 後即可點選左側長輩卡片，綁定並登打您自家的長輩資訊。')
       `, (err) => {
         if (err) return reject(err);
         resolve(true);
@@ -366,7 +316,5 @@ module.exports = {
   db,
   dbQuery,
   clearDemoData,
-  restoreDemoData,
-  getCustomPatientData,
-  saveCustomPatientData
+  restoreDemoData
 };

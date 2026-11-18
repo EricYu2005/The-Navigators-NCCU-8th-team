@@ -26,8 +26,10 @@ Thumbs.db
 .vscode/
 .idea/
 
-# 日誌
+# 日誌与 Python 快取
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+__pycache__/
+*.pyc

@@ -1,978 +1,671 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>CareNav 智護領航 - 全家照護雲端看板</title>
-  
-  <!-- PWA & Mobile Web App Meta Tags -->
-  <meta name="theme-color" content="#0284c7">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="CareNav">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>好選保健 PurePick｜跨品牌保健食品比較、去冗評估與服用日曆</title>
+  <meta name="description" content="跨品牌保健食品成分與每日真實花費比較、重疊去冗分析、以及日曆式服用與身體狀態追蹤平台。" />
+  <meta name="theme-color" content="#0f172a" />
 
-  <link rel="stylesheet" href="style.css?v=2.0.8">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+
+  <link rel="stylesheet" href="style.css?v=3.0.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <!-- 手機專屬頂部列 (僅於手機版顯示) -->
-  <header class="mobile-header">
-    <button type="button" class="mobile-hamburger-btn" id="mobile-hamburger-btn" aria-label="打開個案與設定選單">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
-    </button>
-    <div class="mobile-brand">
-      <svg class="mobile-brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-      </svg>
-      <span>CareNav 智護領航</span>
-    </div>
-    <div class="mobile-header-actions">
-      <!-- 手機版 LINE 登入 / 使用者頭像 -->
-      <div id="mobile-user-auth" class="mobile-user-auth">
-        <button type="button" class="btn-line-login-sm" id="btn-mobile-line-login" onclick="startLineLogin()">
-          <svg class="line-icon-svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
-          </svg>
-          登入
-        </button>
-        <div id="mobile-user-chip" class="mobile-user-chip" style="display:none;" onclick="showUserAuthModal()">
-          <img id="mobile-user-avatar" class="user-avatar-mini" src="" alt="LINE 頭像" />
-        </div>
-      </div>
-      <button type="button" class="btn-install-mobile" id="mobile-pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
-        📲 安裝
-      </button>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="loadDashboardData()" title="即時同步">
-        <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- 側邊欄抽屜背景遮罩 -->
-  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
-
-  <div class="app-layout">
-    <!-- ==================== 左側商務面板 (SIDEBAR) ==================== -->
-    <aside class="sidebar">
-      <!-- 品牌識別 -->
-      <div class="brand-section">
-        <div class="brand-mark">
-          <svg class="brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="brand-naming">
-            <span class="brand-title">CareNav</span>
-            <span class="brand-version">智護領航</span>
-          </div>
-          <button type="button" class="sidebar-close-btn" id="sidebar-close-btn" aria-label="關閉選單">&times;</button>
-        </div>
-        <p class="brand-descriptor">CLINICAL COPILOT &amp; CARE RETENTION</p>
-      </div>
-
-      <!-- 長輩個案身分卡 (點選可編輯) -->
-      <div class="case-card" id="sidebar-case-card" onclick="openEditPatientModal()" style="cursor: pointer;" title="點擊編輯長輩基本資料">
-        <div class="case-avatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="12" cy="7" r="4"/>
+  <!-- ==================== 頂部導覽列 (DESKTOP & MOBILE) ==================== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-group" onclick="switchView('view-finder')">
+        <div class="brand-logo-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M10.5 20.5 3.5 13.5a4.95 4.95 0 1 1 7-7l7 7a4.95 4.95 0 1 1-7 7Z"/>
+            <path d="m8.5 8.5 7 7"/>
           </svg>
         </div>
-        <div class="case-details">
-          <div class="case-name-row">
-            <span class="case-name" id="sidebar-patient-name">陳國華 (爸爸)</span>
-            <span class="case-age" id="sidebar-patient-age">72歲</span>
-            <span style="font-size: 0.72rem; color: #38bdf8; margin-left: auto;" title="編輯長輩資料">✏️</span>
-          </div>
-          <div class="case-sub" id="sidebar-patient-conditions">高血壓二期・腎臟病3期</div>
-          <div class="case-hub-tag" id="sidebar-patient-hospital">林口長庚紀念醫院</div>
-          <div class="case-updater-tag" id="sidebar-patient-updater" style="font-size: 0.72rem; color: #64748b; margin-top: 0.25rem;">
-            <span>👥 官方臨床示範案例</span>
-          </div>
+        <div class="brand-titles">
+          <span class="brand-name">好選保健 PurePick</span>
+          <span class="brand-sub">跨品牌保健品比較・清單管理・服用日曆</span>
         </div>
       </div>
 
-      <!-- 專業功能選單 (左側切換) -->
-      <nav class="nav-menu">
-        <button class="nav-item active" data-view="view-dashboard">
-          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7" rx="1"/>
-            <rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="14" y="14" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/>
-          </svg>
-          <span class="nav-text">全家照護雲端看板</span>
-          <span class="nav-status-dot active"></span>
+      <!-- 三大核心功能切換籤 (Desktop) -->
+      <nav class="main-nav-tabs" aria-label="主要功能導覽">
+        <button type="button" class="nav-tab active" data-target="view-finder" onclick="switchView('view-finder')">
+          <span class="tab-icon">🔍</span>
+          <span>1. 尋找保健方案</span>
         </button>
-
-        <button class="nav-item" data-view="view-orders">
-          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
-          </svg>
-          <span class="nav-text">口頭醫囑結構化轉譯</span>
-          <span class="nav-chip pulse">即時推播</span>
+        <button type="button" class="nav-tab" data-target="view-wishlist" onclick="switchView('view-wishlist')">
+          <span class="tab-icon">⚖️</span>
+          <span>2. 有興趣清單分析</span>
+          <span class="nav-badge" id="nav-wishlist-count">0</span>
         </button>
-
-        <button class="nav-item" data-view="view-prescription">
-          <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="4" y="4" width="16" height="16" rx="4"/>
-            <line x1="4" y1="12" x2="20" y2="12"/>
-            <line x1="12" y1="4" x2="12" y2="20"/>
-          </svg>
-          <span class="nav-text">藥袋用法逆向推導</span>
+        <button type="button" class="nav-tab" data-target="view-calendar" onclick="switchView('view-calendar')">
+          <span class="tab-icon">📅</span>
+          <span>3. 已購買與服用日曆</span>
+          <span class="nav-badge badge-teal" id="nav-purchased-count">0</span>
         </button>
       </nav>
 
-      <!-- 側邊欄底部系統運行指示 -->
-      <div class="sidebar-system-footer">
-        <div class="sys-item">
-          <span class="sys-dot online"></span>
-          <span class="sys-label">SQLite 資料庫：記憶在線</span>
-        </div>
-        <div class="sys-item" id="ollama-status-row">
-          <span class="sys-dot online" id="ollama-status-dot"></span>
-          <span class="sys-label" id="ollama-status-label">LLM 臨床解析引擎</span>
-        </div>
+      <!-- 右側工具與登入區 -->
+      <div class="header-actions">
+        <button type="button" class="btn-install-top" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
+          📲 安裝
+        </button>
+        <button type="button" class="btn-sub-plan" onclick="openSubscriptionModal()">
+          💎 訂閱方案
+        </button>
+        <button type="button" class="btn-demo-toggle" id="btn-toggle-demo" onclick="toggleDemoData()" title="清空範例以測試自己的清單，或隨時恢復範例">
+          🧹 清空範例
+        </button>
 
-      </div>
-    </aside>
-
-    <!-- ==================== 主工作視圖區 (MAIN VIEWPORT) ==================== -->
-    <main class="main-viewport">
-      <!-- 頂部工作列 -->
-      <header class="top-nav-bar">
-        <div class="top-context">
-          <h1 id="page-title">全家照護雲端看板</h1>
-          <p id="page-desc">手足同步瀏覽跨科就醫履歷、最新處方異動與口頭醫囑，杜絕照護內耗</p>
-        </div>
-        <div class="top-actions">
-          <div class="family-members-sync" title="手足跨縣市/海外連線狀態">
-            <span class="sync-title">手足協同：</span>
-            <span class="member-tag">台北・大女兒</span>
-            <span class="member-tag">竹科・小兒子</span>
-            <span class="member-tag">海外・長子</span>
-          </div>
-          <!-- LINE 一鍵登入 / 家屬使用者身分 -->
-          <div class="user-auth-area" id="user-auth-area">
-            <button type="button" class="btn-line-login" id="btn-line-login" onclick="startLineLogin()">
-              <svg class="line-icon-svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
-              </svg>
-              LINE 一鍵登入
-            </button>
-            <div class="user-logged-in-chip" id="user-logged-in-chip" style="display:none;">
-              <img id="user-avatar-img" class="user-avatar-mini" src="" alt="LINE 頭像" />
-              <div class="user-info-text">
-                <span class="user-name" id="user-display-name">LINE 家屬</span>
-                <span class="user-badge-line">已綁定</span>
-              </div>
-              <button type="button" class="btn-logout-mini" onclick="logoutLine()" title="切換帳號 / 登出">&times;</button>
-            </div>
-          </div>
-
-          <button class="btn btn-primary btn-sm" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
-            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        <!-- LINE 登入狀態 -->
+        <div class="auth-box" id="auth-box">
+          <button type="button" class="btn-line-auth" id="btn-line-login" onclick="startLineLogin()">
+            <svg class="line-svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
             </svg>
-            📲 安裝 App
+            <span>LINE 登入</span>
           </button>
-          <button class="btn btn-outline btn-sm" id="btn-toggle-demo" onclick="toggleDemoMode()" title="清空示範資料以登打自家長輩數據，或隨時點擊恢復">
-            <span id="demo-mode-icon">🧹</span>
-            <span id="demo-mode-text">清空範例 (打自家數據)</span>
-          </button>
-          <button class="btn btn-outline btn-sm" id="open-scenario-modal-btn" title="切換長輩示範案例情境">
-            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            📋 示範案例切換
-          </button>
-          <button class="btn btn-outline btn-sm" id="refresh-all-btn">
-            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            即時同步
-          </button>
-        </div>
-      </header>
-
-      <!-- ==================== VIEW 1: 全家照護雲端看板 ==================== -->
-      <section id="view-dashboard" class="page-view active">
-        <!-- 4大核心關鍵指標 -->
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-icon-wrap bg-blue-subtle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-title">下次回診倒數</span>
-              <h3 class="kpi-num" id="kpi-visit-days">6 天</h3>
-              <span class="kpi-sub" id="kpi-visit-sub">11/20 新陳代謝科・長庚 Hub</span>
-            </div>
+          <div class="user-chip" id="user-logged-in-chip" style="display:none;">
+            <span class="user-chip-name" id="user-display-name">使用者</span>
+            <button type="button" class="btn-chip-logout" onclick="logoutLine()" title="登出">&times;</button>
           </div>
-
-          <div class="kpi-card">
-            <div class="kpi-icon-wrap bg-teal-subtle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="4" y="4" width="16" height="16" rx="4"/>
-                <line x1="4" y1="12" x2="20" y2="12"/>
-                <line x1="12" y1="4" x2="12" y2="20"/>
-              </svg>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-title">目前常規用藥</span>
-              <h3 class="kpi-num" id="dash-med-count">4 種</h3>
-              <span class="kpi-sub text-teal" id="dash-med-sub">本期已逆向優化時段 (防跌)</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-icon-wrap bg-amber-subtle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-title">最新口頭醫囑警示</span>
-              <h3 class="kpi-num text-amber" id="kpi-order-title">血壓 &lt; 110</h3>
-              <span class="kpi-sub" id="kpi-order-sub">晨間暫停脈優 Norvasc 5mg 一次</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-icon-wrap bg-indigo-subtle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-title">門診特助錨定</span>
-              <h3 class="kpi-num" id="kpi-escort-name">王思婷 護理師</h3>
-              <span class="kpi-sub" id="kpi-escort-sub">林口長庚 Hub 專屬責任派案</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="dashboard-two-col">
-          <!-- 左欄：跨科就醫履歷動態時間軸 -->
-          <div class="panel-card">
-            <div class="panel-card-head">
-              <div class="head-lead">
-                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <h3>跨科就醫履歷與醫囑動態時序</h3>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="switchView('view-orders')">+ 記錄新醫囑</button>
-            </div>
-            <div class="timeline-stream" id="dashboard-timeline">
-              <!-- 動態渲染時間軸節點 -->
-            </div>
-          </div>
-
-          <!-- 右欄：四時段服藥排程 + 手足協同留話簿 -->
-          <div class="right-stack">
-            <!-- 服藥排程 -->
-            <div class="panel-card">
-              <div class="panel-card-head">
-                <div class="head-lead">
-                  <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="5"/>
-                    <line x1="12" y1="1" x2="12" y2="3"/>
-                    <line x1="12" y1="21" x2="12" y2="23"/>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                    <line x1="1" y1="12" x2="3" y2="12"/>
-                    <line x1="21" y1="12" x2="23" y2="12"/>
-                  </svg>
-                  <h3>今日四時段服藥排程 (全家同步)</h3>
-                </div>
-                <span class="status-badge-outline">逆向推導優化</span>
-              </div>
-              <div class="med-schedule-grid" id="dashboard-schedule">
-                <!-- 動態注入排程 -->
-              </div>
-            </div>
-
-            <!-- 手足協同留話簿 (家庭協同) -->
-            <div class="panel-card">
-              <div class="panel-card-head">
-                <div class="head-lead">
-                  <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
-                  <h3>手足協同留話簿 (杜絕互推責任)</h3>
-                </div>
-              </div>
-
-              <!-- 留話輸入 -->
-              <form id="family-note-form" class="family-note-input-row">
-                <select id="note-author" class="form-input form-input-sm" style="width: 140px;">
-                  <option value="Alice 大女兒 (台北)">大女兒 (台北)</option>
-                  <option value="David 小兒子 (竹科)">小兒子 (竹科)</option>
-                  <option value="James 長子 (海外)">長子 (海外)</option>
-                </select>
-                <input type="text" id="note-content" class="form-input form-input-sm flex-1" placeholder="填寫最新服藥觀察、陪診安排或長輩狀況..." required>
-                <button type="submit" class="btn btn-primary btn-sm">發表</button>
-              </form>
-
-              <!-- 留話清單 -->
-              <div class="notes-stream" id="family-notes-list">
-                <!-- 動態渲染留話 -->
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 2: 口頭醫囑結構化轉譯 ==================== -->
-      <section id="view-orders" class="page-view">
-        <div class="two-col-layout">
-          <!-- 錄入區 -->
-          <div class="panel-card">
-            <div class="panel-card-head">
-              <div class="head-lead">
-                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" y1="19" x2="12" y2="23"/>
-                  <line x1="8" y1="23" x2="16" y2="23"/>
-                </svg>
-                <h3>出診間口頭醫囑錄入</h3>
-              </div>
-            </div>
-
-            <p class="section-intro">
-              看診結束後，用語音口述或文字輸入醫師交代，系統將自動解析為家人與外傭秒懂的【觸發條件・具體行動・危急警訊】生活指引，並即時同步到全家看板。
-            </p>
-
-            <!-- 語音錄音控制座 -->
-            <div class="voice-console">
-              <button type="button" class="voice-mic-button" id="voice-record-btn">
-                <svg class="mic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" y1="19" x2="12" y2="23"/>
-                  <line x1="8" y1="23" x2="16" y2="23"/>
-                </svg>
-                <span id="voice-btn-label">按此開始語音口述錄音</span>
-              </button>
-              <div class="quick-presets-row">
-                <span class="preset-label">診間高頻口語範本：</span>
-                <button type="button" class="btn-preset" onclick="loadSampleVoice(1)">血壓 &lt; 110 暫停脈優</button>
-                <button type="button" class="btn-preset" onclick="loadSampleVoice(2)">利尿劑改早晨避免夜尿</button>
-                <button type="button" class="btn-preset" onclick="loadSampleVoice(3)">低血糖急救處理</button>
-              </div>
-            </div>
-
-            <!-- 輸入表單 -->
-            <form id="verbal-order-form">
-              <div class="form-group">
-                <label class="form-label">醫師口語原始交代內容</label>
-                <textarea id="raw-verbal-input" class="form-input" rows="3" placeholder="例如：如果早上量血壓收縮壓低於 110，那顆脈優 5mg 先停吃一次。利尿劑換到早上吃避免夜尿，若下肢水腫三天沒消要提早回來。"></textarea>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group flex-1">
-                  <label class="form-label">紀錄責任人員</label>
-                  <input type="text" id="order-recorder" class="form-input" value="林口長庚 Hub 護理特助 - 王思婷">
-                </div>
-                <div class="form-group flex-1">
-                  <label class="form-label">科別與主治醫師</label>
-                  <input type="text" id="order-dept" class="form-input" value="心臟內科・林主治醫師">
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-primary btn-block" id="parse-order-btn">
-                結構化轉譯為白話行動指引 ➜ 即時推播全家看板
-              </button>
-            </form>
-          </div>
-
-          <!-- 轉譯成果展示與全家廣播清單 -->
-          <div class="panel-card">
-            <div class="panel-card-head">
-              <div class="head-lead">
-                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
-                </svg>
-                <h3>全家同步白話行動醫囑庫</h3>
-              </div>
-              <span class="status-badge-outline">即時廣播</span>
-            </div>
-
-            <div class="orders-stream" id="verbal-orders-list">
-              <!-- 動態注入轉譯後的口頭醫囑卡片 -->
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 4: 藥袋用法代碼逆向推導引擎 ==================== -->
-      <section id="view-prescription" class="page-view">
-        <!-- 處方用法轉譯與生活排程頂部條 -->
-        <div class="mcp-alert-bar">
-          <div class="mcp-alert-lead">
-            <svg class="mcp-alert-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </svg>
-            <div>
-              <strong>長輩門診用藥分析與生活服藥排程</strong>
-              <p>自動比對前後期用藥標籤 ｜ 解析服藥時段（早、中、晚、睡前） ｜ 提供生活服藥與飲食配合叮嚀</p>
-            </div>
-          </div>
-          <div>
-            <button class="btn btn-primary btn-sm" onclick="triggerMcpSimulation()">產生服藥排程與生活指南</button>
-          </div>
-        </div>
-
-        <div class="two-col-layout">
-          <!-- 前後期藥袋處方比對 -->
-          <div class="panel-card">
-            <div class="panel-card-head">
-              <div class="head-lead">
-                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="16 3 21 3 21 8"/>
-                  <line x1="4" y1="20" x2="21" y2="3"/>
-                  <polyline points="21 16 21 21 16 21"/>
-                  <line x1="15" y1="15" x2="21" y2="21"/>
-                  <line x1="4" y1="4" x2="9" y2="9"/>
-                </svg>
-                <h3>長輩前後期用藥處方比對</h3>
-              </div>
-            </div>
-
-            <p class="section-intro">
-              拍照上傳新藥袋後，系統自動比對前後期處方標籤與時段調整（如利尿劑改至早晨服用），協助全家精準掌握長輩生活服藥時段。
-            </p>
-
-            <div class="rx-compare-flex">
-              <!-- 前期處方 -->
-              <div class="rx-column rx-prev">
-                <div class="rx-col-title">
-                  <span>前期常規處方 (2026/10/15)</span>
-                  <span class="tag-neutral">舊方</span>
-                </div>
-                <div class="med-list" id="prev-meds-list">
-                  <!-- 前期用藥列表 -->
-                </div>
-              </div>
-
-              <!-- 本期處方 -->
-              <div class="rx-column rx-curr">
-                <div class="rx-col-title">
-                  <span>本期門診新處方 (2026/11/05)</span>
-                  <span class="tag-active">推導結果</span>
-                </div>
-                <div class="med-list" id="curr-meds-list">
-                  <!-- 本期用藥列表 -->
-                </div>
-              </div>
-            </div>
-
-            <!-- MCP 臨床多階段推進與倒數計時器 -->
-            <div class="mcp-progress-container" id="mcp-progress-container">
-              <div class="mcp-progress-header">
-                <div class="mcp-progress-title">
-                  <svg style="width:16px;height:16px;color:#0d9488;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                  用藥生活指南與服藥排程建立中...
-                </div>
-                <div class="mcp-timer-ticker">
-                  正在進行用藥比對與排程分析...
-                </div>
-              </div>
-
-              <div class="mcp-progress-track">
-                <div class="mcp-progress-bar-fill" id="mcp-progress-bar-fill"></div>
-              </div>
-
-              <div class="mcp-stages-list">
-                <div class="mcp-stage-item in-progress" id="stage-1-item">
-                  <span class="stage-bullet"></span>
-                  <span class="stage-text">階段一：解析新藥袋用法標籤 (早/中/晚/睡前)</span>
-                </div>
-                <div class="mcp-stage-item" id="stage-2-item">
-                  <span class="stage-bullet"></span>
-                  <span class="stage-text">階段二：比對前後期用藥調整（如利尿劑改晨間，防夜尿跌倒）</span>
-                </div>
-                <div class="mcp-stage-item" id="stage-3-item">
-                  <span class="stage-bullet"></span>
-                  <span class="stage-text">階段三：建立每日四時段生活服藥日程與飲食配合指引</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 逆向推導報告 -->
-            <div class="inference-report" id="inference-box">
-              <div class="report-head">
-                <svg class="report-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <circle cx="12" cy="14" r="3"/>
-                </svg>
-                <strong>長輩門診用藥分析與生活指引</strong>
-              </div>
-              <p class="report-text" id="inference-summary-text">載入中...</p>
-              <div id="mcp-notes-area"></div>
-              <div id="drugbank-mcp-results"></div>
-            </div>
-          </div>
-
-          <!-- 藥袋拍攝與隱私安全工作台 -->
-          <div class="panel-card">
-            <div class="panel-card-head">
-              <div class="head-lead">
-                <svg class="head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                <h3>藥袋拍攝與隱私安全遮蔽</h3>
-              </div>
-              <span class="status-badge" style="background:#ecfdf5; color:#065f46; border-color:#a7f3d0;">
-                🛡️ 隱私安全保護
-              </span>
-            </div>
-
-            <!-- 長輩隱私安全說明 -->
-            <div class="deid-tech-banner">
-              <div class="deid-tech-title">
-                <span class="pulse-dot" style="background:#10b981; width:8px; height:8px;"></span>
-                <strong>長輩隱私安全防護 (手機端實體遮蔽)</strong>
-              </div>
-              <p class="deid-tech-desc">
-                上傳藥袋照片前，系統會在您的手機端<strong>自動實體塗黑長輩姓名、身分證字號與就醫條碼</strong>，原始重要個資絕不上雲，僅辨識處方用法與服藥時段。
-              </p>
-              <div class="deid-tech-tags">
-                <span class="deid-chip active">🛡️ 姓名自動遮蔽</span>
-                <span class="deid-chip active">🔒 個資不出手機</span>
-                <span class="deid-chip active">📵 條碼防掃描覆蓋</span>
-                <span class="deid-chip active">⏱️ 僅辨識藥品與服用時段</span>
-              </div>
-            </div>
-
-            <!-- 操作功能按鈕區 -->
-            <div class="deid-actions-bar">
-              <input type="file" id="bag-image-input" accept="image/*" capture="environment" style="display:none;">
-              <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('bag-image-input').click()">
-                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-                📷 拍照或上傳真實藥袋照片
-              </button>
-
-              <button type="button" class="btn btn-ghost btn-sm" onclick="clearCustomRedactions()" title="清除畫布上的自訂塗黑遮蔽區">
-                🗑️ 清除遮罩
-              </button>
-
-              <button type="button" class="btn btn-ghost btn-sm" onclick="downloadSanitizedImage()" title="下載安全藥袋圖">
-                📥 下載安全藥袋圖
-              </button>
-            </div>
-
-            <!-- 家屬操作提示 -->
-            <div style="font-size:0.75rem; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.45rem 0.65rem; margin-bottom:0.75rem;">
-              💡 <strong>安心操作指南</strong>：拍照或上傳真實藥袋後，系統立即自動塗黑個資；您也可以直接用手指在畫布上<strong>「拖曳框選」</strong>任意欲遮蔽的文字。
-            </div>
-
-            <!-- 畫布展示區 (Canvas 物理處理) -->
-            <div class="deid-canvas-container" id="deid-canvas-container">
-              <canvas id="sanitized-bag-canvas" width="600" height="420" style="cursor: crosshair;"></canvas>
-              <div id="deid-mode-overlay-note" class="deid-overlay-note">
-                <!-- 動態注入模式解說 -->
-              </div>
-            </div>
-
-            <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.9rem; font-weight:700; font-size:0.92rem;" onclick="processUploadedBagToPrescription()">
-              ⚡ 啟動藥袋處方辨識與建立服藥排程 (100% 隱私安全)
-            </button>
-
-            <!-- 即時隱私安全檢查 -->
-            <div class="deid-audit-grid" id="deid-audit-grid">
-              <div class="deid-audit-item">
-                <span class="audit-lbl">長輩姓名與身分資訊：</span>
-                <span class="audit-val good" id="audit-name-id">已安全遮蔽保護</span>
-              </div>
-              <div class="deid-audit-item">
-                <span class="audit-lbl">病歷號與就醫序號：</span>
-                <span class="audit-val good" id="audit-mrn">已安全塗黑</span>
-              </div>
-              <div class="deid-audit-item">
-                <span class="audit-lbl">門診條碼與 QR Code：</span>
-                <span class="audit-val good" id="audit-barcode">防掃描遮蔽</span>
-              </div>
-              <div class="deid-audit-item">
-                <span class="audit-lbl">藥品用法與生活時段：</span>
-                <span class="audit-val highlight" id="audit-meds">完整辨識 (早/中/晚/睡前)</span>
-              </div>
-            </div>
-
-            <!-- 醫學代碼速查 -->
-            <div class="code-ref-box">
-              <span class="ref-title">醫學用法代碼庫 (Latin Sig Reference)：</span>
-              <div class="ref-chips">
-                <span><code>QD AM</code> 每日早晨一次</span>
-                <span><code>QD HS</code> 每日睡前一次</span>
-                <span><code>BID</code> 每日早晚兩次</span>
-                <span><code>TID</code> 每日早中晚三次</span>
-                <span><code>AC</code> 飯前服用</span>
-                <span><code>PC</code> 飯後服用</span>
-              </div>
-            </div>
-
-            <!-- 自訂新增藥物 -->
-            <form id="rx-inference-form">
-              <div class="form-row">
-                <div class="form-group flex-1">
-                  <label class="form-label">藥品學名/商品名</label>
-                  <input type="text" id="custom-med-name" class="form-input" value="Norvasc 脈優 5mg">
-                </div>
-                <div class="form-group flex-1">
-                  <label class="form-label">用法代碼</label>
-                  <input type="text" id="custom-med-code" class="form-input" value="QD AM">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">適應症 / 門診備註</label>
-                <input type="text" id="custom-med-ind" class="form-input" value="高血壓 (時段由睡前改早晨，壓制晨峰高壓)">
-              </div>
-
-              <button type="submit" class="btn btn-secondary btn-block">
-                加入本期處方並執行逆向比對
-              </button>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== 課程專題免責聲明 ==================== -->
-      <footer class="legal-disclaimer-footer">
-        <div class="legal-disclaimer-card">
-          <p class="legal-statement-core">
-            ⚖️ 本網頁僅供政治大學創創入門課程使用，非正式平台。
-          </p>
-          <p class="legal-statement-desc">
-            本平台（CareNav 智護領航）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示與概念驗證（PoC）模型，非屬我國《醫療法》或《醫療器材管理法》規範之正式醫療軟體或診斷器材。網頁所載之所有長輩就醫履歷、醫囑結構化轉譯、藥袋拉丁代碼推導與服藥時段排程，均僅供課堂教學演練與小組專題報告展示用途，不具備任何實質臨床醫療診斷、處方調劑、治療指示或急救效力。若真實生活中有長輩身體不適或急性醫療需求，請務必立即諮詢合格執業醫師或前往就近醫療機構急診救治。
-          </p>
-          <div class="legal-footer-meta">
-            <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
-            <span>版權所有 © 2026 Academic Project • All Rights Reserved.</span>
-          </div>
-        </div>
-      </footer>
-    </main>
-  </div>
-
-  <!-- ==================== 雙 LLM 呼叫管道與各功能專屬管道監控儀表板 (MODAL) ==================== -->
-  <div id="pipeline-modal" class="pipeline-modal-backdrop">
-    <div class="pipeline-modal-content">
-      <div class="pipeline-modal-header">
-        <h3>
-          <svg style="width:20px;height:20px;color:#0284c7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-          CareNav 雙 LLM 呼叫管道與逾時安全閥監控
-        </h3>
-        <button type="button" class="modal-close-btn" id="close-pipeline-modal-btn">&times;</button>
-      </div>
-      <div class="pipeline-modal-body">
-        <p style="font-size:0.82rem; color:#64748b; margin-bottom:1.25rem;">
-          為確保系統在調用大型外部知識庫時<strong>絕不卡死、絕無醫療幻覺</strong>，CareNav 架構了<strong>「本地極速推理」與「DrugBank MCP 臨床增強」雙呼叫管道</strong>，且為每一個功能配置了<strong>專屬隔離管道與獨立逾時安全閥 (Circuit Breaker)</strong>。
-        </p>
-
-        <div class="pipeline-cards-grid">
-          <!-- 管道 A -->
-          <div class="pipeline-tech-card" id="card-pipe-fast">
-            <span class="tech-card-badge badge-fast">管道 A (極速私有)</span>
-            <div class="tech-card-title">本地極速推理管道</div>
-            <div class="tech-card-sub">直連本機 Docker Ollama (100% 醫療隱私本地留存)</div>
-            <div class="tech-card-stats">
-              <div class="stat-row">
-                <span class="stat-label">連線端點：</span>
-                <span class="stat-val" id="pipe-fast-url">http://localhost:11434</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">預設模型：</span>
-                <span class="stat-val highlight" id="pipe-fast-model">llama3.2</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">逾時安全閥：</span>
-                <span class="stat-val" id="pipe-fast-timeout">8,000 ms</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">當前狀態：</span>
-                <span class="stat-val good" id="pipe-fast-status">在線 (Online)</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 管道 B -->
-          <div class="pipeline-tech-card active-card" id="card-pipe-mcp">
-            <span class="tech-card-badge badge-mcp">管道 B (實證增強)</span>
-            <div class="tech-card-title">臨床藥學 MCP 增強管道</div>
-            <div class="tech-card-sub">直連 DrugBank 官方 MCP (徹底消除醫療幻覺)</div>
-            <div class="tech-card-stats">
-              <div class="stat-row">
-                <span class="stat-label">MCP 端點：</span>
-                <span class="stat-val" id="pipe-mcp-url">https://mcp.drugbank.com/mcp</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">第一層 MCP 逾時：</span>
-                <span class="stat-val" id="pipe-mcp-lookup-timeout">10,000 ms (網路與工具檢索)</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">第二層 LLM 逾時：</span>
-                <span class="stat-val highlight" id="pipe-mcp-total-timeout">30,000 ms (臨床實證黃金區間 25s~35s)</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">斷路器安全網：</span>
-                <span class="stat-val good" id="pipe-mcp-status">實證規則保護中</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 各功能專屬隔離對應表 -->
-        <div class="dedicated-channels-section">
-          <h4 style="font-size:0.92rem; color:#0f172a; margin-bottom:0.5rem; font-weight:700;">
-            各功能專屬隔離管道配置 (Feature-Dedicated Pipelines)
-          </h4>
-          <table class="dedicated-table">
-            <thead>
-              <tr>
-                <th>功能模組</th>
-                <th>專屬獨立管道</th>
-                <th>逾時安全閥</th>
-                <th>臨床職責與特性</th>
-              </tr>
-            </thead>
-            <tbody id="dedicated-channels-tbody">
-              <!-- 動態由 API 填入 -->
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- ==================== 切換長輩示範情境案例 (MODAL) ==================== -->
-  <div id="scenario-modal" class="pipeline-modal-backdrop">
-    <div class="pipeline-modal-content" style="max-width: 820px;">
-      <div class="pipeline-modal-header">
-        <h3>
-          <svg style="width:22px;height:22px;color:#0284c7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-          </svg>
-          切換長輩示範情境案例
-        </h3>
-        <button type="button" class="modal-close-btn" id="close-scenario-modal-btn">&times;</button>
-      </div>
-      <div class="pipeline-modal-body">
-        <p style="font-size:0.92rem; color:#475569; margin-bottom:1.25rem; line-height:1.6;">
-          您可以點選下方不同的長輩示範情境，系統將為您展示該情境之門診醫囑、藥袋用法比對與生活服藥排程：
-        </p>
+  <!-- ==================== 主內容容器 ==================== -->
+  <main class="page-container">
 
-        <div style="font-size:0.95rem; font-weight:700; color:#0f172a; margin-bottom:0.75rem;">
-          示範案例列表：
+    <!-- =========================================================================
+         功能一：【尋找】人性化互動表單 ＋ 跨品牌保健品比較
+         ========================================================================= -->
+    <section id="view-finder" class="view-section active">
+      <div class="section-banner">
+        <div>
+          <h1>尋找適合您的保健品方案</h1>
+          <p>描述您的日常困擾並設定每月預算，我們幫您跨品牌比對成分含量與每日真實花費，找出真正需要且划算的選擇。</p>
         </div>
-
-        <div class="scenario-list-grid" id="scenarios-list-container">
-          <div style="padding:1rem; color:#64748b;">正在載入案例列表...</div>
-        </div>
-
-        <div class="scenario-upload-box">
-          <input type="file" id="scenario-file-input" accept=".json" style="display:none;">
-          <button type="button" class="btn btn-outline" onclick="document.getElementById('scenario-file-input').click()">
-            <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            匯入自訂長輩 JSON 資料檔
-          </button>
-        </div>
-
-        <div id="scenario-active-preview" style="display:none; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:1.15rem; margin-bottom:1.25rem;">
-          <div style="font-weight:700; color:#0284c7; font-size:1rem; margin-bottom:0.35rem;" id="preview-scenario-title"></div>
-          <div style="font-size:0.9rem; color:#334155; line-height:1.6;" id="preview-scenario-desc"></div>
-        </div>
-
-        <button type="button" class="btn btn-primary btn-block" id="confirm-load-scenario-btn" disabled>
-          確認切換至此長輩案例
+        <button type="button" class="btn btn-outline" onclick="openAddSupplementModal()">
+          ＋ 手動新增市售保健品
         </button>
       </div>
-    </div>
-  </div>
 
-  <!-- iOS 加入主畫面引導提示條 (僅於 iOS Safari 未安裝時自動浮現) -->
-  <div id="ios-pwa-banner" class="ios-install-banner" style="display:none;">
-    <div class="ios-banner-content">
-      <span class="ios-icon">📲</span>
-      <div class="ios-text">
-        <strong>將 CareNav 加到手機主畫面</strong>
-        <p>點擊 Safari 下方的「分享」圖標 <svg style="display:inline;width:13px;height:13px;vertical-align:baseline;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>，再滑動點選<strong>「加入主畫面」</strong>，即可享受免下載的原生 App 全螢幕體驗！</p>
-      </div>
-      <button type="button" class="ios-close-btn" onclick="dismissIosBanner()" aria-label="關閉">&times;</button>
-    </div>
-  </div>
+      <!-- 互動式需求表單卡片 -->
+      <div class="card finder-form-card">
+        <form id="finder-form" onsubmit="handleFinderSubmit(event)">
+          <!-- 步驟 1：自由文字輸入 -->
+          <div class="form-step-block">
+            <div class="step-header">
+              <span class="step-num">1</span>
+              <div>
+                <h3>用自己的話聊聊最近的身體狀況或作息困擾</h3>
+                <p class="step-hint">直接輸入您的生活習慣、飲食或想改善的地方，下方也有常見範例可一鍵帶入</p>
+              </div>
+            </div>
 
-  <!-- 手機專屬底部快捷導覽列 (Bottom Navigation Bar) -->
-  <nav class="mobile-bottom-nav">
-    <button type="button" class="bottom-nav-item active" data-view="view-dashboard">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="14" width="7" height="7" rx="1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1"/>
-      </svg>
-      <span>全家看板</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-view="view-orders">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-        <line x1="12" y1="19" x2="12" y2="23"/>
-        <line x1="8" y1="23" x2="16" y2="23"/>
-      </svg>
-      <span>口頭醫囑</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-view="view-prescription">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="4" y="4" width="16" height="16" rx="4"/>
-        <line x1="4" y1="12" x2="20" y2="12"/>
-        <line x1="12" y1="4" x2="12" y2="20"/>
-      </svg>
-      <span>藥袋推導</span>
-    </button>
-  </nav>
+            <textarea
+              id="finder-free-text"
+              class="form-textarea"
+              rows="3"
+              placeholder="例如：我每天看電腦超過 10 小時眼睛很乾酸，三餐都吃外食很少吃魚跟青菜，最近趕報告常熬夜覺得精神很差、晚上睡眠也很淺..."
+            ></textarea>
 
-  <!-- ==================== LINE 登入設定與身分切換視窗 (MODAL) ==================== -->
-  <div id="line-auth-modal" class="pipeline-modal-backdrop">
-    <div class="pipeline-modal-content" style="max-width: 520px;">
-      <div class="pipeline-modal-header" style="border-bottom: 1px solid #e2e8f0;">
-        <h3 style="display: flex; align-items: center; gap: 0.5rem; color: #0f172a;">
-          <svg style="width: 22px; height: 22px; fill: #06C755;" viewBox="0 0 24 24">
-            <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
-          </svg>
-          LINE 登入設定與手足身分管理
-        </h3>
-        <button type="button" class="modal-close-btn" id="close-line-modal-btn">&times;</button>
-      </div>
+            <div class="sample-chips-row">
+              <span class="sample-label">快速帶入情境：</span>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(1)">💻 盯螢幕眼乾酸＋外食少吃魚</button>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(2)">🌙 常熬夜疲勞＋晚上淺眠多夢</button>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(3)">🌿 排便不順易脹氣＋想找無糖益生菌</button>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(4)">🏃 長輩行動保養＋吞大顆膠囊困難</button>
+            </div>
+          </div>
 
-      <div class="pipeline-modal-body" style="padding: 1.25rem;">
-        <div id="line-config-status-box" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.85rem; margin-bottom:1rem; font-size:0.85rem;">
-          <div style="font-weight:700; color:#166534; margin-bottom:0.25rem;">🌐 LINE Developers 回呼網址 (Callback URL)</div>
-          <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
-            <input type="text" id="line-callback-copy-input" class="form-input" style="font-size:0.8rem; background:#fff;" value="https://carenav-demo.loca.lt/auth/line/callback" readonly>
-            <button type="button" class="btn btn-outline btn-sm" onclick="copyLineCallbackUrl()">複製網址</button>
-          </div>
-          <div style="font-size:0.75rem; color:#475569; margin-top:0.35rem;">
-            ※ 請將上方網址貼至 LINE Developers Console ➔「LINE Login」頻道 ➔「LINE 登入」分頁下的 <strong>Callback URL</strong>。
-          </div>
-        </div>
+          <!-- 步驟 2：快速勾選保養目標 -->
+          <div class="form-step-block">
+            <div class="step-header">
+              <span class="step-num">2</span>
+              <div>
+                <h3>勾選您最在意的保養重點（可複選）</h3>
+              </div>
+            </div>
 
-        <div style="font-weight:700; font-size:0.92rem; color:#0f172a; margin-bottom:0.5rem;">
-          👥 快速以家屬身分測試 (免等 LINE 審核即刻體驗)：
-        </div>
-        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.25rem;">
-          <button type="button" class="btn btn-outline btn-block" style="text-align:left; justify-content:flex-start; padding:0.6rem 0.85rem;" onclick="mockFamilyLogin('Alice 大女兒 (台北)', '台北')">
-            👩‍💼 <strong>Alice 大女兒 (台北)</strong> <span style="font-size:0.75rem; color:#64748b; margin-left:auto;">台北生活圈</span>
-          </button>
-          <button type="button" class="btn btn-outline btn-block" style="text-align:left; justify-content:flex-start; padding:0.6rem 0.85rem;" onclick="mockFamilyLogin('David 小兒子 (竹科)', '竹科')">
-            👨‍💻 <strong>David 小兒子 (竹科)</strong> <span style="font-size:0.75rem; color:#64748b; margin-left:auto;">新竹園區</span>
-          </button>
-          <button type="button" class="btn btn-outline btn-block" style="text-align:left; justify-content:flex-start; padding:0.6rem 0.85rem;" onclick="mockFamilyLogin('James 長子 (海外)', '海外')">
-            ✈️ <strong>James 長子 (海外)</strong> <span style="font-size:0.75rem; color:#64748b; margin-left:auto;">跨時區同步</span>
-          </button>
-        </div>
+            <div class="goal-checkbox-grid" id="goal-checkbox-grid">
+              <label class="goal-check-card">
+                <input type="checkbox" name="goal" value="eye" />
+                <span class="goal-icon">👀</span>
+                <div class="goal-text">
+                  <strong>晶亮護眼</strong>
+                  <span>長時間看電腦手機、乾澀疲勞</span>
+                </div>
+              </label>
+              <label class="goal-check-card">
+                <input type="checkbox" name="goal" value="cardio" checked />
+                <span class="goal-icon">🐟</span>
+                <div class="goal-text">
+                  <strong>外食循環與思緒</strong>
+                  <span>三餐外食少吃魚、油膩代謝</span>
+                </div>
+              </label>
+              <label class="goal-check-card">
+                <input type="checkbox" name="goal" value="energy" checked />
+                <span class="goal-icon">⚡</span>
+                <div class="goal-text">
+                  <strong>精神體力補給</strong>
+                  <span>常熬夜加班、下午容易疲倦</span>
+                </div>
+              </label>
+              <label class="goal-check-card">
+                <input type="checkbox" name="goal" value="gut" />
+                <span class="goal-icon">🌿</span>
+                <div class="goal-text">
+                  <strong>消化順暢與體質</strong>
+                  <span>排便不規律、容易脹氣或換季敏感</span>
+                </div>
+              </label>
+              <label class="goal-check-card">
+                <input type="checkbox" name="goal" value="bone" />
+                <span class="goal-icon">🌙</span>
+                <div class="goal-text">
+                  <strong>骨骼行動與舒眠</strong>
+                  <span>少喝牛奶缺鈣、淺眠難入睡、關節保養</span>
+                </div>
+              </label>
+              <label class="goal-check-card">
+                <input type="checkbox" name="goal" value="beauty" />
+                <span class="goal-icon">✨</span>
+                <div class="goal-text">
+                  <strong>氣色澎潤保養</strong>
+                  <span>日常基底美妍、彈力與氣色維持</span>
+                </div>
+              </label>
+            </div>
+          </div>
 
-        <div style="border-top:1px solid #e2e8f0; padding-top:0.85rem; display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.75rem; color:#64748b;">真機金鑰於 .env 設定後生效</span>
-          <button type="button" class="btn btn-primary btn-sm" style="background:#06C755; border-color:#06C755;" onclick="window.location.href='/auth/line'">
-            前往 LINE 官方真機授權
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+          <!-- 步驟 3：每月預算區間與飲食偏好 -->
+          <div class="form-step-block">
+            <div class="step-header">
+              <span class="step-num">3</span>
+              <div>
+                <h3>設定每月預算區間與食用偏好</h3>
+                <p class="step-hint">我們會將所有商品換算為「每月真實花費」，幫您在預算內挑出有效劑量最高的組合</p>
+              </div>
+            </div>
 
-  <!-- ==================== 編輯長輩基本資料視窗 (MODAL) ==================== -->
-  <div id="edit-patient-modal" class="pipeline-modal-backdrop">
-    <div class="pipeline-modal-content" style="max-width: 480px;">
-      <div class="pipeline-modal-header" style="border-bottom: 1px solid #e2e8f0;">
-        <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem; display: flex; align-items: center; gap: 0.4rem;">
-          ✏️ 編輯長輩基本資料
-        </h3>
-        <button type="button" class="modal-close-btn" onclick="closeEditPatientModal()">&times;</button>
-      </div>
-      <div class="pipeline-modal-body" style="padding: 1.25rem;">
-        <!-- LINE 帳號綁定與全組共享狀態提示 -->
-        <div class="form-group" style="margin-bottom: 0.95rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.65rem 0.85rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 0.35rem;">
-              <svg class="line-icon-svg" style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="#00c300"><path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/></svg>
-              LINE 帳號綁定與雲端共享
-            </span>
-            <span id="edit-patient-line-status" style="font-size: 0.75rem; color: #15803d; font-weight: 700;">已綁定目前登入帳號</span>
-          </div>
-          <div style="font-size: 0.73rem; color: #475569; margin-top: 0.3rem; line-height: 1.45;">
-            ✨ 儲存後將同步永久保存至雲端平台，全體組員開網頁或做簡報時皆可直接查閱共享！
-          </div>
-        </div>
+            <div class="budget-radio-grid" id="budget-radio-grid">
+              <label class="budget-card">
+                <input type="radio" name="budgetTier" value="under_500" />
+                <span class="budget-title">NT$ 500 以下 / 月</span>
+                <span class="budget-desc">極致小資・單項基礎打底</span>
+              </label>
+              <label class="budget-card">
+                <input type="radio" name="budgetTier" value="500_1200" />
+                <span class="budget-title">NT$ 500 ~ 1,200 / 月</span>
+                <span class="budget-desc">實惠均衡・1~2 項核心保養</span>
+              </label>
+              <label class="budget-card">
+                <input type="radio" name="budgetTier" value="1200_2000" checked />
+                <span class="budget-title">NT$ 1,200 ~ 2,000 / 月</span>
+                <span class="budget-desc">主流足量・高濃度專利規格</span>
+              </label>
+              <label class="budget-card">
+                <input type="radio" name="budgetTier" value="2000_3000" />
+                <span class="budget-title">NT$ 2,000 ~ 3,000 / 月</span>
+                <span class="budget-desc">完整配搭・2~3 項高規足量</span>
+              </label>
+              <label class="budget-card">
+                <input type="radio" name="budgetTier" value="above_3000" />
+                <span class="budget-title">NT$ 3,000 以上 / 月</span>
+                <span class="budget-desc">頂規全方位・無預算上限</span>
+              </label>
+            </div>
 
-        <form id="edit-patient-form" onsubmit="handleEditPatientSubmit(event)">
-          <div class="form-group" style="margin-bottom: 0.85rem;">
-            <label class="form-label" for="edit-patient-name">長輩稱謂 / 姓名</label>
-            <input type="text" id="edit-patient-name" class="form-input" placeholder="例如: 陳國華 (爸爸)、李媽媽" required>
-          </div>
-          <div class="form-group" style="margin-bottom: 0.85rem;">
-            <label class="form-label" for="edit-patient-age">年齡 (歲)</label>
-            <input type="number" id="edit-patient-age" class="form-input" placeholder="例如: 72" min="1" max="130">
-          </div>
-          <div class="form-group" style="margin-bottom: 0.85rem;">
-            <label class="form-label" for="edit-patient-conditions">主要慢性病史 / 照護焦點</label>
-            <input type="text" id="edit-patient-conditions" class="form-input" placeholder="例如: 高血壓二期、慢性腎病3期">
-          </div>
-          <div class="form-group" style="margin-bottom: 1.25rem;">
-            <label class="form-label" for="edit-patient-hospital">常就診醫院</label>
-            <input type="text" id="edit-patient-hospital" class="form-input" placeholder="例如: 林口長庚紀念醫院、台大醫院">
-          </div>
-          <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="closeEditPatientModal()">取消</button>
-            <button type="submit" class="btn btn-primary btn-sm">儲存長輩資料</button>
+            <div class="preference-row">
+              <div class="pref-field">
+                <label for="finder-diet">飲食限制：</label>
+                <select id="finder-diet" class="form-select">
+                  <option value="all">一般飲食（葷素皆可）</option>
+                  <option value="vegan">素食可食</option>
+                </select>
+              </div>
+              <div class="pref-field">
+                <label for="finder-form-pref">劑型偏好：</label>
+                <select id="finder-form-pref" class="form-select">
+                  <option value="all">不限劑型（以效益最高優先）</option>
+                  <option value="small">偏好小顆膠囊／好吞錠劑</option>
+                  <option value="powder">不會吞膠囊（偏好粉包／液態飲）</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg" id="btn-run-finder">
+                開始分析並制定我的保健方案 ➜
+              </button>
+            </div>
           </div>
         </form>
       </div>
+
+      <!-- 分析結果區塊 (點擊制定方案後展開，預設亦載入示範結果) -->
+      <div id="finder-result-area" class="finder-result-area" style="display:none;">
+        <!-- 動態注入個人化方案建議與跨品牌推薦比對 -->
+      </div>
+
+      <!-- 全站跨品牌保健品比價資料庫 -->
+      <div class="card catalog-section-card">
+        <div class="catalog-header">
+          <div>
+            <h2>跨品牌保健品透明比價庫</h2>
+            <p>不看廣告話術，統一攤開各品牌「每日實際花費」、「有效成分濃度」與「真實優缺點」</p>
+          </div>
+          <div class="catalog-controls">
+            <input
+              type="search"
+              id="catalog-search-input"
+              class="form-input"
+              placeholder="搜尋品牌、品名或成分 (如: 魚油、游離型、海藻鈣)..."
+              oninput="renderCatalog()"
+            />
+            <select id="catalog-sort-select" class="form-select" onchange="renderCatalog()">
+              <option value="score_desc">依綜合效益評分（高 ➜ 低）</option>
+              <option value="daily_asc">依每日實際花費（低 ➜ 高）</option>
+              <option value="monthly_asc">依每月花費（低 ➜ 高）</option>
+              <option value="price_asc">依單盒售價（低 ➜ 高）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 品類篩選膠囊列 -->
+        <div class="category-filter-pills" id="category-filter-pills">
+          <button type="button" class="cat-pill active" data-cat="all" onclick="setCatalogCategory('all')">全部品類</button>
+          <button type="button" class="cat-pill" data-cat="魚油" onclick="setCatalogCategory('魚油')">🐟 魚油 (Omega-3)</button>
+          <button type="button" class="cat-pill" data-cat="葉黃素" onclick="setCatalogCategory('葉黃素')">👀 葉黃素</button>
+          <button type="button" class="cat-pill" data-cat="益生菌" onclick="setCatalogCategory('益生菌')">🌿 益生菌</button>
+          <button type="button" class="cat-pill" data-cat="B群" onclick="setCatalogCategory('B群')">⚡ 維生素 B 群</button>
+          <button type="button" class="cat-pill" data-cat="鈣鎂D" onclick="setCatalogCategory('鈣鎂D')">🌙 鈣鎂D / 關節</button>
+          <button type="button" class="cat-pill" data-cat="膠原蛋白" onclick="setCatalogCategory('膠原蛋白')">✨ 膠原蛋白</button>
+        </div>
+
+        <div class="catalog-grid" id="catalog-grid">
+          <!-- 動態渲染跨品牌商品比較卡 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         功能二：【管理 A：有興趣清單】重疊去冗分析與效益把關
+         ========================================================================= -->
+    <section id="view-wishlist" class="view-section">
+      <div class="section-banner">
+        <div>
+          <h1>有興趣的商品清單 ＆ 重疊去冗分析</h1>
+          <p>把考慮購買的保健品放進來，系統會自動交叉比對您「已購買正在吃」與「有興趣」的商品，抓出重複購買並幫您省下冤枉錢。</p>
+        </div>
+        <div class="banner-btns">
+          <button type="button" class="btn btn-outline" onclick="switchView('view-finder')">
+            ＋ 去比價庫挑選更多商品
+          </button>
+        </div>
+      </div>
+
+      <!-- 頂部省錢與費用摘要指標 -->
+      <div class="wishlist-kpi-grid" id="wishlist-kpi-grid">
+        <!-- 動態注入：有興趣清單總月費、發現重疊可省金額、精簡後最佳月費 -->
+      </div>
+
+      <div class="two-col-management">
+        <!-- 左欄：有興趣的商品清單 -->
+        <div class="card">
+          <div class="card-title-bar">
+            <h3>♡ 我有興趣考慮購買的商品</h3>
+            <span class="pill-count" id="wishlist-panel-count">0 款</span>
+          </div>
+          <div id="wishlist-items-container" class="managed-list-container">
+            <!-- 動態渲染有興趣的商品卡 -->
+          </div>
+        </div>
+
+        <!-- 右欄：嚴格重疊去冗與劑量安全分析報告 -->
+        <div class="card analysis-report-card">
+          <div class="card-title-bar">
+            <h3>⚖️ 跨商品重疊去冗 ＆ 劑量安全分析報告</h3>
+            <button type="button" class="btn btn-sm btn-outline" onclick="refreshWishlistAnalysis()">
+              重新精算分析
+            </button>
+          </div>
+
+          <div id="wishlist-analysis-container">
+            <!-- 動態渲染：
+                 1. 整體購買建議結論
+                 2. 去冗省錢警示（「不需要買 A，因為已經有 B」＋ 一鍵剔除省錢按鈕）
+                 3. 合併每日營養素劑量檢核表（對照每日建議量與上限 UL）
+                 4. 服用時段衝突與吸收提醒 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         功能三：【管理 B：已購買與服用日曆】月經日曆式打卡與身體日誌
+         ========================================================================= -->
+    <section id="view-calendar" class="view-section">
+      <div class="section-banner">
+        <div>
+          <h1>已購買保健櫃 ＆ 服用狀態日曆</h1>
+          <p>像記錄生理期日曆一樣，每天輕鬆勾選吃過的保健品並記錄精神、消化與睡眠感受，追蹤保健品吃了一個月後是否真的有感。</p>
+        </div>
+        <button type="button" class="btn btn-outline" onclick="openAddSupplementModal('purchased')">
+          ＋ 新增我手邊已買的保健品
+        </button>
+      </div>
+
+      <!-- 日曆頂部統計指標 -->
+      <div class="calendar-kpi-row" id="calendar-kpi-row">
+        <!-- 動態注入：本月規律服用率、連續打卡天數、目前已購每月總花費、正在服用罐數 -->
+      </div>
+
+      <!-- 日曆與當日打卡雙欄區 -->
+      <div class="calendar-workspace">
+        <!-- 左側：互動式月曆視圖 -->
+        <div class="card calendar-main-card">
+          <div class="calendar-nav-bar">
+            <div class="cal-month-switcher">
+              <button type="button" class="btn-cal-arrow" onclick="changeCalendarMonth(-1)" aria-label="上個月">&lsaquo;</button>
+              <h2 id="calendar-month-title">2026 年 11 月</h2>
+              <button type="button" class="btn-cal-arrow" onclick="changeCalendarMonth(1)" aria-label="下個月">&rsaquo;</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline" onclick="jumpToToday()">回到今天</button>
+          </div>
+
+          <!-- 圖例說明 -->
+          <div class="calendar-legend">
+            <span class="legend-item"><i class="dot dot-full"></i> 當日已全數服用</span>
+            <span class="legend-item"><i class="dot dot-partial"></i> 部分服用</span>
+            <span class="legend-item"><i class="dot dot-log"></i> 有記錄身體狀態日誌</span>
+          </div>
+
+          <!-- 星期標頭 -->
+          <div class="calendar-weekdays">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+
+          <!-- 日期網格 -->
+          <div class="calendar-days-grid" id="calendar-days-grid">
+            <!-- 動態產生月曆格子 -->
+          </div>
+        </div>
+
+        <!-- 右側：選取日期的服用打卡 ＆ 身體狀態日誌 -->
+        <div class="card daily-tracker-card">
+          <div class="daily-header">
+            <div>
+              <span class="daily-tag">當日服用與身體記錄</span>
+              <h3 id="selected-date-title">2026-11-18 (今天)</h3>
+            </div>
+            <span class="daily-progress-badge" id="daily-progress-badge">完成 0 / 0</span>
+          </div>
+
+          <!-- 1. 當日該吃的已購買保健品打卡清單 -->
+          <div class="daily-section">
+            <div class="daily-sec-head">
+              <h4>💊 點擊勾選今日已服用的保健品</h4>
+              <button type="button" class="btn-link-sm" onclick="checkAllTodaySupplements()">全選今日已吃</button>
+            </div>
+            <div id="daily-checklist-container" class="daily-checklist">
+              <!-- 依時段顯示已購買保健品打卡項 -->
+            </div>
+          </div>
+
+          <!-- 2. 像月經日曆一樣的身體感受快速打卡 -->
+          <div class="daily-section">
+            <h4>📝 身體感受與狀態日誌（點選即記錄）</h4>
+
+            <div class="mood-group">
+              <span class="mood-label">精神體力：</span>
+              <div class="mood-pills" data-field="energyLevel">
+                <button type="button" class="mood-pill" data-val="精神飽滿" onclick="selectDailyMood('energyLevel', '精神飽滿')">⚡ 精神飽滿</button>
+                <button type="button" class="mood-pill" data-val="狀態平穩" onclick="selectDailyMood('energyLevel', '狀態平穩')">🙂 狀態平穩</button>
+                <button type="button" class="mood-pill" data-val="疲倦想睡" onclick="selectDailyMood('energyLevel', '疲倦想睡')">🥱 疲倦想睡</button>
+              </div>
+            </div>
+
+            <div class="mood-group">
+              <span class="mood-label">消化排便：</span>
+              <div class="mood-pills" data-field="digestionStatus">
+                <button type="button" class="mood-pill" data-val="排便順暢" onclick="selectDailyMood('digestionStatus', '排便順暢')">🌿 排便順暢</button>
+                <button type="button" class="mood-pill" data-val="稍微脹氣" onclick="selectDailyMood('digestionStatus', '稍微脹氣')">💨 稍微脹氣</button>
+                <button type="button" class="mood-pill" data-val="排便不順" onclick="selectDailyMood('digestionStatus', '排便不順')">🪨 排便不順</button>
+              </div>
+            </div>
+
+            <div class="mood-group">
+              <span class="mood-label">睡眠晶亮：</span>
+              <div class="mood-pills" data-field="sleepEyeStatus">
+                <button type="button" class="mood-pill" data-val="睡眠深沉" onclick="selectDailyMood('sleepEyeStatus', '睡眠深沉')">🌙 睡眠深沉</button>
+                <button type="button" class="mood-pill" data-val="晶亮舒適" onclick="selectDailyMood('sleepEyeStatus', '晶亮舒適')">👀 晶亮舒適</button>
+                <button type="button" class="mood-pill" data-val="眼睛乾酸" onclick="selectDailyMood('sleepEyeStatus', '眼睛乾酸')">👁️ 眼睛乾酸</button>
+              </div>
+            </div>
+
+            <div class="daily-note-box">
+              <label for="daily-note-input">當日隨手筆記：</label>
+              <textarea
+                id="daily-note-input"
+                class="form-textarea"
+                rows="2"
+                placeholder="記錄今天的體感變化（例如：吃益生菌第 7 天早上排便很順、昨晚睡前吃鎂睡得比較沉）..."
+              ></textarea>
+              <button type="button" class="btn btn-primary btn-block" onclick="saveDailyCalendarLog()">
+                儲存當日打卡與日誌
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 下方：目前已購買正在服用的商品管理櫃 -->
+      <div class="card purchased-cabinet-card">
+        <div class="card-title-bar">
+          <div>
+            <h3>📦 我目前已購買正在服用的保健品清單</h3>
+            <p class="card-sub-hint">這裡的商品會自動出現在上方的每日服用日曆中，並作為「有興趣清單」的去冗比對基準</p>
+          </div>
+          <span class="pill-count" id="purchased-cabinet-count">0 款</span>
+        </div>
+        <div id="purchased-cabinet-grid" class="purchased-cabinet-grid">
+          <!-- 動態渲染已購買商品卡 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 課程專題免責聲明 (嚴格保留指定開頭與法規風險內文) ==================== -->
+    <footer class="legal-disclaimer-footer">
+      <div class="legal-disclaimer-card">
+        <p class="legal-statement-core">
+          ⚖️ 本網頁僅供政治大學創創入門課程使用，非正式平台。
+        </p>
+        <p class="legal-statement-desc">
+          本平台（好選保健 PurePick）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示與概念驗證（PoC）模型，非屬我國《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之正式醫療診斷軟體或藥事諮詢機構。網頁所載之各品牌保健食品價格、成分含量換算、重疊去冗建議與服用日曆紀錄，均僅供課堂教學演練與小組專題報告展示用途，不具備任何臨床醫療診斷、處方指示或疾病治療效力。若真實生活中有身體不適、慢性疾病服藥交互作用疑問或醫療需求，請務必諮詢合格執業醫師、藥師或營養師。
+        </p>
+        <div class="legal-footer-meta">
+          <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
+          <span>版權所有 © 2026 Academic Project • All Rights Reserved.</span>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ==================== 手機底部快捷導覽列 ==================== -->
+  <nav class="mobile-bottom-nav" aria-label="手機底部導覽">
+    <button type="button" class="m-nav-item active" data-target="view-finder" onclick="switchView('view-finder')">
+      <span class="m-nav-icon">🔍</span>
+      <span>尋找方案</span>
+    </button>
+    <button type="button" class="m-nav-item" data-target="view-wishlist" onclick="switchView('view-wishlist')">
+      <span class="m-nav-icon">⚖️</span>
+      <span>有興趣分析 (<b id="m-wishlist-count">0</b>)</span>
+    </button>
+    <button type="button" class="m-nav-item" data-target="view-calendar" onclick="switchView('view-calendar')">
+      <span class="m-nav-icon">📅</span>
+      <span>服用日曆 (<b id="m-purchased-count">0</b>)</span>
+    </button>
+  </nav>
+
+  <!-- ==================== MODAL 1：手動新增市售保健品 ==================== -->
+  <div id="add-supplement-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>＋ 新增市售保健食品</h3>
+        <button type="button" class="modal-close" onclick="closeAddSupplementModal()">&times;</button>
+      </div>
+      <form id="add-supplement-form" onsubmit="handleAddSupplementSubmit(event)">
+        <div class="modal-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>品牌名稱 *</label>
+              <input type="text" id="new-supp-brand" class="form-input" placeholder="例如：好市多、DHC、大研生醫" required />
+            </div>
+            <div class="form-group">
+              <label>商品名稱 *</label>
+              <input type="text" id="new-supp-name" class="form-input" placeholder="例如：高濃度魚油軟膠囊" required />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>保健品類別 *</label>
+              <select id="new-supp-category" class="form-select">
+                <option value="魚油">🐟 魚油 (Omega-3)</option>
+                <option value="葉黃素">👀 葉黃素</option>
+                <option value="益生菌">🌿 益生菌</option>
+                <option value="B群">⚡ 維生素 B 群</option>
+                <option value="鈣鎂D">🌙 鈣鎂D / 關節保養</option>
+                <option value="膠原蛋白">✨ 膠原蛋白</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>建議服用時段</label>
+              <select id="new-supp-timing" class="form-select">
+                <option value="隨餐/飯後">🍱 隨餐 / 飯後</option>
+                <option value="早上空腹">🌅 早上空腹</option>
+                <option value="睡前">🌙 睡前</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label>單盒售價 (NT$) *</label>
+              <input type="number" id="new-supp-price" class="form-input" value="980" min="50" required />
+            </div>
+            <div class="form-group">
+              <label>總顆數 / 包數 *</label>
+              <input type="number" id="new-supp-total" class="form-input" value="60" min="1" required />
+            </div>
+            <div class="form-group">
+              <label>每日吃幾顆/包 *</label>
+              <input type="number" id="new-supp-daily" class="form-input" value="2" min="1" required />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>核心有效成分與含量說明</label>
+              <input type="text" id="new-supp-summary" class="form-input" placeholder="例如：Omega-3 1000mg (rTG型 85%)" />
+            </div>
+            <div class="form-group">
+              <label>新增後直接加入哪個清單？</label>
+              <select id="new-supp-target-list" class="form-select">
+                <option value="wishlist">♡ 加入「有興趣清單」做去冗分析</option>
+                <option value="purchased">✓ 加入「已購買清單」開始日曆打卡</option>
+                <option value="catalog_only">僅加入比價資料庫</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeAddSupplementModal()">取消</button>
+          <button type="submit" class="btn btn-primary">儲存並自動換算每日花費</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <script src="app.js?v=2.0.8"></script>
+  <!-- ==================== MODAL 2：消費者訂閱方案與中立商業模式 ==================== -->
+  <div id="subscription-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3>💎 好選保健 消費者訂閱方案</h3>
+        <button type="button" class="modal-close" onclick="closeSubscriptionModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="sub-intro-text">
+          市面上多數保健品推薦文章由品牌廠商贊助置入，只會勸您「越買越多」。好選保健透過消費者小額訂閱維持獨立營運，<strong>幫您砍掉多買的一罐重複保健品，省下的錢就超過一整年的訂閱費</strong>。
+        </p>
+        <div class="sub-plans-grid">
+          <div class="sub-plan-card">
+            <div class="plan-badge">免費體驗版</div>
+            <div class="plan-price">NT$ 0 <span>/ 永久免費</span></div>
+            <ul class="plan-features">
+              <li>✓ 跨品牌保健品每日真實花費比價</li>
+              <li>✓ 互動式需求表單與預算方案推薦</li>
+              <li>✓ 基礎有興趣清單管理（最多 3 款比對）</li>
+              <li>✓ 基礎服用日曆打卡</li>
+            </ul>
+            <button type="button" class="btn btn-outline btn-block" onclick="closeSubscriptionModal()">目前使用中</button>
+          </div>
+          <div class="sub-plan-card featured">
+            <div class="plan-badge badge-pro">精明消費者訂閱版（專題全功能已解鎖）</div>
+            <div class="plan-price">NT$ 49 <span>/ 月（年繳 NT$ 390）</span></div>
+            <ul class="plan-features">
+              <li>✓ <strong>無上限跨品牌成分重疊與去冗省錢精算</strong></li>
+              <li>✓ <strong>已購買 vs. 有興趣商品交叉比對（避免重複買）</strong></li>
+              <li>✓ <strong>完整服用日曆、身體感受追蹤與耗盡補貨提醒</strong></li>
+              <li>✓ <strong>跨通路最低價變動通知與透明分潤回饋折抵</strong></li>
+            </ul>
+            <button type="button" class="btn btn-primary btn-block" onclick="activateDemoProPlan()">
+              ✨ 課程展示期間已免費開啟全功能
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3：LINE 登入與組員身分切換 ==================== -->
+  <div id="line-login-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>LINE 帳號登入與清單綁定</h3>
+        <button type="button" class="modal-close" onclick="closeLineLoginModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 1rem; color: #475569; font-size: 0.92rem;">
+          登入後可將您的「有興趣清單」、「已購買保健品」與「服用日曆」綁定至您的名稱，方便小組報告展示與跨裝置查看。
+        </p>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>輸入您的稱呼或組員姓名：</label>
+          <input type="text" id="mock-line-name" class="form-input" placeholder="例如：政大創創第八組 - 組員" value="政大創創第八組" />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.65rem;">
+          <button type="button" class="btn btn-line-full" onclick="submitQuickLineLogin()">
+            立即以 LINE 身分登入並綁定清單
+          </button>
+          <a href="/auth/line" class="btn btn-outline" style="text-align:center; text-decoration:none;">
+            跳轉 LINE 官方 OAuth 授權頁
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全域輕量提示 Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js?v=3.0.0"></script>
 </body>
 </html>

@@ -1,2165 +1,1239 @@
 /**
  * app.js
- * CareNav 智護領航 - 核心前端交互控制器 (專業醫療商務版)
- * 實裝簡報 4 大核心模組 (排除第三點)：
- * 1. 全家照護雲端看板 (Family Care Hub & Family Notes)
- * 2. 診前臨床指引卡生成 (20秒主訴 + 5秒勾選回條)
- * 3. 口頭醫囑結構化轉譯 (語音錄音 / 快捷句 ➜ 條件-行動-紅旗)
- * 4. 藥袋代碼逆向推導引擎 (照片上傳 + 時段比對 + 藥學知識庫 MCP 接口)
- * 5. 在地醫院 Hub 陪診媒合 (Linkou, NTU, VGHTPE)
+ * 好選保健 PurePick - 跨品牌保健食品比較、去冗評估與服用日曆管理前端互動邏輯
  */
 
-// ========================================================
-// 1. 左側面板導覽與視圖切換
-// ========================================================
-const navItems = document.querySelectorAll('.nav-item');
-const pageViews = document.querySelectorAll('.page-view');
-const pageTitleEl = document.getElementById('page-title');
-const pageDescEl = document.getElementById('page-desc');
-
-const VIEW_METAS = {
-  'view-dashboard': {
-    title: '全家照護雲端看板 (Family Care Hub)',
-    desc: '手足同步瀏覽跨科就醫履歷、最新處方異動與口頭醫囑，杜絕照護內耗'
-  },
-  'view-orders': {
-    title: '口頭醫囑結構化轉譯 (Verbal Orders Digitization)',
-    desc: '診後極速語音/文字錄入，自動轉譯為全家皆懂的【觸發條件 - 具體行動 - 危急紅旗】'
-  },
-  'view-prescription': {
-    title: '藥袋用法代碼逆向推導 (Prescription Inference Engine)',
-    desc: '拍照上傳新藥袋，端點不可逆物理去識別化，自動比對跨期門診處方異動並建立今日服藥生活排程'
-  }
+const state = {
+  supplements: [],
+  wishlist: [],
+  purchased: [],
+  calendarLogs: {},
+  wishlistAnalysis: null,
+  finderResult: null,
+  activeView: 'view-finder',
+  catalogCategory: 'all',
+  calendarYear: new Date().getFullYear(),
+  calendarMonth: new Date().getMonth() + 1, // 1-12
+  selectedDateStr: formatDateStr(new Date()),
+  currentUser: null,
+  isDemoCleared: false
 };
 
-const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+let deferredPwaPrompt = null;
 
-function switchView(targetViewId) {
-  navItems.forEach(item => {
-    if (item.getAttribute('data-view') === targetViewId) {
-      item.classList.add('active');
-    } else {
-      item.classList.remove('active');
+function formatDateStr(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function showToast(message) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = 'toast-msg';
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.remove();
+  }, 3200);
+}
+
+// ========================================================
+// 1. 初始化與資料載入
+// ========================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  initUserAuth();
+  await loadBootstrapData();
+});
+
+async function loadBootstrapData() {
+  try {
+    const res = await fetch('/api/bootstrap');
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.supplements = json.data.supplements || [];
+      state.wishlist = json.data.wishlist || [];
+      state.purchased = json.data.purchased || [];
+      state.calendarLogs = json.data.calendarLogs || {};
+      state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
+
+      updateNavBadges();
+      renderCatalog();
+      renderWishlistView();
+      renderCalendarView();
     }
-  });
-
-  bottomNavItems.forEach(item => {
-    if (item.getAttribute('data-view') === targetViewId) {
-      item.classList.add('active');
-    } else {
-      item.classList.remove('active');
-    }
-  });
-
-  pageViews.forEach(view => {
-    if (view.id === targetViewId) {
-      view.classList.add('active');
-    } else {
-      view.classList.remove('active');
-    }
-  });
-
-  const meta = VIEW_METAS[targetViewId];
-  if (meta && pageTitleEl && pageDescEl) {
-    pageTitleEl.innerText = meta.title;
-    pageDescEl.innerText = meta.desc;
+  } catch (err) {
+    console.error('載入平台資料失敗:', err);
   }
+}
 
-  // 手機版：切換視圖後自動收起側邊欄抽屜並滑動至頂部
-  closeMobileSidebar();
+function updateNavBadges() {
+  const wCount = state.wishlist.length;
+  const pCount = state.purchased.length;
+
+  const setTxt = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  setTxt('nav-wishlist-count', wCount);
+  setTxt('nav-purchased-count', pCount);
+  setTxt('m-wishlist-count', wCount);
+  setTxt('m-purchased-count', pCount);
+  setTxt('wishlist-panel-count', `${wCount} 款`);
+  setTxt('purchased-cabinet-count', `${pCount} 款`);
+
+  const demoBtn = document.getElementById('btn-toggle-demo');
+  if (demoBtn) {
+    demoBtn.innerHTML = state.isDemoCleared ? '🔄 恢復預設範例' : '🧹 清空範例';
+  }
+}
+
+function switchView(viewId) {
+  state.activeView = viewId;
+  document.querySelectorAll('.view-section').forEach(sec => {
+    sec.classList.toggle('active', sec.id === viewId);
+  });
+  document.querySelectorAll('.nav-tab, .m-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.target === viewId);
+  });
+
+  if (viewId === 'view-wishlist') {
+    renderWishlistView();
+  } else if (viewId === 'view-calendar') {
+    renderCalendarView();
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-navItems.forEach(item => {
-  item.addEventListener('click', () => {
-    const target = item.getAttribute('data-view');
-    switchView(target);
-  });
-});
-
-bottomNavItems.forEach(item => {
-  item.addEventListener('click', () => {
-    const target = item.getAttribute('data-view');
-    switchView(target);
-  });
-});
-
-// 手機側邊欄抽屜 (Off-canvas Drawer) 開關控制
-const mobileHamburgerBtn = document.getElementById('mobile-hamburger-btn');
-const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
-const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-const sidebarEl = document.querySelector('.sidebar');
-
-function openMobileSidebar() {
-  if (sidebarEl) sidebarEl.classList.add('open');
-  if (sidebarBackdrop) sidebarBackdrop.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-window.openMobileSidebar = openMobileSidebar;
-
-function closeMobileSidebar() {
-  if (sidebarEl) sidebarEl.classList.remove('open');
-  if (sidebarBackdrop) sidebarBackdrop.classList.remove('open');
-  document.body.style.overflow = '';
-}
-window.closeMobileSidebar = closeMobileSidebar;
-
-if (mobileHamburgerBtn) mobileHamburgerBtn.addEventListener('click', openMobileSidebar);
-if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeMobileSidebar);
-if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+window.switchView = switchView;
 
 // ========================================================
-// 2. 全家照護雲端看板 (Family Care Hub) 資料載入與長輩管理
+// 2. 【功能一：尋找】互動式需求表單與跨品牌比較
 // ========================================================
-let activePatientData = null;
+function fillFinderSample(sampleId) {
+  const samples = {
+    1: {
+      text: '我是軟體工程師，每天看電腦螢幕超過 10 小時，下午眼睛非常乾澀酸疲；平常三餐都吃外食便當，幾乎沒吃魚，想找真正高濃度划算的護眼跟魚油組合。',
+      goals: ['eye', 'cardio'],
+      budget: '1200_2000',
+      diet: 'all',
+      form: 'all'
+    },
+    2: {
+      text: '最近趕專案常熬夜到凌晨，白天上班精神很差、容易嘴破；可是晚上躺到床上又很淺眠多夢、半夜容易醒來，希望白天有精神、晚上能放鬆好睡。',
+      goals: ['energy', 'bone'],
+      budget: '1200_2000',
+      diet: 'all',
+      form: 'all'
+    },
+    3: {
+      text: '平常青菜吃得少，常常兩三天才排便一次而且肚子容易脹氣；之前買過市售乳酸菌覺得太甜像在吃糖粉，想找無添加糖跟香料的足量益生菌。',
+      goals: ['gut'],
+      budget: '500_1200',
+      diet: 'vegan',
+      form: 'powder'
+    },
+    4: {
+      text: '想幫家裡長輩挑保健品，長輩最近走路上下樓梯覺得關節卡卡、晚上睡不好容易抽筋，而且很怕吞大顆的膠囊，預算大概兩千到三千元以內。',
+      goals: ['bone', 'cardio'],
+      budget: '2000_3000',
+      diet: 'all',
+      form: 'small'
+    }
+  };
 
-async function loadDashboardData() {
+  const s = samples[sampleId];
+  if (!s) return;
+
+  const textEl = document.getElementById('finder-free-text');
+  if (textEl) textEl.value = s.text;
+
+  document.querySelectorAll('#goal-checkbox-grid input[name="goal"]').forEach(cb => {
+    cb.checked = s.goals.includes(cb.value);
+  });
+
+  document.querySelectorAll('#budget-radio-grid input[name="budgetTier"]').forEach(rb => {
+    rb.checked = rb.value === s.budget;
+  });
+
+  const dietEl = document.getElementById('finder-diet');
+  if (dietEl) dietEl.value = s.diet;
+
+  const formEl = document.getElementById('finder-form-pref');
+  if (formEl) formEl.value = s.form;
+
+  handleFinderSubmit();
+}
+window.fillFinderSample = fillFinderSample;
+
+async function handleFinderSubmit(e) {
+  if (e) e.preventDefault();
+
+  const freeText = document.getElementById('finder-free-text')?.value || '';
+  const goals = Array.from(document.querySelectorAll('#goal-checkbox-grid input[name="goal"]:checked')).map(el => el.value);
+  const budgetTier = document.querySelector('#budget-radio-grid input[name="budgetTier"]:checked')?.value || '1200_2000';
+  const diet = document.getElementById('finder-diet')?.value || 'all';
+  const formPref = document.getElementById('finder-form-pref')?.value || 'all';
+
+  const btn = document.getElementById('btn-run-finder');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '正在為您比對各品牌成分與預算...';
+  }
+
   try {
-    const res = await fetch('/api/dashboard');
-    const result = await res.json();
-    if (!result.success || !result.data) return;
-
-    const { patient, latestOrder, currentPrescription, verbalOrders, prescriptions, hubBookings, familyNotes } = result.data;
-    activePatientData = patient;
-
-    // 判斷是否為自家長輩 (非陳國華展示範例)
-    const isCleared = !patient || patient.name !== '陳國華 (爸爸)';
-    window.isDemoCleared = isCleared;
-    if (typeof updateDemoToggleUI === 'function') {
-      updateDemoToggleUI(isCleared);
+    const res = await fetch('/api/finder/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ freeText, goals, diet, formPref, budgetTier })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.finderResult = json.data;
+      renderFinderResult(json.data);
     }
-
-    // 1. 動態更新側邊欄長輩個案卡
-    if (patient) {
-      const nameEl = document.getElementById('sidebar-patient-name');
-      const ageEl = document.getElementById('sidebar-patient-age');
-      const condEl = document.getElementById('sidebar-patient-conditions');
-      const hospEl = document.getElementById('sidebar-patient-hospital');
-
-      if (nameEl) nameEl.innerText = patient.name || '自家長輩';
-      if (ageEl) ageEl.innerText = patient.age ? `${patient.age}歲` : '';
-      if (condEl) condEl.innerText = patient.conditions || '尚無慢性病紀錄 (點選可編輯)';
-      if (hospEl) hospEl.innerText = patient.primary_hospital || '常看診醫院 (點選可編輯)';
-
-      const updaterEl = document.getElementById('sidebar-patient-updater');
-      if (updaterEl) {
-        if (patient.name === '陳國華 (爸爸)') {
-          updaterEl.innerHTML = `<span style="color:#64748b;">👥 官方臨床示範案例</span>`;
-        } else if (patient.updated_by) {
-          updaterEl.innerHTML = `<span style="color:#059669; font-weight:600;">👥 責任家屬：${escapeHtml(patient.updated_by)}</span>`;
-        } else {
-          updaterEl.innerHTML = `<span style="color:#0284c7;">👥 自家長輩資料</span>`;
-        }
-      }
-    }
-
-    // 2. 動態更新 4 大 KPI 卡片
-    const kpiDays = document.getElementById('kpi-visit-days');
-    const kpiVisitSub = document.getElementById('kpi-visit-sub');
-    if (kpiDays && kpiVisitSub) {
-      if (hubBookings && hubBookings.length > 0 && hubBookings[0].visit_date) {
-        kpiDays.innerText = '6 天';
-        kpiVisitSub.innerText = `${hubBookings[0].visit_date.slice(5, 10)} ${hubBookings[0].department || ''}・${hubBookings[0].hospital_name || ''}`;
-      } else {
-        kpiDays.innerText = '--';
-        kpiVisitSub.innerText = '尚未排程回診';
-      }
-    }
-
-    const kpiMedCount = document.getElementById('dash-med-count');
-    const kpiMedSub = document.getElementById('dash-med-sub');
-    if (kpiMedCount) {
-      const medCount = currentPrescription?.medications?.length || 0;
-      kpiMedCount.innerText = `${medCount} 種`;
-      if (kpiMedSub) {
-        kpiMedSub.innerText = medCount > 0 ? '本期已建立生活排程' : '尚無處方 (至藥袋推導上傳)';
-      }
-    }
-
-    const kpiOrderTitle = document.getElementById('kpi-order-title');
-    const kpiOrderSub = document.getElementById('kpi-order-sub');
-    if (kpiOrderTitle && kpiOrderSub) {
-      if (latestOrder) {
-        kpiOrderTitle.innerText = latestOrder.condition_text ? (latestOrder.condition_text.length > 12 ? latestOrder.condition_text.slice(0, 12) + '...' : latestOrder.condition_text) : '最新醫囑';
-        kpiOrderSub.innerText = latestOrder.action_text || '已同步至家庭看板';
-      } else {
-        kpiOrderTitle.innerText = '尚無醫囑';
-        kpiOrderSub.innerText = '至「口頭醫囑轉譯」錄入';
-      }
-    }
-
-    const kpiEscort = document.getElementById('kpi-escort-name');
-    const kpiEscortSub = document.getElementById('kpi-escort-sub');
-    if (kpiEscort && kpiEscortSub) {
-      if (latestOrder?.recorded_by) {
-        kpiEscort.innerText = latestOrder.recorded_by;
-        kpiEscortSub.innerText = '出診間責任指引紀錄';
-      } else {
-        kpiEscort.innerText = '家屬協同';
-        kpiEscortSub.innerText = '手足全天候守護中';
-      }
-    }
-
-    // 3. 動態渲染跨科就醫履歷動態時間軸
-    const timelineEl = document.getElementById('dashboard-timeline');
-    if (timelineEl) {
-      const hasOrders = verbalOrders && verbalOrders.length > 0;
-      const hasPrescription = !!currentPrescription;
-
-      if (!hasOrders && !hasPrescription) {
-        // 示範資料已清空狀態：顯示友善引導
-        timelineEl.innerHTML = `
-          <div class="timeline-entry">
-            <div class="timeline-pin"></div>
-            <div class="timeline-header">
-              <span class="timeline-title">全家健康軌跡・就緒中</span>
-              <span class="timeline-date">今日</span>
-            </div>
-            <div class="timeline-card-box" style="background:#f8fafc; border:1px dashed #cbd5e1;">
-              <strong style="color:#0f172a;">✨ 示範資料已清空，現在您可以開始登打自家長輩的真實紀錄：</strong>
-              <p style="margin-top:0.4rem; color:#475569; line-height:1.6; font-size:0.85rem;">
-                • <strong>長輩資料</strong>：點擊左側長輩身分卡可修改姓名、年齡與就醫醫院。<br>
-                • <strong>口頭醫囑</strong>：帶長輩看完門診後，至左側「<a href="javascript:void(0)" onclick="switchView('view-orders')" style="color:#0284c7; font-weight:700;">口頭醫囑轉譯</a>」錄下醫師交代。<br>
-                • <strong>生活服藥排程</strong>：至左側「<a href="javascript:void(0)" onclick="switchView('view-prescription')" style="color:#0284c7; font-weight:700;">藥袋用法推導</a>」拍照上傳新藥袋，自動推導服藥時段。<br>
-                • <strong>手足留話</strong>：在下方手足留話簿直接發表照顧叮嚀。
-              </p>
-            </div>
-          </div>
-        `;
-      } else {
-        let timelineHtml = '';
-
-        // 渲染最新口頭醫囑
-        if (hasOrders) {
-          verbalOrders.forEach(order => {
-            timelineHtml += `
-              <div class="timeline-entry">
-                <div class="timeline-pin"></div>
-                <div class="timeline-header">
-                  <span class="timeline-title">${escapeHtml(order.department || '門診醫囑')}・最新口頭醫囑轉譯</span>
-                  <span class="timeline-date">${order.created_at ? order.created_at.slice(0, 10) : '近期'}</span>
-                </div>
-                <div class="timeline-card-box">
-                  <strong style="color:#0f172a;">【觸發條件】${escapeHtml(order.condition_text || '日常監測')}</strong>
-                  <p style="margin-top:0.25rem;"><strong>【具體行動】</strong>${escapeHtml(order.action_text || '')}</p>
-                  ${order.red_flags ? `<div style="font-size:0.75rem; color:#dc2626; margin-top:0.25rem;"><strong>【危急警訊】</strong>${escapeHtml(order.red_flags)}</div>` : ''}
-                  <div style="font-size:0.75rem; color:#0284c7; margin-top:0.35rem;">責任人員：${escapeHtml(order.recorded_by || '特助/家屬')}</div>
-                </div>
-              </div>
-            `;
-          });
-        }
-
-        // 渲染最新處方
-        if (hasPrescription) {
-          timelineHtml += `
-            <div class="timeline-entry">
-              <div class="timeline-pin"></div>
-              <div class="timeline-header">
-                <span class="timeline-title">${escapeHtml(currentPrescription.hospital_name || '門診處方')}・藥袋用法逆向推導</span>
-                <span class="timeline-date">${currentPrescription.prescription_date || '本期最新處方'}</span>
-              </div>
-              <div class="timeline-card-box">
-                <p>${escapeHtml(currentPrescription.inference_summary || '已建立處方用法生活排程。')}</p>
-              </div>
-            </div>
-          `;
-        }
-
-        timelineEl.innerHTML = timelineHtml;
-      }
-    }
-
-    // 4. 動態渲染四時段服藥排程
-    const scheduleEl = document.getElementById('dashboard-schedule');
-    if (scheduleEl) {
-      const meds = currentPrescription?.medications;
-      if (!meds || !Array.isArray(meds) || meds.length === 0) {
-        scheduleEl.innerHTML = `
-          <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: #64748b; font-size: 0.85rem; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
-            💊 尚未建立長輩用藥處方。<br>
-            至左側「<a href="javascript:void(0)" onclick="switchView('view-prescription')" style="color: #0284c7; font-weight: 700;">藥袋用法逆向推導</a>」拍照上傳新藥袋，系統將自動解析生活服藥排程！
-          </div>
-        `;
-      } else {
-        const amMeds = [];
-        const noonMeds = [];
-        const pmMeds = [];
-        const hsMeds = [];
-
-        meds.forEach(m => {
-          const code = (m.code || '').toUpperCase();
-          const freq = m.frequency || '';
-          const label = `${m.name || '處方藥品'}`;
-
-          if (code.includes('QD AM') || code.includes('BID') || code.includes('TID') || code.includes('QID') || freq.includes('早') || freq.includes('晨')) {
-            amMeds.push(label);
-          }
-          if (code.includes('BID') || code.includes('TID') || code.includes('QID') || freq.includes('午')) {
-            noonMeds.push(label);
-          }
-          if (code.includes('TID') || code.includes('QID') || freq.includes('晚') || freq.includes('傍晚')) {
-            pmMeds.push(label);
-          }
-          if (code.includes('QD HS') || code.includes('QID') || freq.includes('睡前') || freq.includes('HS')) {
-            hsMeds.push(label);
-          }
-        });
-
-        scheduleEl.innerHTML = `
-          <div class="schedule-slot">
-            <div class="slot-heading">早晨 (AM) 飯後</div>
-            ${amMeds.length ? amMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無早晨常規用藥</span>'}
-          </div>
-          <div class="schedule-slot">
-            <div class="slot-heading">中午 (Noon)</div>
-            ${noonMeds.length ? noonMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無中午常規用藥</span>'}
-          </div>
-          <div class="schedule-slot">
-            <div class="slot-heading">傍晚 (PM) 飯後</div>
-            ${pmMeds.length ? pmMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無晚餐常規用藥</span>'}
-          </div>
-          <div class="schedule-slot">
-            <div class="slot-heading">睡前 (HS)</div>
-            ${hsMeds.length ? hsMeds.map(item => `<span class="slot-pill">${escapeHtml(item)}</span>`).join('') : '<span style="font-size:0.75rem; color:#94a3b8;">無睡前常規用藥</span>'}
-          </div>
-        `;
-      }
-    }
-
-    // 5. 渲染手足協同留話簿
-    renderFamilyNotes(familyNotes || []);
-
-    // 6. 載入處方對比預設與去識別化藥袋畫布
-    loadPrescriptionPreset('changed');
-    renderPrescriptionBagCanvas('sanitized');
-
-    // 7. 更新示範狀態切換按鈕顯示
-    updateDemoToggleUI();
-
   } catch (err) {
-    console.error('載入看板失敗:', err);
+    showToast('分析發生錯誤，請稍後再試');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '開始分析並制定我的保健方案 ➜';
+    }
   }
 }
+window.handleFinderSubmit = handleFinderSubmit;
 
-function renderFamilyNotes(notes) {
-  const container = document.getElementById('family-notes-list');
-  if (!container) return;
+function renderFinderResult(result) {
+  const area = document.getElementById('finder-result-area');
+  if (!area) return;
 
-  if (notes.length === 0) {
-    container.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; text-align:center; padding:1rem;">尚無留言，手足可於上方發表照護備忘</div>';
+  const bundleIds = (result.recommendedBundle || []).map(x => x.id);
+  const reasonsHtml = (result.matchedReasons || []).map(r => `
+    <div style="margin-top:0.55rem; padding:0.65rem 0.85rem; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; font-size:0.85rem;">
+      <strong style="color:#0284c7;">【${r.category}｜${r.label}】挑選標準：</strong>
+      <span>${r.buyingAdvice}</span>
+    </div>
+  `).join('');
+
+  const comparisonsHtml = (result.categoryComparisons || []).map(group => {
+    const cardsHtml = (group.products || []).slice(0, 3).map(item => renderSupplementCardHtml(item, item.id === group.topPickId)).join('');
+    return `
+      <div style="margin-top: 1.35rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem;">
+          📌 【${group.category}】跨品牌效益與每日花費比較
+        </h3>
+        <div class="catalog-grid">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  area.style.display = 'block';
+  area.innerHTML = `
+    <div class="card finder-result-card">
+      <div class="result-summary-box">
+        <h3>💡 您的個人化保健購買建議</h3>
+        <p style="font-size:0.93rem; color:#1e293b;">${result.personalizedSummary}</p>
+        ${reasonsHtml}
+        <div class="dont-waste-box">
+          <strong>💰 省錢避坑提醒：</strong>${result.dontWasteMoneyOn}
+        </div>
+      </div>
+
+      <div class="bundle-recommendation-bar">
+        <div>
+          <div style="font-size:0.8rem; color:#94a3b8;">為您精選的預算內最優組合（共 ${(result.recommendedBundle || []).length} 款）</div>
+          <div style="font-size:1rem; font-weight:700; margin-top:0.15rem;">
+            ${(result.recommendedBundle || []).map(x => `${x.brand} ${x.name}`).join(' ＋ ')}
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+          <div>
+            <span style="font-size:0.78rem; color:#cbd5e1;">組合每月總花費：</span>
+            <span class="bundle-price-tag">NT$ ${result.bundleMonthlyCost} / 月</span>
+            <span style="font-size:0.78rem; color:#94a3b8;">（每日約 $${result.bundleDailyCost}）</span>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="addBundleToWishlist([${bundleIds.join(',')}])">
+            ♡ 將此組合加入「有興趣清單」做重疊檢核
+          </button>
+        </div>
+      </div>
+
+      ${comparisonsHtml}
+    </div>
+  `;
+
+  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function addBundleToWishlist(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return;
+  for (const id of ids) {
+    await addToUserList(id, 'wishlist', true);
+  }
+  showToast('已將推薦組合加入「有興趣清單」！正在為您開啟重疊去冗分析...');
+  switchView('view-wishlist');
+}
+window.addBundleToWishlist = addBundleToWishlist;
+
+// ========================================================
+// 3. 跨品牌保健品透明比價庫渲染
+// ========================================================
+function setCatalogCategory(cat) {
+  state.catalogCategory = cat;
+  document.querySelectorAll('#category-filter-pills .cat-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  renderCatalog();
+}
+window.setCatalogCategory = setCatalogCategory;
+
+function renderCatalog() {
+  const grid = document.getElementById('catalog-grid');
+  if (!grid) return;
+
+  const query = (document.getElementById('catalog-search-input')?.value || '').trim().toLowerCase();
+  const sortBy = document.getElementById('catalog-sort-select')?.value || 'score_desc';
+
+  let list = state.supplements.filter(item => {
+    if (state.catalogCategory !== 'all' && item.category !== state.catalogCategory) {
+      return false;
+    }
+    if (query) {
+      const hay = `${item.brand} ${item.name} ${item.category} ${item.active_summary} ${item.absorption_form}`.toLowerCase();
+      return hay.includes(query);
+    }
+    return true;
+  });
+
+  list.sort((a, b) => {
+    if (sortBy === 'daily_asc') return Number(a.daily_cost) - Number(b.daily_cost);
+    if (sortBy === 'monthly_asc') return Number(a.monthly_cost) - Number(b.monthly_cost);
+    if (sortBy === 'price_asc') return Number(a.price) - Number(b.price);
+    return Number(b.value_score) - Number(a.value_score);
+  });
+
+  if (list.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2rem; color:#64748b;">找不到符合條件的保健食品，可嘗試切換分類或點選右上角手動新增。</div>`;
     return;
   }
 
-  container.innerHTML = '';
-  notes.forEach(note => {
-    container.innerHTML += `
-      <div class="note-bubble">
-        <div class="note-bubble-head">
-          <span>${escapeHtml(note.author)} [${escapeHtml(note.city || '連線')}]</span>
-          <span class="note-bubble-time">${note.created_at ? note.created_at.slice(5, 16) : '剛剛'}</span>
-        </div>
-        <p class="note-bubble-text">${escapeHtml(note.content)}</p>
-      </div>
-    `;
-  });
+  grid.innerHTML = list.map(item => renderSupplementCardHtml(item, false)).join('');
 }
+window.renderCatalog = renderCatalog;
 
-// 手足協同留話表單送出
-const familyNoteForm = document.getElementById('family-note-form');
-if (familyNoteForm) {
-  familyNoteForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const authorSelect = document.getElementById('note-author').value;
-    const content = document.getElementById('note-content').value.trim();
+function renderSupplementCardHtml(item, isTopPick) {
+  const inWishlist = state.wishlist.some(x => Number(x.id) === Number(item.id));
+  const inPurchased = state.purchased.some(x => Number(x.id) === Number(item.id));
+  const score = Number(item.value_score || 80);
+  const scoreClass = score >= 85 ? 'score-high' : 'score-mid';
 
-    if (!content) return;
-
-    const parts = authorSelect.split(' ');
-    const author = parts[0];
-    const city = parts[1] ? parts[1].replace(/[()]/g, '') : '台北';
-
-    try {
-      const res = await fetch('/api/family-notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author, city, content })
-      });
-      const result = await res.json();
-      if (result.success) {
-        document.getElementById('note-content').value = '';
-        await refreshFamilyNotes();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  });
-}
-
-async function refreshFamilyNotes() {
-  try {
-    const res = await fetch('/api/family-notes');
-    const result = await res.json();
-    if (result.success) {
-      renderFamilyNotes(result.data);
-    }
-  } catch (e) {}
-}
-
-// ========================================================
-// 3. 口頭醫囑結構化轉譯 (Verbal Orders Digitization)
-// ========================================================
-const verbalForm = document.getElementById('verbal-order-form');
-const rawInputEl = document.getElementById('raw-verbal-input');
-const voiceBtn = document.getElementById('voice-record-btn');
-const voiceLabel = document.getElementById('voice-btn-label');
-
-let recognition = null;
-let isRecording = false;
-
-// 支援 Web Speech API 原生中文語音辨識
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRecognition();
-  recognition.lang = 'zh-TW';
-  recognition.continuous = false;
-  recognition.interimResults = false;
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    rawInputEl.value = transcript;
-    stopRecordingUI();
-  };
-
-  recognition.onerror = () => {
-    stopRecordingUI();
-  };
-
-  recognition.onend = () => {
-    stopRecordingUI();
-  };
-}
-
-if (voiceBtn) {
-  voiceBtn.addEventListener('click', () => {
-    if (!isRecording) {
-      isRecording = true;
-      voiceBtn.classList.add('recording');
-      voiceLabel.innerText = '正在聆聽醫師口頭醫囑（請對麥克風說話）...';
-
-      if (recognition) {
-        try {
-          recognition.start();
-        } catch (e) {}
-      } else {
-        // 若無麥克風權限或不支援，1.5 秒後自動載入範本
-        setTimeout(() => {
-          loadSampleVoice(1);
-          stopRecordingUI();
-        }, 1500);
-      }
-    } else {
-      stopRecordingUI();
-      if (recognition) recognition.stop();
-    }
-  });
-}
-
-function stopRecordingUI() {
-  isRecording = false;
-  if (voiceBtn) {
-    voiceBtn.classList.remove('recording');
-    voiceLabel.innerText = '按此開始語音口述錄音';
-  }
-}
-
-function loadSampleVoice(sampleId) {
-  if (sampleId === 1) {
-    rawInputEl.value = '如果早上量血壓收縮壓低於 110，那顆脈優 5mg 先停吃一次。其餘常規降血脂與胃藥正常吃。';
-  } else if (sampleId === 2) {
-    rawInputEl.value = '利尿劑改去早餐後吃，避免半夜一直起來夜尿跌倒。若下肢水腫三天沒消要提早回來加驗腎功能。';
-  } else if (sampleId === 3) {
-    rawInputEl.value = '如果血糖低於 70 出現冒冷汗手抖，趕快喝 150cc 果汁或吃三顆方糖，暫停下一餐短效降糖藥。';
-  }
-}
-
-if (verbalForm) {
-  verbalForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const rawInput = rawInputEl.value.trim();
-    const recordedBy = document.getElementById('order-recorder').value;
-    const deptInfo = document.getElementById('order-dept').value;
-
-    if (!rawInput) {
-      alert('請先輸入或口述醫師口頭交代內容！');
-      return;
-    }
-
-    const btn = document.getElementById('parse-order-btn');
-    btn.disabled = true;
-    btn.innerText = '正在執行臨床結構化轉譯...';
-
-    try {
-      const res = await fetch('/api/verbal-orders/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawInput, recordedBy, department: deptInfo })
-      });
-
-      const result = await res.json();
-      if (result.success) {
-        await loadVerbalOrdersList();
-        await loadDashboardData();
-        alert('口頭醫囑結構化轉譯成功！已同步至家庭照護看板。');
-        rawInputEl.value = '';
-      } else {
-        alert('轉譯失敗: ' + result.message);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('轉譯失敗');
-    } finally {
-      btn.disabled = false;
-      btn.innerText = '結構化轉譯為白話行動指引 ➜ 即時推播全家看板';
-    }
-  });
-}
-
-async function loadVerbalOrdersList() {
-  const container = document.getElementById('verbal-orders-list');
-  if (!container) return;
-
-  try {
-    const res = await fetch('/api/verbal-orders');
-    const result = await res.json();
-    if (result.success && result.data.length > 0) {
-      container.innerHTML = '';
-      result.data.forEach(order => {
-        container.innerHTML += `
-          <div class="order-entry">
-            <div class="order-entry-head">
-              <span class="order-doc-title">${escapeHtml(order.department || '門診醫囑')}・${escapeHtml(order.doctor_name || '主治醫師')}</span>
-              <span class="status-badge">${order.created_at ? order.created_at.slice(0, 16) : '剛剛'}</span>
-            </div>
-            <div class="order-raw-quote">口語原始記錄：「${escapeHtml(order.raw_input)}」</div>
-            <div class="rule-box rule-condition-box">
-              <strong>【觸發條件】</strong> ${escapeHtml(order.condition_text || '清晨量測收縮壓 < 110 mmHg 時')}
-            </div>
-            <div class="rule-box rule-action-box">
-              <strong>【具體行動】</strong> ${escapeHtml(order.action_text || '暫停服用脈優一次')}
-            </div>
-            <div class="rule-box rule-redflags-box">
-              <strong>【危急警訊】</strong> ${escapeHtml(order.red_flags || '若持續過低請立即就醫')}
-            </div>
-            <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem; text-align:right;">
-              收錄責任人：${escapeHtml(order.recorded_by || '特助')}
-            </div>
+  return `
+    <div class="supp-card ${isTopPick ? 'top-recommended' : ''}">
+      <div>
+        <div class="supp-top-row">
+          <div>
+            <span class="supp-cat-badge">${item.category}</span>
+            ${isTopPick ? '<span class="supp-cat-badge" style="background:#0284c7;color:#fff;margin-left:4px;">★ 預算內首選</span>' : ''}
+            ${item.is_vegan ? '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">素食</span>' : ''}
           </div>
-        `;
-      });
-    } else {
-      container.innerHTML = `
-        <div style="text-align: center; padding: 2.5rem 1rem; color: #94a3b8; font-size: 0.88rem; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
-          💡 目前此長輩尚無口頭醫囑紀錄。<br>
-          帶長輩看完門診後，可於上方口述或錄音輸入醫師交代，系統將自動結構化轉譯！
+          <span class="supp-score-badge ${scoreClass}">綜合效益 ${score} 分</span>
         </div>
-      `;
-    }
-  } catch (e) {
-    console.error(e);
-  }
+
+        <div class="supp-brand-title">${item.brand}｜${item.name}</div>
+
+        <div class="supp-price-metrics">
+          <div class="metric-item">
+            <span class="metric-label">每日真實花費</span>
+            <span class="metric-val highlight-daily">NT$ ${Math.round(item.daily_cost)} / 日</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">每月換算花費</span>
+            <span class="metric-val">NT$ ${item.monthly_cost}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">單盒售價 (${item.days_supply}天份)</span>
+            <span class="metric-val">$${item.price}</span>
+          </div>
+        </div>
+
+        <div class="supp-spec-list">
+          <div class="spec-row">
+            <span class="spec-tag">有效成分：</span>
+            <span>${item.active_summary}</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-tag">吸收型態：</span>
+            <span>${item.absorption_form}（${item.dosage_form}，每日 ${item.daily_units} 份）</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-tag">純淨檢視：</span>
+            <span>${item.additives_note || '一般標準配方'}</span>
+          </div>
+        </div>
+
+        <div class="pros-cons-box">
+          <div class="pro-line"><strong>✓ 值得買理由：</strong>${item.pros}</div>
+          <div class="con-line"><strong>⚠️ 注意事項：</strong>${item.cons}</div>
+        </div>
+      </div>
+
+      <div class="supp-actions-row">
+        <button
+          type="button"
+          class="btn btn-sm ${inWishlist ? 'btn-primary' : 'btn-outline'}"
+          onclick="toggleUserListItem(${item.id}, 'wishlist')"
+        >
+          ${inWishlist ? '♥ 已在有興趣清單' : '♡ 加入有興趣'}
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm ${inPurchased ? 'btn-teal' : 'btn-outline'}"
+          onclick="toggleUserListItem(${item.id}, 'purchased')"
+        >
+          ${inPurchased ? '✓ 已在服用日曆' : '📦 我已購買'}
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 // ========================================================
-// 4. 藥袋用法代碼逆向推導 & 端點不可逆去識別化引擎
+// 4. 【功能二：管理 A - 有興趣清單與嚴格去冗分析】
 // ========================================================
-let uploadedBagImageBase64 = null;
-let currentDeidMode = 'sanitized'; // 'sanitized' | 'threat' | 'mosaic'
-let currentBagImageSource = null;  // null for default/real case, or Image object for user upload
-let customRedactionBoxes = [];     // 使用者於畫布自訂拖曳之物理塗黑遮蔽區
-let isDrawingRedaction = false;
-let redactStartX = 0;
-let redactStartY = 0;
-let currentDragRect = null;
-let canvasEventsInitialized = false;
+async function toggleUserListItem(supplementId, status) {
+  const list = status === 'wishlist' ? state.wishlist : state.purchased;
+  const exists = list.some(x => Number(x.id) === Number(supplementId));
 
-// 模式切換器
-function setDeidMode(mode) {
-  currentDeidMode = mode;
-
-  // 更新按鈕樣式
-  const btnSanitized = document.getElementById('btn-mode-sanitized');
-  const btnThreat = document.getElementById('btn-mode-threat');
-  const btnMosaic = document.getElementById('btn-mode-mosaic');
-
-  if (btnSanitized) btnSanitized.classList.toggle('active', mode === 'sanitized');
-  if (btnThreat) btnThreat.classList.toggle('active', mode === 'threat');
-  if (btnMosaic) btnMosaic.classList.toggle('active', mode === 'mosaic');
-
-  renderPrescriptionBagCanvas(mode);
-}
-window.setDeidMode = setDeidMode;
-
-// 載入實際門診藥袋案例 (含高敏個資)
-function loadRealCasePrescriptionBag() {
-  currentBagImageSource = null;
-  customRedactionBoxes = [];
-  setDeidMode('sanitized');
-  loadPrescriptionPreset('changed');
-}
-window.loadRealCasePrescriptionBag = loadRealCasePrescriptionBag;
-
-// 藥袋照片上傳監聽 (支援端點零知識去識別化處理)
-const bagImageInput = document.getElementById('bag-image-input');
-if (bagImageInput) {
-  bagImageInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          currentBagImageSource = img;
-          customRedactionBoxes = [];
-          setDeidMode('sanitized');
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-}
-
-// 清除畫布上的自訂塗黑遮蔽區
-function clearCustomRedactions() {
-  customRedactionBoxes = [];
-  renderPrescriptionBagCanvas();
-}
-window.clearCustomRedactions = clearCustomRedactions;
-
-// 下載去識別化後的安全藥袋影像 (供家屬驗證絕無個資外洩)
-function downloadSanitizedImage() {
-  const canvas = document.getElementById('sanitized-bag-canvas');
-  if (!canvas) return;
-  const link = document.createElement('a');
-  link.download = `CareNav_去識別化藥袋_${new Date().toISOString().slice(0, 10)}.jpg`;
-  link.href = canvas.toDataURL('image/jpeg', 0.92);
-  link.click();
-}
-window.downloadSanitizedImage = downloadSanitizedImage;
-
-// 啟動藥袋處方辨識推導與今日排程 (100% 隱私安全)
-async function processUploadedBagToPrescription() {
-  const medName = document.getElementById('custom-med-name')?.value || 'Norvasc 脈優 5mg';
-  const medCode = document.getElementById('custom-med-code')?.value || 'QD AM';
-  const medInd = document.getElementById('custom-med-ind')?.value || '高血壓 晨峰壓制 (時段由睡前改早晨)';
-
-  const medsToProcess = [
-    { name: medName, code: medCode, ind: medInd },
-    { name: 'Lasix 歐得通/利尿劑 40mg', code: 'QD AM', ind: '時段變更：改早餐後吃，阻斷夜尿跌倒' },
-    { name: 'Diovan 得安穩 80mg', code: 'QD HS', ind: '本期新增：保護心腎血管張力素受體阻斷劑' },
-    { name: 'Crestor 冠脂妥 10mg', code: 'QD HS', ind: '降血脂：維持原方續開' }
-  ];
-
-  await executePrescriptionInference(medsToProcess);
-  alert('✅ 藥袋已通過端點物理不可逆去識別化！已為您完成處方推導，並同步至跨期比對與今日服藥排程。');
-}
-window.processUploadedBagToPrescription = processUploadedBagToPrescription;
-
-// 核心 Canvas 去識別化渲染管線
-function renderPrescriptionBagCanvas(mode = currentDeidMode) {
-  const canvas = document.getElementById('sanitized-bag-canvas');
-  if (!canvas) return;
-
-  // 自適應自訂照片之長寬比 (避免長輩拍攝直式藥袋被壓扁)
-  if (currentBagImageSource) {
-    const aspect = currentBagImageSource.naturalHeight / currentBagImageSource.naturalWidth;
-    const targetH = Math.round(600 * Math.max(0.6, Math.min(1.4, aspect)));
-    if (canvas.width !== 600 || canvas.height !== targetH) {
-      canvas.width = 600;
-      canvas.height = targetH;
-    }
+  if (exists) {
+    await removeFromUserList(supplementId, status);
   } else {
-    if (canvas.width !== 600 || canvas.height !== 420) {
-      canvas.width = 600;
-      canvas.height = 420;
-    }
+    await addToUserList(supplementId, status, false);
   }
+}
+window.toggleUserListItem = toggleUserListItem;
 
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
-
-  ctx.clearRect(0, 0, w, h);
-
-  if (currentBagImageSource) {
-    // 繪製使用者上傳之原始照片 (並於前端記憶體進行區域性去識別化)
-    ctx.drawImage(currentBagImageSource, 0, 0, w, h);
-    applyCustomImageDeid(ctx, w, h, mode);
-  } else {
-    // 繪製林口長庚紀念醫院高仿真門診藥袋 (Actual Hospital Prescription Bag)
-    renderRealisticHospitalBag(ctx, w, h, mode);
-  }
-
-  // 繪製自訂框選之物理遮蔽區
-  drawCustomRedactionBoxes(ctx, mode);
-
-  // 拖曳中的即時預覽外框
-  if (isDrawingRedaction && currentDragRect && currentDragRect.w > 2 && currentDragRect.h > 2) {
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 3]);
-    ctx.strokeRect(currentDragRect.x, currentDragRect.y, currentDragRect.w, currentDragRect.h);
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
-    ctx.fillRect(currentDragRect.x, currentDragRect.y, currentDragRect.w, currentDragRect.h);
-    ctx.setLineDash([]);
-  }
-
-  // 初始化畫布互動拖曳事件 (僅綁定一次)
-  if (!canvasEventsInitialized) {
-    initCanvasRedactionEvents(canvas);
-    canvasEventsInitialized = true;
-  }
-
-  // 匯出端點物理處理後之 Base64 影像 (原始高敏個資未經清洗絕對不上雲)
+async function addToUserList(supplementId, status, silent = false) {
   try {
-    uploadedBagImageBase64 = canvas.toDataURL('image/jpeg', 0.88);
-  } catch (e) {
-    console.warn('Canvas export warning:', e);
-  }
+    const userName = state.currentUser?.displayName || '消費者';
+    const lineUserId = state.currentUser?.userId || null;
+    const res = await fetch('/api/user-supplements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ supplementId, status, userName, lineUserId })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.wishlist = json.data.wishlist || [];
+      state.purchased = json.data.purchased || [];
+      state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      state.isDemoCleared = false;
+      updateNavBadges();
+      renderCatalog();
+      if (state.finderResult) renderFinderResult(state.finderResult);
+      renderWishlistView();
+      renderCalendarView();
 
-  updateDeidModeInfo(mode);
-}
-window.renderPrescriptionBagCanvas = renderPrescriptionBagCanvas;
-
-// 綁定滑鼠與觸控拖曳塗黑事件
-function initCanvasRedactionEvents(canvas) {
-  function getCanvasCoords(e) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
-    };
-  }
-
-  const startDrag = (e) => {
-    const pt = getCanvasCoords(e);
-    isDrawingRedaction = true;
-    redactStartX = pt.x;
-    redactStartY = pt.y;
-    currentDragRect = { x: pt.x, y: pt.y, w: 0, h: 0 };
-  };
-
-  const moveDrag = (e) => {
-    if (!isDrawingRedaction) return;
-    const pt = getCanvasCoords(e);
-    currentDragRect = {
-      x: Math.min(redactStartX, pt.x),
-      y: Math.min(redactStartY, pt.y),
-      w: Math.abs(pt.x - redactStartX),
-      h: Math.abs(pt.y - redactStartY)
-    };
-    renderPrescriptionBagCanvas();
-  };
-
-  const endDrag = () => {
-    if (isDrawingRedaction && currentDragRect && currentDragRect.w > 12 && currentDragRect.h > 12) {
-      customRedactionBoxes.push({ ...currentDragRect });
-    }
-    isDrawingRedaction = false;
-    currentDragRect = null;
-    renderPrescriptionBagCanvas();
-  };
-
-  canvas.addEventListener('mousedown', startDrag);
-  window.addEventListener('mousemove', moveDrag);
-  window.addEventListener('mouseup', endDrag);
-
-  canvas.addEventListener('touchstart', startDrag, { passive: true });
-  window.addEventListener('touchmove', moveDrag, { passive: true });
-  window.addEventListener('touchend', endDrag);
-}
-
-// 繪製自訂框選遮蔽區
-function drawCustomRedactionBoxes(ctx, mode) {
-  if (!customRedactionBoxes || customRedactionBoxes.length === 0) return;
-
-  customRedactionBoxes.forEach((box, idx) => {
-    if (mode === 'sanitized') {
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(box.x, box.y, box.w, box.h);
-      ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(box.x, box.y, box.w, box.h);
-      ctx.fillStyle = '#34d399';
-      ctx.font = 'bold 10px "Microsoft JhengHei", sans-serif';
-      ctx.fillText(`🛡️ 物理抹除 (H=0) #${idx + 1}`, box.x + 4, box.y + Math.min(14, box.h - 4));
-    } else if (mode === 'threat') {
-      ctx.strokeStyle = '#dc2626';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 2]);
-      ctx.strokeRect(box.x, box.y, box.w, box.h);
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(box.x, Math.max(0, box.y - 14), 100, 14);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 9px "Microsoft JhengHei", sans-serif';
-      ctx.fillText(`自訂敏感區 #${idx + 1}`, box.x + 4, Math.max(10, box.y - 3));
-      ctx.setLineDash([]);
-    } else if (mode === 'mosaic') {
-      drawSimulatedMosaic(ctx, box.x, box.y, box.w, box.h, 10);
-    }
-  });
-}
-
-// 繪製高仿真台灣醫學中心門診藥袋
-function renderRealisticHospitalBag(ctx, w, h, mode) {
-  // 1. 藥袋米黃紙質感底色與高對比邊框
-  ctx.fillStyle = '#faf8f2';
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.strokeStyle = '#334155';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(8, 8, w - 16, h - 16);
-
-  // 2. 院區抬頭 Header
-  ctx.fillStyle = '#0f766e';
-  ctx.fillRect(10, 10, w - 20, 34);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px "Microsoft JhengHei", sans-serif';
-  ctx.fillText('林口長庚紀念醫院  門診處方藥袋 (Chang Gung Memorial Hospital)', 20, 32);
-
-  ctx.fillStyle = '#ccfbf1';
-  ctx.font = '11px sans-serif';
-  ctx.fillText('領藥號: 0158', w - 95, 31);
-
-  // 調劑中繼標頭
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillRect(10, 46, w - 20, 22);
-  ctx.fillStyle = '#334155';
-  ctx.font = '11px "Microsoft JhengHei", sans-serif';
-  ctx.fillText('調劑日期: 115/11/05 ｜ 心臟內科 02診 ｜ 主治醫師: 林宏昌 ｜ 專科藥師: 陳美玲', 18, 61);
-
-  // 3. 高敏特種個資區 (PII Coordinates)
-  const piiX = 20;
-  const piiY = 78;
-
-  // 原始個資文字
-  ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 13px "Microsoft JhengHei", sans-serif';
-  ctx.fillText('病患姓名：陳國華   性別：男   年齡：72歲', piiX, piiY + 14);
-
-  ctx.font = '12px "Microsoft JhengHei", sans-serif';
-  ctx.fillStyle = '#1e293b';
-  ctx.fillText('身分證字號：A128938210   出生日期：43/08/15', piiX, piiY + 34);
-  ctx.fillText('病歷號碼：08429188       就醫序號：0024 (健保首診)', piiX, piiY + 54);
-
-  // 4. 門診條碼與 QR Code (HIS 健保資料庫索引)
-  const barX = 385;
-  const barY = 74;
-  renderSimulatedBarcode(ctx, barX, barY, 195, 32);
-  renderSimulatedQrCode(ctx, barX + 148, barY + 38, 42, 42);
-
-  ctx.font = '10px monospace';
-  ctx.fillStyle = '#475569';
-  ctx.fillText('*084291880024*', barX + 35, barY + 44);
-
-  // ----------------------------------------------------
-  // 5. 去識別化處理層 (根據 mode 執行不同物理處理)
-  // ----------------------------------------------------
-  if (mode === 'sanitized') {
-    // 🛡️ 不可逆資訊熵歸零 (Entropy=0) + 差分合成標籤置換
-    // 1. 姓名列覆寫 (實體覆寫原始 RGB 像素數值)
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(piiX - 4, piiY, 275, 20);
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 11px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('🛡️ 【病患姓名：差分合成虛擬標籤 ID#7741】', piiX, piiY + 14);
-
-    // 2. 身分證號覆寫
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(piiX - 4, piiY + 22, 290, 18);
-    ctx.fillStyle = '#34d399';
-    ctx.font = 'bold 11px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('🛡️ 【身分證號：A12*****10 不可逆遮罩】', piiX, piiY + 35);
-
-    // 3. 病歷號覆寫
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(piiX - 4, piiY + 42, 290, 18);
-    ctx.fillStyle = '#6ee7b7';
-    ctx.font = 'bold 11px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('🛡️ 【病歷編號：資訊熵歸零 物理消除】', piiX, piiY + 55);
-
-    // 4. 門診條碼與 QR Code 全頻段光學遮斷 (阻斷任何二維掃描器與手機相機)
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(barX - 6, barY - 4, 208, 86);
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(barX - 6, barY - 4, 208, 86);
-
-    ctx.fillStyle = '#34d399';
-    ctx.font = 'bold 11px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('🛡️ 條碼光學防掃描遮斷', barX + 24, barY + 32);
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = '#a7f3d0';
-    ctx.fillText('ANTI-SCAN CRYPTO SHIELD', barX + 20, barY + 52);
-
-  } else if (mode === 'threat') {
-    // ⚠️ 威脅偵測模式：以鮮紅框線與警示標籤標示重大資安風險點
-    ctx.strokeStyle = '#dc2626';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 2]);
-
-    // 姓名警示
-    ctx.strokeRect(piiX - 4, piiY, 275, 20);
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(piiX + 175, piiY - 14, 96, 14);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 9px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('重大個資: 真實姓名', piiX + 179, piiY - 3);
-
-    // 身分證警示
-    ctx.strokeRect(piiX - 4, piiY + 22, 290, 18);
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(piiX + 170, piiY + 22, 116, 14);
-    ctx.fillStyle = '#fff';
-    ctx.fillText('特種個資: 國健身分證', piiX + 174, piiY + 33);
-
-    // 病歷號警示
-    ctx.strokeRect(piiX - 4, piiY + 42, 290, 18);
-
-    // 條碼/QR Code 警示
-    ctx.strokeRect(barX - 6, barY - 4, 208, 86);
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(barX - 6, barY - 16, 130, 14);
-    ctx.fillStyle = '#fff';
-    ctx.fillText('掃描金鑰: 門診條碼/QR', barX - 2, barY - 5);
-
-    ctx.setLineDash([]);
-
-  } else if (mode === 'mosaic') {
-    // ❌ 傳統馬賽克模式 (展示局部均值化漏洞)
-    drawSimulatedMosaic(ctx, piiX - 4, piiY, 275, 60, 8);
-    drawSimulatedMosaic(ctx, barX - 6, barY - 4, 208, 86, 10);
-
-    ctx.fillStyle = 'rgba(180, 83, 9, 0.9)';
-    ctx.fillRect(piiX, piiY + 16, 260, 22);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 11px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('⚠️ 傳統馬賽克 (殘留字型高頻能量，易遭AI逆向)', piiX + 6, piiY + 31);
-  }
-
-  // ----------------------------------------------------
-  // 6. 臨床關鍵用藥區 (Prescription Data - 100% 完整保留！)
-  // ----------------------------------------------------
-  const medStartY = 166;
-
-  // 表頭
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(10, medStartY - 20, w - 20, 20);
-  ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 11px "Microsoft JhengHei", sans-serif';
-  ctx.fillText('項次   藥品商品名 / 學名成分                       用法用量代碼             總量 / 天數     適應症與警語', 16, medStartY - 6);
-
-  // 第一項用藥 (Norvasc QD AM)
-  drawMedRow(ctx, 14, medStartY + 8, w - 28, {
-    idx: '1',
-    name: 'Norvasc 脈優錠 5mg (Amlodipine)',
-    code: 'QD AM 每日早晨一次 (早餐後)',
-    qty: '28 顆 (28天)',
-    ind: '高血壓、心絞痛 ｜ 門診排程由睡前移至早晨，覆蓋晨峰血壓'
-  }, true);
-
-  // 第二項用藥 (Lasix QD AM)
-  drawMedRow(ctx, 14, medStartY + 68, w - 28, {
-    idx: '2',
-    name: 'Lasix 來適泄/利尿劑 40mg (Furosemide)',
-    code: 'QD AM 每日早晨一次 (早餐後)',
-    qty: '28 顆 (28天)',
-    ind: '水腫、高血壓 ｜ 門診調整至早餐後，防範夜間頻尿中斷睡眠跌倒'
-  }, true);
-
-  // 第三項用藥 (Diovan QD HS)
-  drawMedRow(ctx, 14, medStartY + 128, w - 28, {
-    idx: '3',
-    name: 'Diovan 得安穩錠 80mg (Valsartan)',
-    code: 'QD HS 每日睡前一次',
-    qty: '28 顆 (28天)',
-    ind: '血管張力素受體阻斷劑 (ARB)，保護心臟與腎臟功能'
-  }, false);
-
-  // 第四項用藥 (Crestor QD HS)
-  drawMedRow(ctx, 14, medStartY + 188, w - 28, {
-    idx: '4',
-    name: 'Crestor 冠脂妥 10mg (Rosuvastatin)',
-    code: 'QD HS 每日睡前一次',
-    qty: '28 顆 (28天)',
-    ind: '降膽固醇、預防心血管動脈硬化 ｜ 維持原方續開'
-  }, false);
-
-  // 頁尾叮嚀
-  ctx.fillStyle = '#64748b';
-  ctx.font = '10px "Microsoft JhengHei", sans-serif';
-  ctx.fillText('※ 本藥袋影像已完成 CareNav 端點去識別化處理，符合醫療個資隱私標準，臨床用法代碼已完整留存供推導。', 16, h - 12);
-}
-
-// 輔助繪圖：用藥列
-function drawMedRow(ctx, x, y, width, data, isHighlighted) {
-  ctx.fillStyle = isHighlighted ? '#f0fdf4' : '#ffffff';
-  ctx.fillRect(x, y, width, 52);
-
-  ctx.strokeStyle = isHighlighted ? '#86efac' : '#cbd5e1';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x, y, width, 52);
-
-  ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 12px "Microsoft JhengHei", sans-serif';
-  ctx.fillText(`${data.idx}. ${data.name}`, x + 8, y + 18);
-
-  // 用法代碼 Chip
-  ctx.fillStyle = isHighlighted ? '#15803d' : '#0284c7';
-  ctx.fillRect(x + 225, y + 5, 160, 18);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 10px "Microsoft JhengHei", sans-serif';
-  ctx.fillText(data.code, x + 230, y + 18);
-
-  ctx.fillStyle = '#475569';
-  ctx.font = '11px sans-serif';
-  ctx.fillText(data.qty, x + 395, y + 18);
-
-  ctx.fillStyle = isHighlighted ? '#166534' : '#64748b';
-  ctx.font = '10.5px "Microsoft JhengHei", sans-serif';
-  ctx.fillText(data.ind, x + 8, y + 38);
-}
-
-// 輔助繪圖：模擬 1D 條碼
-function renderSimulatedBarcode(ctx, x, y, w, h) {
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = '#0f172a';
-
-  let curX = x + 8;
-  const barPattern = [2, 1, 3, 1, 2, 4, 1, 2, 1, 3, 2, 1, 4, 1, 2, 1, 3, 1, 2, 3, 1, 4, 2, 1, 3, 1, 2, 1, 4, 2, 1, 3];
-  for (let i = 0; i < barPattern.length; i++) {
-    const barW = barPattern[i] * 1.5;
-    if (i % 2 === 0) {
-      ctx.fillRect(curX, y, barW, h);
-    }
-    curX += barW;
-    if (curX > x + w - 10) break;
-  }
-}
-
-// 輔助繪圖：模擬 2D QR Code
-function renderSimulatedQrCode(ctx, x, y, size, _) {
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x, y, size, size);
-  ctx.fillStyle = '#0f172a';
-
-  // 尋像標記 (三個回字框)
-  ctx.fillRect(x + 2, y + 2, 12, 12);
-  ctx.clearRect(x + 4, y + 4, 8, 8);
-  ctx.fillRect(x + 6, y + 6, 4, 4);
-
-  ctx.fillRect(x + size - 14, y + 2, 12, 12);
-  ctx.clearRect(x + size - 12, y + 4, 8, 8);
-  ctx.fillRect(x + size - 10, y + 6, 4, 4);
-
-  ctx.fillRect(x + 2, y + size - 14, 12, 12);
-  ctx.clearRect(x + 4, y + size - 12, 8, 8);
-  ctx.fillRect(x + 6, y + size - 10, 4, 4);
-
-  // 隨機資料點點
-  for (let r = 0; r < 4; r++) {
-    for (let c = 0; c < 4; c++) {
-      if ((r + c) % 2 === 0) {
-        ctx.fillRect(x + 16 + c * 4, y + 16 + r * 4, 3, 3);
+      if (!silent) {
+        const label = status === 'wishlist' ? '「有興趣清單」（已自動更新重疊去冗分析）' : '「已購買與服用日曆」';
+        showToast(`已將商品加入${label}`);
       }
     }
+  } catch (err) {
+    console.error(err);
   }
 }
+window.addToUserList = addToUserList;
 
-// 輔助繪圖：模擬傳統馬賽克
-function drawSimulatedMosaic(ctx, x, y, w, h, size = 8) {
-  for (let py = y; py < y + h; py += size) {
-    for (let px = x; px < x + w; px += size) {
-      const shade = 180 + ((px * 13 + py * 7) % 50);
-      ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade - 10})`;
-      ctx.fillRect(px, py, Math.min(size, x + w - px), Math.min(size, y + h - py));
-    }
-  }
-}
-
-// 自訂上傳圖片的去識別化遮罩
-function applyCustomImageDeid(ctx, w, h, mode) {
-  const topCut = h * 0.28;
-  if (mode === 'sanitized') {
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, w, topCut);
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 13px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('🛡️ 【端點不可逆去識別化完成 • 姓名/身分證/條碼區域資訊熵歸零】', 20, topCut / 2);
-  } else if (mode === 'threat') {
-    ctx.strokeStyle = '#dc2626';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(4, 4, w - 8, topCut);
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(10, 10, 160, 20);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 11px "Microsoft JhengHei", sans-serif';
-    ctx.fillText('⚠️ 偵測到重大個資標頭區', 16, 24);
-  } else if (mode === 'mosaic') {
-    drawSimulatedMosaic(ctx, 0, 0, w, topCut, 12);
-  }
-}
-
-// 更新模式解說與審計指標文字
-function updateDeidModeInfo(mode) {
-  const noteEl = document.getElementById('deid-mode-overlay-note');
-  const auditNameId = document.getElementById('audit-name-id');
-  const auditMrn = document.getElementById('audit-mrn');
-  const auditBarcode = document.getElementById('audit-barcode');
-  const auditMeds = document.getElementById('audit-meds');
-
-  if (!noteEl) return;
-
-  if (mode === 'sanitized') {
-    noteEl.className = 'deid-overlay-note sanitized';
-    noteEl.innerHTML = '✅ <strong>端點不可逆去識別化完成</strong>：依據 HIPAA Safe Harbor 與醫療特種個資法，敏感區域原始像素已於前端記憶體實體消除（資訊熵 H=0）。任何神經網路皆無殘差可逆向還原！';
-    if (auditNameId) { auditNameId.className = 'audit-val good'; auditNameId.innerText = '已置換為差分合成標籤 (ID#7741)'; }
-    if (auditMrn) { auditMrn.className = 'audit-val good'; auditMrn.innerText = '物理資訊熵歸零 (H=0)'; }
-    if (auditBarcode) { auditBarcode.className = 'audit-val good'; auditBarcode.innerText = '光學防掃描遮斷覆蓋'; }
-    if (auditMeds) { auditMeds.className = 'audit-val highlight'; auditMeds.innerText = '100% 完整保留 (QD AM / QD HS)'; }
-  } else if (mode === 'threat') {
-    noteEl.className = 'deid-overlay-note threat';
-    noteEl.innerHTML = '⚠️ <strong>高敏個資威脅偵測模式</strong>：已鎖定 4 處若未經處理將引發重大個資外洩與醫療法規責任之高危資料點（姓名、身分證號、病歷號、條碼）。';
-    if (auditNameId) { auditNameId.className = 'audit-val danger'; auditNameId.innerText = '⚠️ 標定 2 處重大特種個資'; }
-    if (auditMrn) { auditMrn.className = 'audit-val danger'; auditMrn.innerText = '⚠️ 標定 HIS 病歷金鑰'; }
-    if (auditBarcode) { auditBarcode.className = 'audit-val danger'; auditBarcode.innerText = '⚠️ 標定可掃描條碼'; }
-    if (auditMeds) { auditMeds.className = 'audit-val highlight'; auditMeds.innerText = '🎯 臨床用藥待安全比對'; }
-  } else if (mode === 'mosaic') {
-    noteEl.className = 'deid-overlay-note mosaic';
-    noteEl.innerHTML = '❌ <strong>傳統馬賽克安全漏洞示警</strong>：傳統馬賽克僅是相鄰像素均值運算，保留了高頻邊緣特徵與字形能量！現有 Depix / CNN 逆向模型可在 3 秒內暴力還原身分證號與姓名。CareNav 堅決屏棄純馬賽克做法！';
-    if (auditNameId) { auditNameId.className = 'audit-val danger'; auditNameId.innerText = '❌ 馬賽克殘留邊緣能量 (高危)'; }
-    if (auditMrn) { auditMrn.className = 'audit-val danger'; auditMrn.innerText = '❌ 存在 Depix 逆向還原漏洞'; }
-    if (auditBarcode) { auditBarcode.className = 'audit-val danger'; auditBarcode.innerText = '❌ 條碼反差仍可能被解析'; }
-    if (auditMeds) { auditMeds.className = 'audit-val highlight'; auditMeds.innerText = '🎯 臨床代碼已就緒'; }
-  }
-}
-
-async function loadPrescriptionPreset(type) {
-  const prevListEl = document.getElementById('prev-meds-list');
-  const currListEl = document.getElementById('curr-meds-list');
-  const infTextEl = document.getElementById('inference-summary-text');
-
-  if (prevListEl) {
-    prevListEl.innerHTML = `
-      <div class="med-card-row">
-        <div><strong>Norvasc 脈優錠 5mg</strong></div>
-        <span class="med-code-badge">QD HS (每日睡前一次)</span>
-        <div style="color:#64748b; font-size:0.75rem; margin-top:0.25rem;">高血壓常規</div>
-      </div>
-      <div class="med-card-row" style="border-color:#fca5a5; background:#fef2f2;">
-        <div><strong style="color:#b91c1c;">Lasix 歐得通/利尿劑 40mg</strong></div>
-        <span class="med-code-badge" style="background:#fee2e2; color:#dc2626;">QD HS (睡前服)</span>
-        <div style="color:#b91c1c; font-size:0.75rem; margin-top:0.25rem;">排程盲點：造成夜間起夜 3-4 次跌倒高風險</div>
-      </div>
-      <div class="med-card-row">
-        <div><strong>Crestor 冠脂妥 10mg</strong></div>
-        <span class="med-code-badge">QD HS (每日睡前一次)</span>
-        <div style="color:#64748b; font-size:0.75rem; margin-top:0.25rem;">降膽固醇</div>
-      </div>
-    `;
-  }
-
-  // 準備呼叫後端專屬管道 PrescriptionMcpPipeline
-  const testNewMeds = [
-    { name: 'Norvasc 脈優 5mg', code: 'QD AM', ind: '時段變更：壓制晨峰高血壓 (早晨7-9點)' },
-    { name: 'Lasix 歐得通/利尿劑 40mg', code: 'QD AM', ind: '時段變更：改早餐後吃，阻斷頻繁夜尿跌倒' },
-    { name: 'Diovan 得安穩 80mg', code: 'QD HS', ind: '本期新增：保護心腎血管張力素受體阻斷劑' },
-    { name: 'Crestor 冠脂妥 10mg', code: 'QD HS', ind: '維持原方續開' }
-  ];
-
-  await executePrescriptionInference(testNewMeds);
-}
-
-async function triggerMcpSimulation() {
-  const testMeds = [
-    { name: 'Norvasc 脈優 5mg', code: 'QD AM' },
-    { name: 'Diovan 得安穩 80mg', code: 'QD HS' },
-    { name: 'Lasix 歐得通 40mg', code: 'QD AM' },
-    { name: 'Aspirin 伯基 100mg', code: 'QD PC' }
-  ];
-  await executePrescriptionInference(testMeds);
-}
-
-async function executePrescriptionInference(medications) {
-  const currListEl = document.getElementById('curr-meds-list');
-  const infTextEl = document.getElementById('inference-summary-text');
-  const mcpResultsContainer = document.getElementById('drugbank-mcp-results');
-  const progressContainer = document.getElementById('mcp-progress-container');
-  const timerSecondsEl = document.getElementById('mcp-elapsed-seconds');
-  const progressBarFill = document.getElementById('mcp-progress-bar-fill');
-  const stage1El = document.getElementById('stage-1-item');
-  const stage2El = document.getElementById('stage-2-item');
-  const stage3El = document.getElementById('stage-3-item');
-
-  if (infTextEl) {
-    infTextEl.innerText = '正在為長輩分析藥袋用法與生活服藥時段...';
-  }
-
-  // 啟動 25s~35s 防耐心耗盡進度計時器
-  let elapsed = 0;
-  if (progressContainer) {
-    progressContainer.classList.add('active');
-    if (timerSecondsEl) timerSecondsEl.innerText = '0';
-    if (progressBarFill) progressBarFill.style.width = '10%';
-    if (stage1El) stage1El.className = 'mcp-stage-item in-progress';
-    if (stage2El) stage2El.className = 'mcp-stage-item';
-    if (stage3El) stage3El.className = 'mcp-stage-item';
-  }
-
-  const timerInterval = setInterval(() => {
-    elapsed++;
-    if (timerSecondsEl) timerSecondsEl.innerText = String(elapsed);
-
-    // 依據秒數動態推進 3 個臨床階段，給予使用者即時心理反饋
-    if (elapsed < 10) {
-      if (progressBarFill) progressBarFill.style.width = `${10 + elapsed * 3}%`;
-    } else if (elapsed < 20) {
-      if (stage1El) stage1El.className = 'mcp-stage-item completed';
-      if (stage2El) stage2El.className = 'mcp-stage-item in-progress';
-      if (progressBarFill) progressBarFill.style.width = `${40 + (elapsed - 10) * 3}%`;
-    } else if (elapsed <= 30) {
-      if (stage2El) stage2El.className = 'mcp-stage-item completed';
-      if (stage3El) stage3El.className = 'mcp-stage-item in-progress';
-      if (progressBarFill) progressBarFill.style.width = `${70 + (elapsed - 20) * 2.5}%`;
-    } else {
-      // 超過 30 秒即將抵達 35 秒上限
-      if (progressBarFill) progressBarFill.style.width = '96%';
-    }
-  }, 1000);
-
+async function removeFromUserList(supplementId, status) {
   try {
-    const res = await fetch('/api/prescriptions/infer', {
+    const res = await fetch(`/api/user-supplements/${supplementId}?status=${status}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.wishlist = json.data.wishlist || [];
+      state.purchased = json.data.purchased || [];
+      state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      updateNavBadges();
+      renderCatalog();
+      if (state.finderResult) renderFinderResult(state.finderResult);
+      renderWishlistView();
+      renderCalendarView();
+      showToast('已從清單移除並重新計算費用與效益');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.removeFromUserList = removeFromUserList;
+
+async function moveWishlistToPurchased(supplementId) {
+  try {
+    const userName = state.currentUser?.displayName || '消費者';
+    const res = await fetch('/api/user-supplements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        newMedications: medications,
-        hospitalName: '林口長庚紀念醫院',
-        department: '心臟內科',
-        bagImageUrl: uploadedBagImageBase64
+        supplementId,
+        status: 'purchased',
+        moveFromWishlist: true,
+        userName
       })
     });
-
-    clearInterval(timerInterval);
-
-    // 完成時平滑填滿進度條
-    if (progressBarFill) progressBarFill.style.width = '100%';
-    if (stage1El) stage1El.className = 'mcp-stage-item completed';
-    if (stage2El) stage2El.className = 'mcp-stage-item completed';
-    if (stage3El) stage3El.className = 'mcp-stage-item completed';
-    setTimeout(() => {
-      if (progressContainer) progressContainer.classList.remove('active');
-    }, 2500);
-
-    const result = await res.json();
-    if (!result.success) {
-      alert('處方推導失敗: ' + result.message);
-      return;
-    }
-
-    const { analyzedMeds, inferenceSummary, drugBankMcp, telemetry } = result.data;
-
-    // 渲染本期處方列表
-    if (currListEl) {
-      currListEl.innerHTML = '';
-      analyzedMeds.forEach(m => {
-        const cls = m.changeType === 'timing' ? 'change-timing' : (m.changeType === 'new' ? 'change-new' : '');
-        currListEl.innerHTML += `
-          <div class="med-card-row ${cls}">
-            <div><strong>${escapeHtml(m.name)}</strong></div>
-            <span class="med-code-badge">${escapeHtml(m.code)} (${escapeHtml(m.frequencyChinese)})</span>
-            <div style="font-size:0.75rem; margin-top:0.25rem;">${escapeHtml(m.changeNotice)}</div>
-          </div>
-        `;
-      });
-    }
-
-    // 渲染推導診斷總結
-    if (infTextEl) {
-      infTextEl.innerText = inferenceSummary;
-    }
-
-    // 渲染生活服藥排程落實與健康軌跡總評卡片
-    if (mcpResultsContainer && drugBankMcp) {
-      let ddiHtml = '';
-      if (drugBankMcp.detectedInteractions && drugBankMcp.detectedInteractions.length > 0) {
-        drugBankMcp.detectedInteractions.forEach(d => {
-          ddiHtml += `
-            <div class="ddi-item moderate">
-              <div class="ddi-item-title">
-                <span>📋 ${escapeHtml(d.drugA)} ＋ ${escapeHtml(d.drugB)}</span>
-                <span class="severity-chip moderate">${escapeHtml(d.severityLabel)}</span>
-              </div>
-              <p style="color:#334155; margin-bottom:0.35rem; font-size:0.92rem; line-height:1.6;">${escapeHtml(d.description)}</p>
-              <div class="ddi-action" style="font-size:0.9rem;">👉 生活實踐叮嚀：${escapeHtml(d.clinicalAction)}</div>
-            </div>
-          `;
-        });
-      } else {
-        ddiHtml = '<div style="font-size:0.92rem; color:#059669; padding:0.5rem 0;">✔️ 處方搭配得宜，請依專科醫囑定時定候規律服用。</div>';
-      }
-
-      let beersHtml = '';
-      if (drugBankMcp.beersAlerts && drugBankMcp.beersAlerts.length > 0) {
-        drugBankMcp.beersAlerts.forEach(b => {
-          beersHtml += `
-            <div class="beers-alert-box">
-              <div class="beers-alert-title" style="font-size:0.95rem;">
-                <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-                高齡生活作息與服藥時段指引 (${escapeHtml(b.riskLevel)})
-              </div>
-              <p style="font-size:0.92rem; line-height:1.6; color:#0f766e;">${escapeHtml(b.warning)}</p>
-            </div>
-          `;
-        });
-      }
-
-      mcpResultsContainer.innerHTML = `
-        <div class="mcp-audit-card">
-          <div class="mcp-audit-header">
-            <div class="mcp-audit-title" style="font-size:1.15rem;">
-              <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-              長輩生活服藥指引與健康備忘
-            </div>
-          </div>
-
-          <div style="font-size:0.9rem; color:#475569; margin-bottom:1rem; line-height:1.6;">
-            <strong>服藥叮嚀：</strong>依專科醫囑定時定候規律服用 ｜ <strong>生活排程：</strong>早、中、晚、睡前四時段生活排程已建立
-          </div>
-
-          <div style="margin-bottom:0.9rem;">
-            <strong style="font-size:0.95rem; color:#0f766e;">生活服藥配合與飲食叮嚀：</strong>
-            <div style="margin-top:0.5rem;">${ddiHtml}</div>
-          </div>
-
-          ${beersHtml}
-        </div>
-      `;
-    }
-
-  } catch (err) {
-    clearInterval(timerInterval);
-    if (progressContainer) progressContainer.classList.remove('active');
-    console.error('處方比對失敗:', err);
-    if (infTextEl) infTextEl.innerText = '比對失敗：' + err.message;
-  }
-}
-
-// 手動加入自訂藥物比對
-const rxManualForm = document.getElementById('rx-inference-form');
-if (rxManualForm) {
-  rxManualForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('custom-med-name').value.trim();
-    const code = document.getElementById('custom-med-code').value.trim();
-    const ind = document.getElementById('custom-med-ind').value.trim();
-
-    if (!name || !code) return;
-
-    const currListEl = document.getElementById('curr-meds-list');
-    if (currListEl) {
-      currListEl.innerHTML += `
-        <div class="med-card-row change-timing">
-          <div><strong>${escapeHtml(name)}</strong></div>
-          <span class="med-code-badge">${escapeHtml(code)}</span>
-          <div style="color:#0284c7; font-size:0.75rem; margin-top:0.25rem;">${escapeHtml(ind)}</div>
-        </div>
-      `;
-    }
-    alert(`已將「${name} (${code})」納入本期處方並完成推導！`);
-  });
-}
-
-// ========================================================
-// 7. Ollama 連線狀態與初始化
-// ========================================================
-async function checkOllamaStatus() {
-  const dot = document.getElementById('ollama-status-dot');
-  const label = document.getElementById('ollama-status-label');
-  if (!dot || !label) return;
-
-  try {
-    const res = await fetch('/api/ollama/status');
-    const result = await res.json();
-    if (result.success && result.data.online) {
-      dot.className = 'sys-dot online';
-      dot.style.backgroundColor = '#10b981';
-      label.innerText = result.data.label || `模型在線 (${result.data.currentModel})`;
-    } else {
-      dot.className = 'sys-dot online';
-      dot.style.backgroundColor = '#10b981';
-      label.innerText = '智慧臨床解析引擎 (在線)';
-    }
-  } catch (e) {
-    dot.className = 'sys-dot online';
-    dot.style.backgroundColor = '#10b981';
-    label.innerText = '智慧臨床解析引擎 (在線)';
-  }
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-document.getElementById('refresh-all-btn').addEventListener('click', () => {
-  loadDashboardData();
-  loadVerbalOrdersList();
-  checkOllamaStatus();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadDashboardData();
-  loadVerbalOrdersList();
-  checkOllamaStatus();
-  checkIosPwaPrompt();
-  initUserAuth();
-});
-
-// ========================================================
-// 8. 雙 LLM 呼叫管道與逾時安全閥監控 (Pipeline Monitor)
-// ========================================================
-const pipelineModal = document.getElementById('pipeline-modal');
-const openPipelineBtn = document.getElementById('open-pipeline-modal-btn');
-const closePipelineBtn = document.getElementById('close-pipeline-modal-btn');
-
-if (openPipelineBtn && pipelineModal) {
-  openPipelineBtn.addEventListener('click', () => {
-    pipelineModal.classList.add('open');
-    fetchPipelinesStatus();
-  });
-}
-
-if (closePipelineBtn && pipelineModal) {
-  closePipelineBtn.addEventListener('click', () => {
-    pipelineModal.classList.remove('open');
-  });
-}
-
-if (pipelineModal) {
-  pipelineModal.addEventListener('click', (e) => {
-    if (e.target === pipelineModal) {
-      pipelineModal.classList.remove('open');
-    }
-  });
-}
-
-async function fetchPipelinesStatus() {
-  try {
-    const res = await fetch('/api/pipelines/status');
-    const result = await res.json();
-    if (!result.success) return;
-
-    const { pipelines, dedicatedChannels } = result.data;
-
-    // 管道 A
-    if (pipelines.fastLocal) {
-      const elUrl = document.getElementById('pipe-fast-url');
-      const elModel = document.getElementById('pipe-fast-model');
-      const elTimeout = document.getElementById('pipe-fast-timeout');
-      const elStatus = document.getElementById('pipe-fast-status');
-
-      if (elUrl) elUrl.innerText = pipelines.fastLocal.url;
-      if (elModel) elModel.innerText = pipelines.fastLocal.model;
-      if (elTimeout) elTimeout.innerText = `${pipelines.fastLocal.timeoutConfigMs} ms (快速中斷與備援)`;
-      if (elStatus) elStatus.innerText = pipelines.fastLocal.status;
-    }
-
-    // 管道 B
-    if (pipelines.mcpAugmented) {
-      const elUrl = document.getElementById('pipe-mcp-url');
-      const elLookup = document.getElementById('pipe-mcp-lookup-timeout');
-      const elTotal = document.getElementById('pipe-mcp-total-timeout');
-      const elStatus = document.getElementById('pipe-mcp-status');
-
-      if (elUrl) elUrl.innerText = pipelines.mcpAugmented.url;
-      if (elLookup) elLookup.innerText = `${pipelines.mcpAugmented.mcpTimeoutConfigMs} ms (防護中斷)`;
-      if (elTotal) elTotal.innerText = `${pipelines.mcpAugmented.totalTimeoutConfigMs} ms (綜合推理)`;
-      if (elStatus) elStatus.innerText = pipelines.mcpAugmented.status;
-      
-
-    }
-
-    // 專屬隔離管道表格
-    const tbody = document.getElementById('dedicated-channels-tbody');
-    if (tbody && dedicatedChannels) {
-      tbody.innerHTML = '';
-      dedicatedChannels.forEach(ch => {
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>${escapeHtml(ch.feature)}</strong></td>
-            <td><code style="color:#0284c7; font-weight:600;">${escapeHtml(ch.channel)}</code></td>
-            <td><span style="color:#d97706; font-weight:700;">${ch.timeoutMs} ms</span></td>
-            <td style="color:#475569;">${escapeHtml(ch.role)}</td>
-          </tr>
-        `;
-      });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.wishlist = json.data.wishlist || [];
+      state.purchased = json.data.purchased || [];
+      state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      updateNavBadges();
+      renderCatalog();
+      renderWishlistView();
+      renderCalendarView();
+      showToast('已轉入「已購買與服用日曆」！現在可在日曆上打卡服用狀態。');
     }
   } catch (err) {
-    console.warn('無法載入管道狀態:', err);
+    console.error(err);
   }
 }
+window.moveWishlistToPurchased = moveWishlistToPurchased;
 
-// 監聽並將 fetchPipelinesStatus 加入自動輪詢
-if (document.getElementById('refresh-all-btn')) {
-  document.getElementById('refresh-all-btn').addEventListener('click', () => {
-    fetchPipelinesStatus();
-  });
-}
-document.addEventListener('DOMContentLoaded', () => {
-  fetchPipelinesStatus();
-});
-
-// ========================================================
-// 9. 臨床 Demo 情境檔案載入器 (Scenario Loader)
-// ========================================================
-const scenarioModal = document.getElementById('scenario-modal');
-const openScenarioBtn = document.getElementById('open-scenario-modal-btn');
-const closeScenarioBtn = document.getElementById('close-scenario-modal-btn');
-const scenariosContainer = document.getElementById('scenarios-list-container');
-const confirmLoadScenarioBtn = document.getElementById('confirm-load-scenario-btn');
-const scenarioFileInput = document.getElementById('scenario-file-input');
-
-let selectedScenarioData = null;
-
-if (openScenarioBtn && scenarioModal) {
-  openScenarioBtn.addEventListener('click', () => {
-    scenarioModal.classList.add('open');
-    fetchScenariosList();
-  });
-}
-
-if (closeScenarioBtn && scenarioModal) {
-  closeScenarioBtn.addEventListener('click', () => {
-    scenarioModal.classList.remove('open');
-  });
-}
-
-if (scenarioModal) {
-  scenarioModal.addEventListener('click', (e) => {
-    if (e.target === scenarioModal) {
-      scenarioModal.classList.remove('open');
-    }
-  });
-}
-
-async function fetchScenariosList() {
-  if (!scenariosContainer) return;
-  scenariosContainer.innerHTML = '<div style="padding:1rem; color:#64748b;">正在掃描 scenarios/ 目錄...</div>';
-
+async function refreshWishlistAnalysis() {
   try {
-    const res = await fetch('/api/scenarios');
-    const result = await res.json();
-    if (!result.success || !result.data || result.data.length === 0) {
-      scenariosContainer.innerHTML = '<div style="padding:1rem; color:#64748b;">scenarios/ 資料夾內暫無情境檔案。您可以自行上傳 JSON。</div>';
-      return;
+    const res = await fetch('/api/wishlist/analyze');
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.wishlistAnalysis = json.data;
+      renderWishlistView();
+      showToast('已完成跨商品成分重疊與去冗省錢精算');
     }
-
-    scenariosContainer.innerHTML = '';
-    result.data.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'scenario-item-card';
-      card.innerHTML = `
-        <div class="scenario-card-info">
-          <h4>${escapeHtml(item.title)}</h4>
-          <p>${escapeHtml(item.description)}</p>
-          <div class="scenario-card-meta">
-            <span class="scenario-badge">長輩：${escapeHtml(item.patientName)}</span>
-            <span class="scenario-badge">科別：${escapeHtml(item.department)}</span>
-            <span class="scenario-badge" style="background:#e0f2fe; color:#0369a1;">檔名：${escapeHtml(item.filename)}</span>
-          </div>
-        </div>
-        <button type="button" class="btn btn-outline btn-sm" style="flex-shrink:0;">選取</button>
-      `;
-
-      card.addEventListener('click', async () => {
-        document.querySelectorAll('.scenario-item-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-
-        try {
-          const detailRes = await fetch(`/api/scenarios/${encodeURIComponent(item.filename)}`);
-          const detail = await detailRes.json();
-          if (detail.success) {
-            selectedScenarioData = detail.data;
-            showScenarioPreview(selectedScenarioData);
-          }
-        } catch (e) {
-          console.error('讀取情境詳細失敗:', e);
-        }
-      });
-
-      scenariosContainer.appendChild(card);
-    });
   } catch (err) {
-    scenariosContainer.innerHTML = `<div style="padding:1rem; color:#b91c1c;">載入情境清單失敗: ${err.message}</div>`;
+    console.error(err);
   }
 }
+window.refreshWishlistAnalysis = refreshWishlistAnalysis;
 
-function showScenarioPreview(scenario) {
-  const previewBox = document.getElementById('scenario-active-preview');
-  const titleEl = document.getElementById('preview-scenario-title');
-  const descEl = document.getElementById('preview-scenario-desc');
+function renderWishlistView() {
+  const kpiGrid = document.getElementById('wishlist-kpi-grid');
+  const itemsContainer = document.getElementById('wishlist-items-container');
+  const analysisContainer = document.getElementById('wishlist-analysis-container');
+  if (!kpiGrid || !itemsContainer || !analysisContainer) return;
 
-  if (previewBox && titleEl && descEl) {
-    titleEl.innerText = scenario.title || scenario.patient?.name || '已選取情境';
-    descEl.innerHTML = `
-      <strong>臨床個案：</strong>${scenario.patient?.name} (${scenario.patient?.age}歲 / ${scenario.patient?.department})<br>
-      <strong>核心衝突：</strong>${scenario.description || '無描述'}<br>
-      <strong>門診處方：</strong>${scenario.prescriptions?.current?.length || 0} 種藥品比對 ｜ <strong>口頭醫囑：</strong>${scenario.verbalOrder?.rawInput ? '已備妥' : '無'}
+  const analysis = state.wishlistAnalysis || {
+    wishlistMonthlyCost: 0,
+    purchasedMonthlyCost: 0,
+    potentialMonthlySavings: 0,
+    optimizedMonthlyCost: 0,
+    redundancyAlerts: [],
+    dosageChecks: [],
+    timingWarnings: [],
+    overallVerdict: '尚未加入有興趣商品'
+  };
+
+  // 1. 頂部 KPI
+  kpiGrid.innerHTML = `
+    <div class="kpi-stat-card">
+      <div class="kpi-label">有興趣清單全買每月花費</div>
+      <div class="kpi-number">NT$ ${analysis.wishlistMonthlyCost} <span style="font-size:0.85rem;font-weight:600;">/ 月</span></div>
+      <div class="kpi-sub">共 ${state.wishlist.length} 款考慮購買商品</div>
+    </div>
+    <div class="kpi-stat-card savings-highlight">
+      <div class="kpi-label" style="color:#be123c;">抓出重複／不需購買可省下</div>
+      <div class="kpi-number" style="color:#e11d48;">立省 NT$ ${analysis.potentialMonthlySavings} <span style="font-size:0.85rem;font-weight:600;">/ 月</span></div>
+      <div class="kpi-sub">發現 ${(analysis.redundancyAlerts || []).length} 項功能或成分重疊</div>
+    </div>
+    <div class="kpi-stat-card optimized-highlight">
+      <div class="kpi-label" style="color:#047857;">剔除重複後最佳每月花費</div>
+      <div class="kpi-number" style="color:#059669;">NT$ ${analysis.optimizedMonthlyCost} <span style="font-size:0.85rem;font-weight:600;">/ 月</span></div>
+      <div class="kpi-sub">另加已購買服用中 NT$ ${analysis.purchasedMonthlyCost} / 月</div>
+    </div>
+  `;
+
+  // 2. 左欄：有興趣清單卡片
+  const redundantIds = new Set((analysis.redundancyAlerts || []).map(a => Number(a.dropProductId)));
+  if (state.wishlist.length === 0) {
+    itemsContainer.innerHTML = `
+      <div style="text-align:center; padding:2rem 1rem; color:#64748b;">
+        <p style="margin-bottom:0.85rem;">目前「有興趣清單」沒有商品。</p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="switchView('view-finder')">去尋找並加入有興趣的保健品</button>
+      </div>
     `;
-    previewBox.style.display = 'block';
+  } else {
+    itemsContainer.innerHTML = state.wishlist.map(item => {
+      const isFlagged = redundantIds.has(Number(item.id));
+      return `
+        <div class="managed-item-card ${isFlagged ? 'redundant-warning' : ''}">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+            <div>
+              <span class="supp-cat-badge">${item.category}</span>
+              ${isFlagged ? '<span class="supp-cat-badge" style="background:#ffe4e6;color:#be123c;margin-left:4px;">⚠️ 建議免買（成分重複）</span>' : '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">✓ 推薦保留</span>'}
+              <h4 style="font-size:0.98rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${item.brand}｜${item.name}</h4>
+            </div>
+            <div style="text-align:right; white-space:nowrap;">
+              <div style="font-size:0.95rem; font-weight:800; color:#0284c7;">NT$ ${item.monthly_cost} / 月</div>
+              <div style="font-size:0.74rem; color:#64748b;">每日 $${Math.round(item.daily_cost)}</div>
+            </div>
+          </div>
+          <div style="font-size:0.8rem; color:#475569; margin:0.5rem 0;">
+            <strong>核心成分：</strong>${item.active_summary}
+          </div>
+          <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.65rem;">
+            <button type="button" class="btn btn-sm btn-outline" onclick="moveWishlistToPurchased(${item.id})">
+              ✓ 轉為已購買 (加入日曆)
+            </button>
+            <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'wishlist')">
+              ✕ 剔除此商品
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
-  if (confirmLoadScenarioBtn) {
-    confirmLoadScenarioBtn.disabled = false;
-  }
-}
+  // 3. 右欄：去冗省錢建議、合併劑量檢核、服用時段提醒
+  const alertsHtml = (analysis.redundancyAlerts || []).length === 0
+    ? `<div style="padding:0.9rem 1rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; color:#065f46; font-size:0.88rem; margin-bottom:1rem;">
+         ✓ 目前有興趣的商品之間、以及與您正在服用的商品之間，沒有發現重複購買或衝突，配置相當精準！
+       </div>`
+    : (analysis.redundancyAlerts || []).map(alert => `
+        <div class="redundancy-alert-card">
+          <div class="redundancy-header">
+            <span class="redundancy-title">💡 您可能不需要買【${alert.dropProductName}】</span>
+            <span class="save-badge">刪除可省 NT$ ${alert.savedMonthly} / 月</span>
+          </div>
+          <p style="font-size:0.85rem; color:#881337; margin-bottom:0.65rem;">
+            ${alert.reason}
+          </p>
+          <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${alert.dropProductId}, 'wishlist')">
+            ✕ 一鍵從清單剔除【${alert.dropProductName}】（立省 $${alert.savedMonthly}/月）
+          </button>
+        </div>
+      `).join('');
 
-// 支援從本機上傳自訂 JSON
-if (scenarioFileInput) {
-  scenarioFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const dosageHtml = (analysis.dosageChecks || []).map(d => {
+    const widthPct = Math.min(100, Math.max(12, Math.round((d.totalAmount / (d.recommended * 1.5)) * 100)));
+    let barClass = 'fill-optimal';
+    let badgeBg = '#dcfce7';
+    let badgeColor = '#15803d';
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target.result);
-        if (!parsed.patient) {
-          alert('上傳的 JSON 缺少 patient 欄位，請參閱 scenarios/README.md 格式規範。');
-          return;
-        }
-        selectedScenarioData = parsed;
-        document.querySelectorAll('.scenario-item-card').forEach(c => c.classList.remove('selected'));
-        showScenarioPreview(selectedScenarioData);
-        alert(`自訂情境檔案「${file.name}」已讀取成功！請點選下方按鈕確認載入。`);
-      } catch (err) {
-        alert('JSON 解析失敗，請確認檔案格式是否正確: ' + err.message);
-      }
-    };
-    reader.readAsText(file);
-  });
-}
-
-// 確認載入情境至全系統
-if (confirmLoadScenarioBtn) {
-  confirmLoadScenarioBtn.addEventListener('click', async () => {
-    if (!selectedScenarioData) return;
-
-    confirmLoadScenarioBtn.disabled = true;
-    confirmLoadScenarioBtn.innerText = '正在將情境寫入全系統資料庫...';
-
-    try {
-      const res = await fetch('/api/scenarios/load', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(selectedScenarioData)
-      });
-      const result = await res.json();
-      if (result.success) {
-        // 1. 更新側邊欄長輩個案資訊
-        const p = selectedScenarioData.patient;
-        if (p) {
-          const nameEl = document.querySelector('.case-name');
-          const ageEl = document.querySelector('.case-age');
-          const subEl = document.querySelector('.case-sub');
-          const hubEl = document.querySelector('.case-hub-tag');
-
-          if (nameEl) nameEl.innerText = p.name;
-          if (ageEl) ageEl.innerText = `${p.age}歲`;
-          if (subEl) subEl.innerText = `${p.primaryHospital} (${p.department})`;
-          if (hubEl) hubEl.innerText = p.careCategory || '高齡慢性照護';
-        }
-
-        // 2. 更新口頭醫囑輸入框
-        if (selectedScenarioData.verbalOrder) {
-          const rawInputEl = document.getElementById('raw-verbal-input');
-          if (rawInputEl) rawInputEl.value = selectedScenarioData.verbalOrder.rawInput || '';
-        }
-
-        // 4. 更新處方清單與推導總評
-        if (selectedScenarioData.prescriptions) {
-          const prevListEl = document.getElementById('prev-meds-list');
-          const currListEl = document.getElementById('curr-meds-list');
-          const infTextEl = document.getElementById('inference-summary-text');
-
-          if (prevListEl && selectedScenarioData.prescriptions.previous) {
-            prevListEl.innerHTML = '';
-            selectedScenarioData.prescriptions.previous.forEach(m => {
-              prevListEl.innerHTML += `
-                <div class="med-card-row">
-                  <div><strong>${escapeHtml(m.name)}</strong></div>
-                  <span class="med-code-badge">${escapeHtml(m.code)}</span>
-                  <div style="font-size:0.85rem; color:#64748b; margin-top:0.25rem;">${escapeHtml(m.ind || '')}</div>
-                </div>
-              `;
-            });
-          }
-
-          if (currListEl && selectedScenarioData.prescriptions.current) {
-            currListEl.innerHTML = '';
-            selectedScenarioData.prescriptions.current.forEach(m => {
-              const isTiming = m.ind && (m.ind.includes('調整') || m.ind.includes('改') || m.ind.includes('調降'));
-              currListEl.innerHTML += `
-                <div class="med-card-row ${isTiming ? 'change-timing' : ''}">
-                  <div><strong>${escapeHtml(m.name)}</strong></div>
-                  <span class="med-code-badge">${escapeHtml(m.code)}</span>
-                  <div style="font-size:0.85rem; margin-top:0.25rem;">${escapeHtml(m.ind || '')}</div>
-                </div>
-              `;
-            });
-          }
-
-          if (infTextEl && selectedScenarioData.prescriptions.inferenceSummary) {
-            infTextEl.innerText = selectedScenarioData.prescriptions.inferenceSummary;
-          }
-        }
-
-        // 5. 重新整理儀表板與醫囑列表
-        await loadDashboardData();
-        await loadVerbalOrdersList();
-
-        if (scenarioModal) scenarioModal.classList.remove('open');
-        alert(`✅ 成功載入情境【${selectedScenarioData.title || p.name}】！全系統畫面與資料庫已全面更新。`);
-      } else {
-        alert('載入情境失敗: ' + result.message);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('載入情境連線失敗');
-    } finally {
-      confirmLoadScenarioBtn.disabled = false;
-      confirmLoadScenarioBtn.innerText = '確認載入此情境至全系統';
+    if (d.status === 'exceed_ul') {
+      barClass = 'fill-exceed';
+      badgeBg = '#ffe4e6';
+      badgeColor = '#be123c';
+    } else if (d.status === 'duplicate_high') {
+      barClass = 'fill-high';
+      badgeBg = '#fef3c7';
+      badgeColor = '#b45309';
+    } else if (d.status === 'low') {
+      barClass = 'fill-low';
+      badgeBg = '#f1f5f9';
+      badgeColor = '#475569';
     }
-  });
+
+    return `
+      <div class="dosage-row">
+        <div class="dosage-row-top">
+          <span>${d.name}：合計 <strong>${d.totalAmount} ${d.unit}</strong>（建議量 ${d.recommended}${d.unit} / 安全上限 ${d.ul}${d.unit}）</span>
+          <span style="font-size:0.74rem; padding:2px 8px; border-radius:999px; background:${badgeBg}; color:${badgeColor};">${d.statusLabel}</span>
+        </div>
+        <div class="dosage-bar-track">
+          <div class="dosage-bar-fill ${barClass}" style="width:${widthPct}%;"></div>
+        </div>
+        <div style="font-size:0.75rem; color:#64748b;">
+          來源商品：${(d.sources || []).join(' ＋ ')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const timingHtml = (analysis.timingWarnings || []).map(w => `
+    <div style="padding:0.65rem 0.85rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:0.83rem; color:#92400e; margin-bottom:0.5rem;">
+      ⏰ ${w}
+    </div>
+  `).join('');
+
+  analysisContainer.innerHTML = `
+    <div class="verdict-banner">
+      <strong>📋 整體購買評估結論：</strong><br/>
+      ${analysis.overallVerdict}
+    </div>
+
+    <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
+      1. 跨商品重疊去冗建議（有興趣清單 vs. 已購買服用中）
+    </h4>
+    ${alertsHtml}
+
+    <div class="dosage-table-wrap">
+      <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
+        2. 合併每日有效成分總量檢核（對照每日建議攝取量與安全上限）
+      </h4>
+      ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
+    </div>
+
+    ${timingHtml ? `
+      <div style="margin-top:1.25rem;">
+        <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
+          3. 服用時段與吸收衝突提醒
+        </h4>
+        ${timingHtml}
+      </div>
+    ` : ''}
+  `;
 }
 
 // ========================================================
-// 10. PWA 漸進式網頁應用 (加入主畫面 & 離線 Service Worker)
+// 5. 【功能三：管理 B - 已購買清單與月經日曆式服用追蹤】
 // ========================================================
-let deferredPwaPrompt = null;
+function renderCalendarView() {
+  renderCalendarKpis();
+  renderCalendarGrid();
+  renderDailyTrackerPanel();
+  renderPurchasedCabinet();
+}
 
+function renderCalendarKpis() {
+  const kpiRow = document.getElementById('calendar-kpi-row');
+  if (!kpiRow) return;
+
+  const monthlyCost = state.purchased.reduce((acc, x) => acc + Number(x.monthly_cost || 0), 0);
+  const pCount = state.purchased.length;
+
+  // 計算當月打卡規律率與連續天數
+  const ymPrefix = `${state.calendarYear}-${String(state.calendarMonth).padStart(2, '0')}`;
+  const monthLogs = Object.values(state.calendarLogs).filter(l => l.dateStr && l.dateStr.startsWith(ymPrefix));
+  let completedDays = 0;
+  for (const log of monthLogs) {
+    if ((log.takenIds || []).length > 0) completedDays++;
+  }
+  const today = new Date();
+  const elapsedDays = (state.calendarYear === today.getFullYear() && state.calendarMonth === today.getMonth() + 1)
+    ? Math.max(1, today.getDate())
+    : 30;
+  const complianceRate = Math.min(100, Math.round((completedDays / elapsedDays) * 100));
+
+  kpiRow.innerHTML = `
+    <div class="kpi-stat-card">
+      <div class="kpi-label">本月規律服用率</div>
+      <div class="kpi-number" style="color:#059669;">${complianceRate}%</div>
+      <div class="kpi-sub">本月已打卡記錄 ${completedDays} 天</div>
+    </div>
+    <div class="kpi-stat-card">
+      <div class="kpi-label">目前正在服用保健品</div>
+      <div class="kpi-number">${pCount} <span style="font-size:0.88rem;">款</span></div>
+      <div class="kpi-sub">依早空腹／隨餐／睡前分時段</div>
+    </div>
+    <div class="kpi-stat-card">
+      <div class="kpi-label">已購買保健品每月花費</div>
+      <div class="kpi-number" style="color:#0284c7;">NT$ ${Math.round(monthlyCost)}</div>
+      <div class="kpi-sub">平均每天花費 NT$ ${Math.round(monthlyCost / 30)}</div>
+    </div>
+  `;
+}
+
+function changeCalendarMonth(delta) {
+  let m = state.calendarMonth + delta;
+  let y = state.calendarYear;
+  if (m < 1) {
+    m = 12;
+    y -= 1;
+  } else if (m > 12) {
+    m = 1;
+    y += 1;
+  }
+  state.calendarYear = y;
+  state.calendarMonth = m;
+  renderCalendarGrid();
+  renderCalendarKpis();
+}
+window.changeCalendarMonth = changeCalendarMonth;
+
+function jumpToToday() {
+  const now = new Date();
+  state.calendarYear = now.getFullYear();
+  state.calendarMonth = now.getMonth() + 1;
+  state.selectedDateStr = formatDateStr(now);
+  renderCalendarView();
+}
+window.jumpToToday = jumpToToday;
+
+function selectCalendarDate(dateStr) {
+  state.selectedDateStr = dateStr;
+  renderCalendarGrid();
+  renderDailyTrackerPanel();
+}
+window.selectCalendarDate = selectCalendarDate;
+
+function renderCalendarGrid() {
+  const titleEl = document.getElementById('calendar-month-title');
+  const gridEl = document.getElementById('calendar-days-grid');
+  if (!titleEl || !gridEl) return;
+
+  const y = state.calendarYear;
+  const m = state.calendarMonth;
+  titleEl.textContent = `${y} 年 ${m} 月`;
+
+  const firstDayOfWeek = new Date(y, m - 1, 1).getDay(); // 0(Sun)..6(Sat)
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const todayStr = formatDateStr(new Date());
+  const totalPurchased = state.purchased.length;
+  const purchasedIds = new Set(state.purchased.map(p => Number(p.id)));
+
+  const cellsHtml = [];
+
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    cellsHtml.push(`<div class="cal-day-cell empty"></div>`);
+  }
+
+  const moodEmojiMap = {
+    '精神飽滿': '⚡',
+    '狀態平穩': '🙂',
+    '疲倦想睡': '🥱',
+    '排便順暢': '🌿',
+    '稍微脹氣': '💨',
+    '排便不順': '🪨',
+    '睡眠深沉': '🌙',
+    '晶亮舒適': '👀',
+    '眼睛乾酸': '👁️'
+  };
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === state.selectedDateStr;
+    const log = state.calendarLogs[dateStr];
+
+    const takenCount = log
+      ? (log.takenIds || []).filter(id => purchasedIds.has(Number(id))).length
+      : 0;
+
+    let intakeBadge = '';
+    if (totalPurchased > 0 && takenCount > 0) {
+      const isFull = takenCount >= totalPurchased;
+      intakeBadge = `
+        <span class="cal-intake-pill ${isFull ? 'full' : 'partial'}">
+          ${isFull ? '✓' : '◐'} ${takenCount}/${totalPurchased}
+        </span>
+      `;
+    }
+
+    const icons = [];
+    if (log) {
+      if (log.energyLevel && moodEmojiMap[log.energyLevel]) icons.push(moodEmojiMap[log.energyLevel]);
+      if (log.digestionStatus && moodEmojiMap[log.digestionStatus]) icons.push(moodEmojiMap[log.digestionStatus]);
+      if (log.sleepEyeStatus && moodEmojiMap[log.sleepEyeStatus]) icons.push(moodEmojiMap[log.sleepEyeStatus]);
+      if (log.note) icons.push('📝');
+    }
+
+    cellsHtml.push(`
+      <div
+        class="cal-day-cell ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}"
+        onclick="selectCalendarDate('${dateStr}')"
+      >
+        <div class="cal-day-num">
+          <span>${day}</span>
+          ${isToday ? '<span class="today-pill">今</span>' : ''}
+        </div>
+        <div class="cal-day-indicators">
+          ${intakeBadge}
+          ${icons.length > 0 ? `<div class="cal-mood-icons">${icons.join('')}</div>` : ''}
+        </div>
+      </div>
+    `);
+  }
+
+  gridEl.innerHTML = cellsHtml.join('');
+}
+
+function getOrCreateSelectedDateLog() {
+  const dateStr = state.selectedDateStr;
+  if (!state.calendarLogs[dateStr]) {
+    state.calendarLogs[dateStr] = {
+      dateStr,
+      takenIds: [],
+      energyLevel: '',
+      digestionStatus: '',
+      sleepEyeStatus: '',
+      note: ''
+    };
+  }
+  return state.calendarLogs[dateStr];
+}
+
+function renderDailyTrackerPanel() {
+  const dateTitle = document.getElementById('selected-date-title');
+  const progressBadge = document.getElementById('daily-progress-badge');
+  const checklistEl = document.getElementById('daily-checklist-container');
+  const noteInput = document.getElementById('daily-note-input');
+  if (!dateTitle || !checklistEl) return;
+
+  const todayStr = formatDateStr(new Date());
+  const dateStr = state.selectedDateStr;
+  dateTitle.textContent = dateStr === todayStr ? `${dateStr}（今天）` : dateStr;
+
+  const log = getOrCreateSelectedDateLog();
+  const takenSet = new Set((log.takenIds || []).map(Number));
+  const totalCount = state.purchased.length;
+  const doneCount = state.purchased.filter(p => takenSet.has(Number(p.id))).length;
+
+  if (progressBadge) {
+    progressBadge.textContent = `已吃 ${doneCount} / ${totalCount} 款`;
+  }
+
+  if (state.purchased.length === 0) {
+    checklistEl.innerHTML = `
+      <div style="padding:1rem; background:#f8fafc; border-radius:8px; color:#64748b; font-size:0.84rem; text-align:center;">
+        您尚未將任何商品加入「已購買清單」。<br/>
+        可從比價庫或點擊右上角「＋ 新增我手邊已買的保健品」加入。
+      </div>
+    `;
+  } else {
+    checklistEl.innerHTML = state.purchased.map(item => {
+      const isChecked = takenSet.has(Number(item.id));
+      const timing = item.intake_time || item.recommended_timing || '隨餐/飯後';
+      return `
+        <label class="intake-check-item ${isChecked ? 'checked' : ''}">
+          <div class="intake-check-left">
+            <input
+              type="checkbox"
+              ${isChecked ? 'checked' : ''}
+              onchange="toggleSupplementTaken(${item.id}, this.checked)"
+            />
+            <div>
+              <div style="font-size:0.9rem; font-weight:800; color:#0f172a;">${item.brand}｜${item.name}</div>
+              <div style="font-size:0.75rem; color:#64748b;">建議份量：每日 ${item.daily_units} 份（${item.dosage_form}）</div>
+            </div>
+          </div>
+          <span class="timing-tag">${timing}</span>
+        </label>
+      `;
+    }).join('');
+  }
+
+  // 同步身體狀態按鈕選取狀態
+  document.querySelectorAll('.mood-pills').forEach(group => {
+    const field = group.dataset.field;
+    const currentVal = log[field] || '';
+    group.querySelectorAll('.mood-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === currentVal && currentVal !== '');
+    });
+  });
+
+  if (noteInput) {
+    noteInput.value = log.note || '';
+  }
+}
+
+async function toggleSupplementTaken(supplementId, isChecked) {
+  const log = getOrCreateSelectedDateLog();
+  const set = new Set((log.takenIds || []).map(Number));
+  if (isChecked) {
+    set.add(Number(supplementId));
+  } else {
+    set.delete(Number(supplementId));
+  }
+  log.takenIds = Array.from(set);
+  await persistCalendarLog(log, true);
+}
+window.toggleSupplementTaken = toggleSupplementTaken;
+
+async function checkAllTodaySupplements() {
+  const log = getOrCreateSelectedDateLog();
+  log.takenIds = state.purchased.map(p => Number(p.id));
+  await persistCalendarLog(log, false);
+}
+window.checkAllTodaySupplements = checkAllTodaySupplements;
+
+async function selectDailyMood(field, value) {
+  const log = getOrCreateSelectedDateLog();
+  log[field] = log[field] === value ? '' : value;
+  await persistCalendarLog(log, true);
+}
+window.selectDailyMood = selectDailyMood;
+
+async function saveDailyCalendarLog() {
+  const log = getOrCreateSelectedDateLog();
+  const noteInput = document.getElementById('daily-note-input');
+  if (noteInput) {
+    log.note = noteInput.value.trim();
+  }
+  await persistCalendarLog(log, false);
+}
+window.saveDailyCalendarLog = saveDailyCalendarLog;
+
+async function persistCalendarLog(log, silent = false) {
+  try {
+    const updatedBy = state.currentUser?.displayName || '消費者';
+    const res = await fetch('/api/calendar/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...log, updatedBy })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.calendarLogs[log.dateStr] = json.data;
+      renderCalendarGrid();
+      renderDailyTrackerPanel();
+      renderCalendarKpis();
+      if (!silent) {
+        showToast(`已儲存 ${log.dateStr} 的服用打卡與身體日誌！`);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderPurchasedCabinet() {
+  const grid = document.getElementById('purchased-cabinet-grid');
+  if (!grid) return;
+
+  if (state.purchased.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:#64748b;">目前尚無已購買服用的保健品。</div>`;
+    return;
+  }
+
+  grid.innerHTML = state.purchased.map(item => `
+    <div class="managed-item-card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <span class="supp-cat-badge">${item.category}</span>
+          <span class="timing-tag" style="margin-left:4px;">⏰ ${item.intake_time || item.recommended_timing}</span>
+          <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${item.brand}｜${item.name}</h4>
+        </div>
+        <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">移除</button>
+      </div>
+      <div style="font-size:0.8rem; color:#475569; margin-top:0.45rem;">
+        <div>有效成分：${item.active_summary}</div>
+        <div style="margin-top:0.2rem;">每日花費：<strong>NT$ ${Math.round(item.daily_cost)} / 日</strong>（預計尚可服用約 ${item.remaining_days || item.days_supply || 30} 天）</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========================================================
+// 6. 新增市售保健品 Modal、訂閱方案 Modal 與範例清空切換
+// ========================================================
+function openAddSupplementModal(defaultList = 'wishlist') {
+  const modal = document.getElementById('add-supplement-modal');
+  const selectEl = document.getElementById('new-supp-target-list');
+  if (selectEl && defaultList) {
+    selectEl.value = defaultList;
+  }
+  if (modal) modal.style.display = 'flex';
+}
+window.openAddSupplementModal = openAddSupplementModal;
+
+function closeAddSupplementModal() {
+  const modal = document.getElementById('add-supplement-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeAddSupplementModal = closeAddSupplementModal;
+
+async function handleAddSupplementSubmit(e) {
+  e.preventDefault();
+  const brand = document.getElementById('new-supp-brand')?.value || '';
+  const name = document.getElementById('new-supp-name')?.value || '';
+  const category = document.getElementById('new-supp-category')?.value || '魚油';
+  const recommended_timing = document.getElementById('new-supp-timing')?.value || '隨餐/飯後';
+  const price = document.getElementById('new-supp-price')?.value || 980;
+  const total_units = document.getElementById('new-supp-total')?.value || 60;
+  const daily_units = document.getElementById('new-supp-daily')?.value || 2;
+  const active_summary = document.getElementById('new-supp-summary')?.value || '';
+  const add_to_status = document.getElementById('new-supp-target-list')?.value || 'wishlist';
+
+  try {
+    const res = await fetch('/api/supplements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand,
+        name,
+        category,
+        recommended_timing,
+        price,
+        total_units,
+        daily_units,
+        active_summary,
+        add_to_status,
+        user_name: state.currentUser?.displayName || '消費者'
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      closeAddSupplementModal();
+      document.getElementById('add-supplement-form')?.reset();
+      await loadBootstrapData();
+      showToast(`已新增【${brand} ${name}】並完成每日花費與成分建檔！`);
+      if (add_to_status === 'wishlist') {
+        switchView('view-wishlist');
+      } else if (add_to_status === 'purchased') {
+        switchView('view-calendar');
+      }
+    }
+  } catch (err) {
+    showToast('新增商品失敗，請檢查欄位');
+  }
+}
+window.handleAddSupplementSubmit = handleAddSupplementSubmit;
+
+function openSubscriptionModal() {
+  const modal = document.getElementById('subscription-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openSubscriptionModal = openSubscriptionModal;
+
+function closeSubscriptionModal() {
+  const modal = document.getElementById('subscription-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeSubscriptionModal = closeSubscriptionModal;
+
+function activateDemoProPlan() {
+  closeSubscriptionModal();
+  showToast('✨ 已為您啟用完整消費者訂閱權益（無上限跨品牌去冗省錢精算＋完整服用日曆）');
+}
+window.activateDemoProPlan = activateDemoProPlan;
+
+async function toggleDemoData() {
+  try {
+    if (!state.isDemoCleared) {
+      await fetch('/api/demo/clear', { method: 'POST' });
+      state.isDemoCleared = true;
+      await loadBootstrapData();
+      showToast('🧹 已清空範例清單與日曆！您現在可以自由挑選或新增自己的保健品。');
+    } else {
+      await fetch('/api/demo/restore', { method: 'POST' });
+      state.isDemoCleared = false;
+      await loadBootstrapData();
+      showToast('🔄 已恢復預設跨品牌示範清單與服用日曆紀錄！');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.toggleDemoData = toggleDemoData;
+
+// ========================================================
+// 7. LINE 登入與組員身分綁定
+// ========================================================
+function initUserAuth() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('line_login') === 'success') {
+    const user = {
+      displayName: params.get('name') || 'LINE 使用者',
+      pictureUrl: params.get('pic') || '',
+      userId: params.get('uid') || 'line_user'
+    };
+    localStorage.setItem('purepick_user', JSON.stringify(user));
+    window.history.replaceState({}, document.title, '/');
+    showToast(`歡迎回來，${user.displayName}！您的保健品清單與日曆已綁定。`);
+  } else if (params.get('auth_notice') === 'line_config_needed') {
+    window.history.replaceState({}, document.title, '/');
+    openLineLoginModal();
+  }
+
+  const saved = localStorage.getItem('purepick_user');
+  if (saved) {
+    try {
+      state.currentUser = JSON.parse(saved);
+    } catch (e) {}
+  }
+  renderAuthUI();
+}
+
+function renderAuthUI() {
+  const loginBtn = document.getElementById('btn-line-login');
+  const chip = document.getElementById('user-logged-in-chip');
+  const nameEl = document.getElementById('user-display-name');
+
+  if (state.currentUser) {
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (chip) chip.style.display = 'inline-flex';
+    if (nameEl) nameEl.textContent = state.currentUser.displayName;
+  } else {
+    if (loginBtn) loginBtn.style.display = 'inline-flex';
+    if (chip) chip.style.display = 'none';
+  }
+}
+
+function startLineLogin() {
+  openLineLoginModal();
+}
+window.startLineLogin = startLineLogin;
+
+function openLineLoginModal() {
+  const modal = document.getElementById('line-login-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openLineLoginModal = openLineLoginModal;
+
+function closeLineLoginModal() {
+  const modal = document.getElementById('line-login-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeLineLoginModal = closeLineLoginModal;
+
+async function submitQuickLineLogin() {
+  const nameInput = document.getElementById('mock-line-name');
+  const roleName = (nameInput?.value || '政大創創組員').trim();
+
+  try {
+    const res = await fetch('/api/auth/mock-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roleName })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.currentUser = json.data;
+      localStorage.setItem('purepick_user', JSON.stringify(json.data));
+      renderAuthUI();
+      closeLineLoginModal();
+      showToast(`已以【${json.data.displayName}】LINE 身分登入並綁定保健品清單！`);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.submitQuickLineLogin = submitQuickLineLogin;
+
+function logoutLine() {
+  state.currentUser = null;
+  localStorage.removeItem('purepick_user');
+  renderAuthUI();
+  showToast('已登出帳號');
+}
+window.logoutLine = logoutLine;
+
+// ========================================================
+// 8. PWA 安裝支援
+// ========================================================
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then((reg) => console.log('✅ CareNav PWA Service Worker 註冊成功，範圍:', reg.scope))
-      .catch((err) => console.warn('PWA Service Worker 註冊警示:', err));
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
   });
 }
 
-// Android / Chrome / Edge: 擷取系統安裝提示事件
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPwaPrompt = e;
-  const installBtn = document.getElementById('pwa-install-btn');
-  const mobileInstallBtn = document.getElementById('mobile-pwa-install-btn');
-  if (installBtn) installBtn.style.display = 'inline-flex';
-  if (mobileInstallBtn) mobileInstallBtn.style.display = 'inline-flex';
-});
-
-window.addEventListener('appinstalled', () => {
-  console.log('✅ CareNav 已成功加入至使用者手機/電腦桌面！');
-  const installBtn = document.getElementById('pwa-install-btn');
-  const mobileInstallBtn = document.getElementById('mobile-pwa-install-btn');
-  if (installBtn) installBtn.style.display = 'none';
-  if (mobileInstallBtn) mobileInstallBtn.style.display = 'none';
-  deferredPwaPrompt = null;
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'inline-flex';
 });
 
 async function triggerPwaInstall() {
   if (deferredPwaPrompt) {
     deferredPwaPrompt.prompt();
-    const choiceResult = await deferredPwaPrompt.userChoice;
-    console.log('使用者安裝回覆:', choiceResult.outcome);
-    if (choiceResult.outcome === 'accepted') {
-      const installBtn = document.getElementById('pwa-install-btn');
-      const mobileInstallBtn = document.getElementById('mobile-pwa-install-btn');
-      if (installBtn) installBtn.style.display = 'none';
-      if (mobileInstallBtn) mobileInstallBtn.style.display = 'none';
+    const choice = await deferredPwaPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      const btn = document.getElementById('pwa-install-btn');
+      if (btn) btn.style.display = 'none';
     }
     deferredPwaPrompt = null;
-  } else {
-    alert('提示：您的瀏覽器已支援將 CareNav 加至桌面，請點選網址列右側的「安裝」圖示，或手機瀏覽器選單中的「加入主畫面」。');
   }
 }
 window.triggerPwaInstall = triggerPwaInstall;
-
-// iOS Safari 專屬：浮現「加入主畫面」指引
-function checkIosPwaPrompt() {
-  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-  const isDismissed = localStorage.getItem('carenav_ios_banner_dismissed');
-
-  if (isIos && !isStandalone && !isDismissed) {
-    const banner = document.getElementById('ios-pwa-banner');
-    if (banner) banner.style.display = 'block';
-  }
-}
-window.checkIosPwaPrompt = checkIosPwaPrompt;
-
-function dismissIosBanner() {
-  const banner = document.getElementById('ios-pwa-banner');
-  if (banner) banner.style.display = 'none';
-  localStorage.setItem('carenav_ios_banner_dismissed', '1');
-}
-window.dismissIosBanner = dismissIosBanner;
-
-// ========================================================
-// 11. LINE 第三方登入與手足身分管理 (LINE Login & Family Auth)
-// ========================================================
-function initUserAuth() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const lineLogin = urlParams.get('line_login');
-  const authNotice = urlParams.get('auth_notice');
-  const authError = urlParams.get('auth_error');
-
-  if (lineLogin === 'success') {
-    const user = {
-      displayName: urlParams.get('name') || 'LINE 家屬',
-      pictureUrl: urlParams.get('pic') || '',
-      userId: urlParams.get('uid') || ''
-    };
-    localStorage.setItem('carenav_user', JSON.stringify(user));
-
-    const cleanUrl = window.location.origin + window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
-    alert(`🎉 歡迎！已成功透過 LINE 登入：${user.displayName}`);
-  } else if (authNotice === 'line_config_needed') {
-    showUserAuthModal();
-    const cleanUrl = window.location.origin + window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
-  } else if (authError) {
-    alert('LINE 授權提示: ' + authError);
-    const cleanUrl = window.location.origin + window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
-  }
-
-  updateAuthUI();
-}
-
-function updateAuthUI() {
-  const userJson = localStorage.getItem('carenav_user');
-  const btnLogin = document.getElementById('btn-line-login');
-  const chipLoggedIn = document.getElementById('user-logged-in-chip');
-  const avatarImg = document.getElementById('user-avatar-img');
-  const nameEl = document.getElementById('user-display-name');
-
-  const btnMobileLogin = document.getElementById('btn-mobile-line-login');
-  const mobileUserChip = document.getElementById('mobile-user-chip');
-  const mobileAvatar = document.getElementById('mobile-user-avatar');
-
-  if (userJson) {
-    try {
-      const user = JSON.parse(userJson);
-      if (btnLogin) btnLogin.style.display = 'none';
-      if (chipLoggedIn) chipLoggedIn.style.display = 'inline-flex';
-      if (nameEl) nameEl.innerText = user.displayName;
-      if (avatarImg) {
-        avatarImg.src = user.pictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face';
-      }
-
-      if (btnMobileLogin) btnMobileLogin.style.display = 'none';
-      if (mobileUserChip) mobileUserChip.style.display = 'flex';
-      if (mobileAvatar) {
-        mobileAvatar.src = user.pictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face';
-      }
-
-      // 同步自動更新手足協同留話簿作者
-      const noteAuthorSelect = document.getElementById('note-author');
-      if (noteAuthorSelect) {
-        let matched = false;
-        for (let i = 0; i < noteAuthorSelect.options.length; i++) {
-          if (noteAuthorSelect.options[i].text.includes(user.displayName)) {
-            noteAuthorSelect.selectedIndex = i;
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) {
-          const opt = document.createElement('option');
-          opt.value = user.displayName;
-          opt.text = `${user.displayName} (LINE登入)`;
-          opt.selected = true;
-          noteAuthorSelect.insertBefore(opt, noteAuthorSelect.firstChild);
-        }
-      }
-    } catch (e) {
-      console.warn('使用者身分解析異常', e);
-    }
-  } else {
-    if (btnLogin) btnLogin.style.display = 'inline-flex';
-    if (chipLoggedIn) chipLoggedIn.style.display = 'none';
-    if (btnMobileLogin) btnMobileLogin.style.display = 'inline-flex';
-    if (mobileUserChip) mobileUserChip.style.display = 'none';
-  }
-}
-
-async function startLineLogin() {
-  try {
-    const res = await fetch('/api/auth/config');
-    const result = await res.json();
-    if (result.success && result.data.lineConfigured) {
-      window.location.href = '/auth/line';
-    } else {
-      showUserAuthModal();
-    }
-  } catch (e) {
-    showUserAuthModal();
-  }
-}
-window.startLineLogin = startLineLogin;
-
-function showUserAuthModal() {
-  const modal = document.getElementById('line-auth-modal');
-  if (modal) modal.classList.add('open');
-}
-window.showUserAuthModal = showUserAuthModal;
-
-function closeUserAuthModal() {
-  const modal = document.getElementById('line-auth-modal');
-  if (modal) modal.classList.remove('open');
-}
-window.closeUserAuthModal = closeUserAuthModal;
-
-const closeLineModalBtn = document.getElementById('close-line-modal-btn');
-if (closeLineModalBtn) closeLineModalBtn.addEventListener('click', closeUserAuthModal);
-
-function copyLineCallbackUrl() {
-  const copyInput = document.getElementById('line-callback-copy-input');
-  if (copyInput) {
-    copyInput.select();
-    navigator.clipboard.writeText(copyInput.value).then(() => {
-      alert('✅ 已複製 LINE 回呼網址 (Callback URL)！\n請直接至 LINE Developers Console 貼上。');
-    });
-  }
-}
-window.copyLineCallbackUrl = copyLineCallbackUrl;
-
-async function mockFamilyLogin(roleName, location) {
-  try {
-    const res = await fetch('/api/auth/mock-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roleName, location })
-    });
-    const result = await res.json();
-    if (result.success) {
-      localStorage.setItem('carenav_user', JSON.stringify(result.data));
-      updateAuthUI();
-      closeUserAuthModal();
-      alert(`✅ 已成功以【${roleName}】身分登入！您現在發布的所有手足備忘都會具名記錄。`);
-    }
-  } catch (e) {
-    alert('模擬登入失敗');
-  }
-}
-window.mockFamilyLogin = mockFamilyLogin;
-
-function logoutLine() {
-  if (confirm('確定要登出目前帳號嗎？')) {
-    localStorage.removeItem('carenav_user');
-    updateAuthUI();
-    alert('已登出。');
-  }
-}
-window.logoutLine = logoutLine;
-
-// ========================================================
-// 8. 示範數據切換 & 長輩基本資料即時編輯管理
-// ========================================================
-
-function updateDemoToggleUI(isCleared) {
-  if (typeof isCleared === 'undefined') {
-    isCleared = window.isDemoCleared;
-  }
-  const btn = document.getElementById('btn-toggle-demo');
-  const icon = document.getElementById('demo-mode-icon');
-  const text = document.getElementById('demo-mode-text');
-  if (!btn || !icon || !text) return;
-
-  if (isCleared) {
-    icon.innerText = '🔄';
-    text.innerText = '恢復展示範例';
-    btn.className = 'btn btn-outline btn-sm';
-    btn.title = '點擊可重新載入示範臨床數據';
-  } else {
-    icon.innerText = '🧹';
-    text.innerText = '清空範例 (打自家數據)';
-    btn.className = 'btn btn-outline btn-sm';
-    btn.title = '清空示範數據，準備登打自家長輩資訊與真實醫囑';
-  }
-}
-window.updateDemoToggleUI = updateDemoToggleUI;
-
-async function toggleDemoMode() {
-  const isCleared = !!window.isDemoCleared;
-  const btn = document.getElementById('btn-toggle-demo');
-  if (btn) btn.disabled = true;
-
-  if (isCleared) {
-    if (!confirm('確定要恢復展示範例數據嗎？這將會載入示範長輩「陳國華 (爸爸)」的臨床模擬紀錄。')) {
-      if (btn) btn.disabled = false;
-      return;
-    }
-    try {
-      const res = await fetch('/api/demo/restore', { method: 'POST' });
-      const result = await res.json();
-      if (result.success) {
-        alert('✅ 已恢復展示範例數據！');
-        window.location.reload();
-      } else {
-        alert('恢復失敗：' + (result.error || '未知錯誤'));
-      }
-    } catch (e) {
-      alert('恢復請求失敗');
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  } else {
-    if (!confirm('確定要清空示範數據嗎？\n清空後，您可以直接為自家長輩修改基本資料、錄入真實口頭醫囑與上傳藥袋！\n(隨時可以點擊「恢復展示範例」還原)')) {
-      if (btn) btn.disabled = false;
-      return;
-    }
-    try {
-      const res = await fetch('/api/demo/clear', { method: 'POST' });
-      const result = await res.json();
-      if (result.success) {
-        alert('✅ 已清空範例數據！\n\n您現在可以：\n1. 點擊左側長輩資料卡，設定長輩姓名與狀況。\n2. 在「口頭醫囑轉譯」錄下醫師交代。\n3. 在「藥袋用法推導」拍照上傳長輩藥袋。');
-        window.location.reload();
-      } else {
-        alert('清空失敗：' + (result.error || '未知錯誤'));
-      }
-    } catch (e) {
-      alert('清空請求失敗');
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  }
-}
-window.toggleDemoMode = toggleDemoMode;
-
-function openEditPatientModal() {
-  const modal = document.getElementById('edit-patient-modal');
-  if (!modal) return;
-
-  const nameInput = document.getElementById('edit-patient-name');
-  const ageInput = document.getElementById('edit-patient-age');
-  const condInput = document.getElementById('edit-patient-conditions');
-  const hospInput = document.getElementById('edit-patient-hospital');
-  const lineStatusEl = document.getElementById('edit-patient-line-status');
-
-  const userJson = localStorage.getItem('carenav_user');
-  let user = null;
-  if (userJson) {
-    try { user = JSON.parse(userJson); } catch (e) {}
-  }
-
-  if (lineStatusEl) {
-    if (user && user.displayName) {
-      lineStatusEl.innerText = `已綁定：${user.displayName} (LINE 登入)`;
-      lineStatusEl.style.color = '#15803d';
-    } else {
-      lineStatusEl.innerText = '平台雲端共享 (全組同步)';
-      lineStatusEl.style.color = '#0284c7';
-    }
-  }
-
-  if (activePatientData) {
-    if (nameInput) nameInput.value = (activePatientData.name && activePatientData.name !== '自家長輩') ? activePatientData.name : '';
-    if (ageInput) ageInput.value = activePatientData.age || '';
-    if (condInput) condInput.value = (activePatientData.conditions && !activePatientData.conditions.includes('尚無慢性病紀錄')) ? activePatientData.conditions : '';
-    if (hospInput) hospInput.value = (activePatientData.primary_hospital && !activePatientData.primary_hospital.includes('常看診醫院')) ? activePatientData.primary_hospital : '';
-  }
-
-  modal.classList.add('open');
-  if (nameInput) nameInput.focus();
-}
-window.openEditPatientModal = openEditPatientModal;
-
-function closeEditPatientModal() {
-  const modal = document.getElementById('edit-patient-modal');
-  if (modal) modal.classList.remove('open');
-}
-window.closeEditPatientModal = closeEditPatientModal;
-
-async function handleEditPatientSubmit(event) {
-  event.preventDefault();
-  const name = document.getElementById('edit-patient-name')?.value?.trim();
-  const age = document.getElementById('edit-patient-age')?.value?.trim();
-  const conditions = document.getElementById('edit-patient-conditions')?.value?.trim();
-  const primary_hospital = document.getElementById('edit-patient-hospital')?.value?.trim();
-
-  if (!name) {
-    alert('請填寫長輩稱謂或姓名');
-    return;
-  }
-
-  const userJson = localStorage.getItem('carenav_user');
-  let user = null;
-  if (userJson) {
-    try { user = JSON.parse(userJson); } catch (e) {}
-  }
-  const updated_by = user && user.displayName ? `${user.displayName} (LINE)` : '政大創創團隊組員';
-  const line_user_id = user ? (user.id || user.provider_id) : 'nccu_team';
-
-  try {
-    const res = await fetch('/api/patient', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        age: age ? parseInt(age, 10) : null,
-        conditions: conditions || '原發性高血壓二期、退化性膝關節炎、心血管日常保養',
-        primary_hospital: primary_hospital || '台北市立萬芳醫院 (政大生活圈首選)',
-        updated_by,
-        line_user_id
-      })
-    });
-    const result = await res.json();
-    if (result.success) {
-      closeEditPatientModal();
-      await loadDashboardData();
-      alert(`✅ 長輩資料已成功儲存至雲端平台！\n\n・長輩稱謂：${name}\n・綁定責任者：${updated_by}\n\n已永久同步至雲端，所有組員開網頁或做報告時皆可直接同步查閱！`);
-    } else {
-      alert('更新失敗：' + (result.error || '未知錯誤'));
-    }
-  } catch (err) {
-    console.error('更新長輩資料異常', err);
-    alert('儲存請求發生錯誤');
-  }
-}
-window.handleEditPatientSubmit = handleEditPatientSubmit;
-
-const editPatientModalEl = document.getElementById('edit-patient-modal');
-if (editPatientModalEl) {
-  editPatientModalEl.addEventListener('click', (e) => {
-    if (e.target === editPatientModalEl) {
-      closeEditPatientModal();
-    }
-  });
-}

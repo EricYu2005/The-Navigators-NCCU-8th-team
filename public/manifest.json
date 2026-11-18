@@ -1,7 +1,7 @@
 {
-  "name": "CareNav 智護領航 - 全家照護雲端看板",
-  "short_name": "CareNav",
-  "description": "手足協同照護平台，跨科就醫時序、四時段服藥排程與藥袋端點去識別化",
+  "name": "好選保健 PurePick - 跨品牌保健食品比較與服用日曆",
+  "short_name": "好選保健",
+  "description": "跨品牌保健食品成分比較、重疊去冗省錢評估與月曆式服用追蹤平台",
   "start_url": "/",
   "id": "/",
   "scope": "/",

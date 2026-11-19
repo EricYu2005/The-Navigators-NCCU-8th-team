@@ -16,7 +16,8 @@ const state = {
   calendarMonth: new Date().getMonth() + 1, // 1-12
   selectedDateStr: formatDateStr(new Date()),
   currentUser: null,
-  isDemoCleared: false
+  isDemoCleared: false,
+  isPro: localStorage.getItem('purepick_pro') === 'true'
 };
 
 let deferredPwaPrompt = null;
@@ -623,11 +624,17 @@ function renderWishlistView() {
   }
 
   // 3. 右欄：去冗省錢建議、合併劑量檢核、服用時段提醒
-  const alertsHtml = (analysis.redundancyAlerts || []).length === 0
+  const rawAlerts = analysis.redundancyAlerts || [];
+  let visibleAlerts = rawAlerts;
+  if (!state.isPro && rawAlerts.length > 1) {
+    visibleAlerts = rawAlerts.slice(0, 1);
+  }
+
+  const alertsHtml = visibleAlerts.length === 0
     ? `<div style="padding:0.9rem 1rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; color:#065f46; font-size:0.88rem; margin-bottom:1rem;">
          目前有興趣與服用中的商品無重複或衝突，配置精準！
        </div>`
-    : (analysis.redundancyAlerts || []).map(alert => `
+    : visibleAlerts.map(alert => `
         <div class="redundancy-alert-card">
           <div class="redundancy-header">
             <span class="redundancy-title">建議無需購買【${alert.dropProductName}】</span>
@@ -685,7 +692,80 @@ function renderWishlistView() {
     </div>
   `).join('');
 
+  // Pro 門檻引導或開通徽章
+  const proGateBannerHtml = !state.isPro ? `
+    <div class="pro-gate-card">
+      <div class="pro-gate-header">
+        <span class="pro-badge">PRO 專屬功能</span>
+        <h4>解鎖「無上限成分重疊精算」與「成分超標 (UL) 安全警示」</h4>
+      </div>
+      <p>免費版僅支援最多 2 款基礎成分比對。想要一次比對多款保健品、精算每年省下數千元冤枉錢嗎？</p>
+      <div class="mvp-gate-note">
+        <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span><strong>創創專題 MVP 說明</strong>：本專案為概念驗證階段，<strong>不收取任何真實費用</strong>。留下聯絡資訊登記名單，即可立刻免費開通 Pro 完整去冗分析！</span>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_pro_gate')">
+        立即免費登記留名單（開通 Pro 去冗精算）
+      </button>
+    </div>
+  ` : `
+    <div class="pro-unlocked-banner">
+      <span class="pro-unlocked-badge">PRO 方案已開通</span>
+      <span>您已享有完整的跨品項去冗精算、有效成分安全上限 (UL) 監控與服用時段衝突檢驗！</span>
+    </div>
+  `;
+
+  // 劑量檢核與時段提醒區塊 (若非 Pro 則加上局部鎖定覆蓋)
+  const dosageAndTimingSection = state.isPro ? `
+    <div class="dosage-table-wrap">
+      <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
+        2. 合併每日有效成分總量檢核（對照每日建議攝取量與安全上限）
+      </h4>
+      ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
+    </div>
+    ${timingHtml ? `
+      <div style="margin-top:1.25rem;">
+        <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
+          3. 服用時段與吸收衝突提醒
+        </h4>
+        ${timingHtml}
+      </div>
+    ` : ''}
+  ` : `
+    <div class="pro-lock-overlay-wrap">
+      <div class="pro-blur-content">
+        <div class="dosage-table-wrap">
+          <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
+            2. 合併每日有效成分總量檢核（對照每日建議攝取量與安全上限）
+          </h4>
+          ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
+        </div>
+        ${timingHtml ? `
+          <div style="margin-top:1.25rem;">
+            <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
+              3. 服用時段與吸收衝突提醒
+            </h4>
+            ${timingHtml}
+          </div>
+        ` : ''}
+      </div>
+      <div class="pro-lock-overlay-btn-box">
+        <div style="font-size:0.95rem; font-weight:800; color:#4c1d95; margin-bottom:0.25rem;">
+          解鎖完整成分安全上限 (UL) 監控與時序衝突檢驗
+        </div>
+        <p style="font-size:0.8rem; color:#6b7280; max-width:360px; margin-bottom:0.5rem;">
+          避免鈣鐵同時吃吸收折損、或高劑量成分超標。MVP 期間登記留名單即可免費開通！
+        </p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('dosage_lock')">
+          登記留名單免費開通 Pro 權限
+        </button>
+      </div>
+    </div>
+  `;
+
   analysisContainer.innerHTML = `
+    ${proGateBannerHtml}
+
     <div class="verdict-banner">
       <strong>整體評估：</strong><br/>
       ${analysis.overallVerdict}
@@ -696,21 +776,7 @@ function renderWishlistView() {
     </h4>
     ${alertsHtml}
 
-    <div class="dosage-table-wrap">
-      <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-        2. 合併每日有效成分總量檢核（對照每日建議攝取量與安全上限）
-      </h4>
-      ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
-    </div>
-
-    ${timingHtml ? `
-      <div style="margin-top:1.25rem;">
-        <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-          3. 服用時段與吸收衝突提醒
-        </h4>
-        ${timingHtml}
-      </div>
-    ` : ''}
+    ${dosageAndTimingSection}
 
     <!-- 藥師審查預約名單卡片 -->
     <div style="margin-top:1.5rem; padding:1.1rem 1.25rem; background:#fffbeb; border:1.5px solid #c4b5fd; border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
@@ -1123,6 +1189,25 @@ window.handleAddSupplementSubmit = handleAddSupplementSubmit;
 
 function openSubscriptionModal() {
   const modal = document.getElementById('subscription-modal');
+  const actionArea = document.getElementById('sub-pro-action-area');
+  if (actionArea) {
+    if (state.isPro) {
+      actionArea.innerHTML = `
+        <div style="padding:0.6rem 0.85rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; color:#065f46; font-size:0.85rem; font-weight:700; text-align:center;">
+          您已透過留名單免費開通 Pro 權限
+        </div>
+        <button type="button" class="btn btn-sm btn-outline btn-block" onclick="toggleProStatusForDemo()">
+          切換回免費版（展示 MVP 門檻）
+        </button>
+      `;
+    } else {
+      actionArea.innerHTML = `
+        <button type="button" class="btn btn-primary btn-block" onclick="openLeadModal('subscription_modal')">
+          登記候補名單（免費開通 Pro 權限）
+        </button>
+      `;
+    }
+  }
   if (modal) modal.style.display = 'flex';
 }
 window.openSubscriptionModal = openSubscriptionModal;
@@ -1133,11 +1218,16 @@ function closeSubscriptionModal() {
 }
 window.closeSubscriptionModal = closeSubscriptionModal;
 
-function activateDemoProPlan() {
+function toggleProStatusForDemo() {
+  state.isPro = !state.isPro;
+  localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
+  if (state.activeView === 'view-wishlist') {
+    renderWishlistView();
+  }
   closeSubscriptionModal();
-  showToast('已啟用消費者訂閱權益（去冗精算＋完整日曆）');
+  showToast(state.isPro ? '已切換為 Pro 方案（展示全功能解鎖狀態）' : '已切換為 免費版（展示 MVP 留名單門檻）');
 }
-window.activateDemoProPlan = activateDemoProPlan;
+window.toggleProStatusForDemo = toggleProStatusForDemo;
 
 async function toggleDemoData() {
   try {
@@ -1393,8 +1483,13 @@ async function handleLeadSubmit(event) {
     });
     const json = await res.json();
     if (json.success) {
+      state.isPro = true;
+      localStorage.setItem('purepick_pro', 'true');
       closeLeadModal();
-      showToast('【登記成功】感謝您的預約！政大創創團隊將盡快與您聯繫並提供避坑分析報告。');
+      showToast('【登記成功】感謝您的預約！已免費為您開通 Pro 去冗精算與成分安全監控！');
+      if (state.activeView === 'view-wishlist') {
+        renderWishlistView();
+      }
       const noteEl = document.getElementById('lead-note');
       if (noteEl) noteEl.value = '';
     } else {
@@ -1406,11 +1501,20 @@ async function handleLeadSubmit(event) {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '確認送出登記';
+      btn.textContent = '確認送出登記（開通 Pro）';
     }
   }
 }
 window.handleLeadSubmit = handleLeadSubmit;
+
+function openExternalSurveyNotice(e) {
+  const customSurveyUrl = window.CUSTOM_SURVEY_URL || '';
+  if (customSurveyUrl) {
+    window.open(customSurveyUrl, '_blank');
+    e.preventDefault();
+  }
+}
+window.openExternalSurveyNotice = openExternalSurveyNotice;
 
 async function openLeadsListModal() {
   const modal = document.getElementById('leads-list-modal');

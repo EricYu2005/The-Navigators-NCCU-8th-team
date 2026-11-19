@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.6.0" />
+  <link rel="stylesheet" href="style.css?v=3.7.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -646,21 +646,30 @@
             </ul>
             <button type="button" class="btn btn-outline btn-block" onclick="closeSubscriptionModal()">目前使用中</button>
           </div>
-          <div class="sub-plan-card featured">
-            <div class="plan-badge badge-pro">精明消費者訂閱版（專題全功能已解鎖）</div>
+          <div class="sub-plan-card featured" id="sub-plan-pro-card">
+            <div class="plan-badge badge-pro">精明消費者訂閱版 (Pro)</div>
             <div class="plan-price">NT$ 49 <span>/ 月（年繳 NT$ 390）</span></div>
             <ul class="plan-features">
               <li><strong>無上限跨品牌成分重疊與去冗省錢精算</strong></li>
               <li><strong>已購買 vs. 有興趣商品交叉比對（避免重複買）</strong></li>
-              <li><strong>完整服用日曆、身體感受追蹤與耗盡補貨提醒</strong></li>
-              <li><strong>跨通路最低價變動通知與透明分潤回饋折抵</strong></li>
+              <li><strong>每日有效成分安全上限 (UL) 監控與警示</strong></li>
+              <li><strong>服用時段衝突檢驗與專屬避坑分析書</strong></li>
             </ul>
-            <div style="display:flex; flex-direction:column; gap:0.5rem;">
+
+            <!-- MVP 概念驗證說明框（純說明，非按鈕） -->
+            <div class="mvp-notice-card">
+              <div class="mvp-notice-title">
+                <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>MVP 概念驗證說明（不收取真實費用）</span>
+              </div>
+              <p class="mvp-notice-text">
+                本平台為政大創創入門專題驗證模型，現階段<strong>不收取任何真實費用</strong>。我們透過「留名單預約機制」驗證消費者對去冗精算的真實付費意願。只需登記候補名單，即可免費解鎖 Pro 權限！
+              </p>
+            </div>
+
+            <div id="sub-pro-action-area" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;">
               <button type="button" class="btn btn-primary btn-block" onclick="openLeadModal('subscription_modal')">
-                登記候補 / 加入首批體驗名單 (留名單)
-              </button>
-              <button type="button" class="btn btn-outline btn-block" onclick="activateDemoProPlan()">
-                課程展示期間已開啟全功能體驗
+                登記候補名單（免費開通 Pro 權限）
               </button>
             </div>
           </div>
@@ -734,10 +743,19 @@
             <label>您目前正在吃或想諮詢的問題（選填）</label>
             <textarea id="lead-note" class="form-textarea" rows="2" placeholder="例如：目前正在吃好市多魚油，想知道跟葉黃素一起吃有沒有重複？"></textarea>
           </div>
+
+          <div style="font-size:0.78rem; color:#6b21a8; background:#f5f0ff; border:1px solid #ddd6fe; padding:0.5rem 0.75rem; border-radius:8px; margin-top:0.65rem;">
+            <strong>立即開通：</strong>確認送出後，系統將免費為您開通 Pro 去冗精算與成分安全上限監控權限！
+          </div>
+
+          <div style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:#64748b; border-top:1px dashed #c4b5fd; padding-top:0.65rem;">
+            <span>偏好填寫外部詳細問卷？</span>
+            <a href="https://forms.gle/demo" target="_blank" rel="noopener noreferrer" style="color:#7c3aed; font-weight:700; text-decoration:underline; margin-left:4px;" id="external-survey-link" onclick="openExternalSurveyNotice(event)">前往 Google 表單 / SurveyCake 問卷 ↗</a>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeLeadModal()">稍後再說</button>
-          <button type="submit" class="btn btn-primary" id="btn-submit-lead">確認送出登記</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-lead">確認送出登記（開通 Pro）</button>
         </div>
       </form>
     </div>
@@ -793,6 +811,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.6.0"></script>
+  <script src="app.js?v=3.7.0"></script>
 </body>
 </html>

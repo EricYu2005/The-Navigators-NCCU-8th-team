@@ -2159,3 +2159,149 @@ body {
   border-color: #7c3aed;
 }
 
+/* ==================== MVP 概念驗證說明框（純說明，非按鈕） ==================== */
+.mvp-notice-card {
+  margin: 0.85rem 0;
+  padding: 0.85rem 1rem;
+  background: #fef08a;
+  border: 1.5px dashed #ca8a04;
+  border-radius: var(--radius-sm);
+}
+
+.mvp-notice-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #854d0e;
+  margin-bottom: 0.35rem;
+}
+
+.mvp-notice-title .icon-svg-sm {
+  stroke: #854d0e;
+}
+
+.mvp-notice-text {
+  font-size: 0.78rem;
+  color: #713f12;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ==================== Pro 門檻引導卡片 (PRO GATING) ==================== */
+.pro-gate-card {
+  margin: 1.25rem 0;
+  padding: 1.25rem 1.4rem;
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 2px solid var(--primary-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.pro-gate-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.pro-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.pro-gate-header h4 {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #2e1065;
+  margin: 0;
+}
+
+.pro-gate-card p {
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.mvp-gate-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.65rem 0.85rem;
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #713f12;
+  margin-bottom: 0.85rem;
+  line-height: 1.4;
+}
+
+.mvp-gate-note .icon-svg-sm {
+  stroke: #a16207;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.pro-unlocked-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  background: #ecfdf5;
+  border: 1.5px solid #6ee7b7;
+  border-radius: var(--radius-sm);
+  color: #065f46;
+  font-size: 0.84rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.pro-unlocked-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  background: #059669;
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pro-lock-overlay-wrap {
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.pro-blur-content {
+  filter: blur(4px);
+  user-select: none;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.pro-lock-overlay-btn-box {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+

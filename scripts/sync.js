@@ -117,7 +117,7 @@ async function showMainMenu() {
   console.log('  [4] 機密資訊管理中心 (.env 編輯 / 加密匯出 / 解密同步)');
   console.log('  [5] 重新初始化本地保健品比價資料庫與日曆示範資料');
   console.log('  [6] Git 衝突急救與狀態診斷');
-  console.log('  [7] 查看已登記的潛在消費者名單 (創創成效驗證)');
+  console.log('  [7] 匯出名單為 Excel 試算表檔案 (列印 leads 名單並即時開啟)');
   console.log('  [0] 離開\n');
   console.log('================================================================');
 
@@ -370,25 +370,80 @@ async function handleGitDoctor() {
 
 async function handleViewLeads() {
   console.log('\n================================================================');
-  console.log('   好選保健 PurePick｜已收集之潛在消費者名單庫 (Leads Database)');
+  console.log('   好選保健 PurePick｜匯出潛在消費者名單為 Excel 試算表 (.csv)');
   console.log('================================================================\n');
   try {
     const { dbQuery } = require('../database');
     const rows = await dbQuery.all('SELECT * FROM leads ORDER BY id DESC');
-    console.log(`總計已登記名單數：${rows.length} 筆\n`);
+    console.log(`目前資料庫名單總計：${rows.length} 筆\n`);
+
     if (rows.length === 0) {
       console.log('目前尚無名單登記記錄。可透過網頁索取報告或預約表單進行登記！');
     } else {
-      rows.forEach((r, idx) => {
+      // 1. 在控制台列印預覽
+      rows.slice(0, 5).forEach((r, idx) => {
         console.log(`[${idx + 1}] 時間: ${r.created_at} | 稱呼: ${r.name}`);
         console.log(`    聯絡: [${r.contact_type}] ${r.contact_value}`);
         console.log(`    面向: ${r.health_goal || '無'} | 預算: ${r.monthly_budget || '無'} | 來源: ${r.source}`);
         if (r.note) console.log(`    備註: ${r.note}`);
         console.log('----------------------------------------------------------------');
       });
+      if (rows.length > 5) {
+        console.log(`... 另有 ${rows.length - 5} 筆記錄，已全數寫入 Excel 檔案中。\n`);
+      }
+
+      // 2. 匯出為 Excel 相容的 UTF-8 with BOM CSV 檔案 (Excel 開啟 100% 不亂碼)
+      const escapeCsv = (val) => {
+        if (val === null || val === undefined) return '""';
+        return '"' + String(val).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
+      };
+
+      const header = [
+        '登記序號',
+        '登記時間',
+        '消費者稱呼',
+        '聯絡管道',
+        '聯絡帳號或電話',
+        '關注健康面向',
+        '每月保健預算',
+        '來源管道標籤',
+        '諮詢問題與備註'
+      ].map(escapeCsv).join(',');
+
+      const lines = rows.map(r => [
+        escapeCsv(r.id),
+        escapeCsv(r.created_at),
+        escapeCsv(r.name),
+        escapeCsv(r.contact_type),
+        escapeCsv(r.contact_value),
+        escapeCsv(r.health_goal),
+        escapeCsv(r.monthly_budget),
+        escapeCsv(r.source),
+        escapeCsv(r.note)
+      ].join(','));
+
+      const csvContent = '\uFEFF' + [header, ...lines].join('\r\n');
+      const nowStr = new Date().toISOString().slice(0, 10);
+      const fileName = `PurePick_消費者登記名單_${nowStr}.csv`;
+      const exportPath = path.join(ROOT_DIR, fileName);
+
+      fs.writeFileSync(exportPath, csvContent, 'utf8');
+
+      console.log(`\n================================================================`);
+      console.log(`[成功] 已將 ${rows.length} 筆名單成功列印匯出為 Excel 檔案！`);
+      console.log(`檔案儲存位置：${exportPath}`);
+      console.log(`================================================================\n`);
+
+      // 3. 自動嘗試調用系統預設的 Excel / 試算表軟體開啟
+      try {
+        runInteractiveCmd(`start "" "${exportPath}"`);
+        console.log('已自動為您呼叫 Excel / 試算表軟體開啟名單！');
+      } catch (e) {
+        console.log('可手動至專案根目錄開啟該檔案。');
+      }
     }
   } catch (err) {
-    console.error('查詢名單失敗:', err.message);
+    console.error('匯出名單失敗:', err.message);
   }
   await waitKeyPress();
 }

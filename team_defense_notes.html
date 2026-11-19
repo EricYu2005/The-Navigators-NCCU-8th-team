@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>好選保健 PurePick｜專題口試與成果審查 Q&A 備忘筆記 (團隊內部機密)</title>
+  <style>
+    :root {
+      --primary: #6d28d9;
+      --primary-light: #f5f3ff;
+      --primary-border: #c4b5fd;
+      --text-dark: #1e1b4b;
+      --text-body: #334155;
+      --text-muted: #64748b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --accent-yellow: #fef08a;
+      --accent-red: #ffe4e6;
+      --accent-green: #dcfce7;
+      --radius: 12px;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text-body);
+      line-height: 1.65;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header.doc-header {
+      background: linear-gradient(135deg, #2e1065 0%, #5b21b6 100%);
+      color: #ffffff;
+      padding: 2.2rem 2.5rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px rgba(91, 33, 182, 0.25);
+    }
+    header.doc-header .badge-secret {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 0.8rem;
+    }
+    header.doc-header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+    header.doc-header p {
+      font-size: 0.92rem;
+      color: #e9d5ff;
+      line-height: 1.5;
+    }
+
+    .nav-shortcuts {
+      background: #ffffff;
+      border: 1.5px solid var(--primary-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.4rem;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .nav-shortcuts span {
+      font-weight: 700;
+      font-size: 0.86rem;
+      color: var(--text-dark);
+    }
+    .nav-shortcuts a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.3rem 0.7rem;
+      background: var(--primary-light);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .nav-shortcuts a:hover {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .section-card {
+      background: var(--card-bg);
+      border: 1.5px solid #e2e8f0;
+      border-radius: var(--radius);
+      padding: 1.8rem 2.2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow);
+    }
+    .section-card h2 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--primary-light);
+      margin-bottom: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .section-card h2 .sec-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .qa-box {
+      margin-bottom: 1.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .qa-q {
+      background: #f8fafc;
+      padding: 0.9rem 1.25rem;
+      font-weight: 800;
+      color: #0f172a;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.98rem;
+    }
+    .qa-q::before {
+      content: "Q";
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .qa-a {
+      padding: 1.2rem 1.25rem;
+      background: #ffffff;
+      font-size: 0.92rem;
+      color: #334155;
+    }
+    .qa-a p {
+      margin-bottom: 0.75rem;
+    }
+    .qa-a p:last-child {
+      margin-bottom: 0;
+    }
+
+    .pitch-script {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 0.85rem 1.1rem;
+      border-radius: 0 8px 8px 0;
+      margin: 0.85rem 0;
+      font-size: 0.9rem;
+      color: #92400e;
+    }
+    .pitch-script strong {
+      color: #78350f;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+    }
+    .data-table th {
+      background: #f1f5f9;
+      color: #1e293b;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid #cbd5e1;
+      text-align: left;
+    }
+    .data-table td {
+      padding: 0.65rem 0.85rem;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    .data-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .pill-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+    .pill-pro { background: #ede9fe; color: #6d28d9; }
+    .pill-free { background: #f1f5f9; color: #475569; }
+
+    .step-list {
+      margin-left: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .step-list li {
+      margin-bottom: 0.4rem;
+    }
+
+    footer.doc-footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- 標題與機密宣告 -->
+    <header class="doc-header">
+      <span class="badge-secret">CONFIDENTIAL • 團隊答辯內部筆記</span>
+      <h1>好選保健 PurePick 專題口試與成果審查 Q&A 備忘錄</h1>
+      <p>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示與評審口試專用筆記。本檔案存放於專案根目錄，非公開網頁資源，供組員報告時隨時查閱核心邏輯與回答架構。</p>
+    </header>
+
+    <!-- 快速導覽錨點 -->
+    <nav class="nav-shortcuts">
+      <span>快速章節跳轉：</span>
+      <a href="#sec-score">1. 綜合效益評分機制</a>
+      <a href="#sec-freepro">2. 免費與付費版 (Pro) 差異</a>
+      <a href="#sec-leads">3. 留名單流程與查看方式</a>
+      <a href="#sec-pitches">4. 評審尖銳問題應答守則</a>
+    </nav>
+
+    <!-- ==================== 第一單元：綜合效益評分 ==================== -->
+    <section id="sec-score" class="section-card">
+      <h2><span class="sec-num">1</span> 保健食品綜合效益評分 (Value Score) 機制</h2>
+
+      <div class="qa-box">
+        <div class="qa-q">Q1：保健品的「綜合效益評分 (80~95分)」是怎麼算出來的？背後科學與商業依據是什麼？</div>
+        <div class="qa-a">
+          <p>我們的模型並非憑空主觀給分，而是根據<strong>食品科學實證</strong>與<strong>每日真實性價比</strong>所建立的多因子加權演算法：</p>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:25%;">評分維度</th>
+                <th style="width:15%;">權重</th>
+                <th>評估標準與科學依據</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. 有效成分足量度</strong></td>
+                <td>40%</td>
+                <td>比對國際臨床試驗與衛福部每日建議攝取量。例如：魚油單日 Omega-3 是否達到 1000mg 以上（低劑量扣分）；葉黃素是否符合 AREDS-2 專利黃金比例 10mg:2mg。</td>
+              </tr>
+              <tr>
+                <td><strong>2. 劑型與專利吸收率</strong></td>
+                <td>25%</td>
+                <td>生物利用率高者給予加分。例如：魚油 rTG 型（高吸收）> TG 型 > EE 型；葉黃素游離型 (FloraGLO) > 傳統酯化型；鈣劑檸檬酸鈣/海藻鈣 > 碳酸鈣。</td>
+              </tr>
+              <tr>
+                <td><strong>3. 每日真實花費性價比</strong></td>
+                <td>25%</td>
+                <td>打破「單盒大包裝便宜」的行銷幻覺，計算「每毫克有效成分的每日實際花費」。每日平均花費落在主流合理區間（例如高濃度魚油 $30~$45/天）給予滿分，過度溢價品牌扣分。</td>
+              </tr>
+              <tr>
+                <td><strong>4. 純淨度與少添加</strong></td>
+                <td>10%</td>
+                <td>無多餘人工色素、無多餘糖分與香料（例如許多市售兒童或女性益生菌添加高達 40% 糖粉，此項目會被扣分）。</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pitch-script">
+            <strong>口試標準應對話術：</strong><br />
+            「報告評審，市面上的保健品評測大多只看單盒售價或品牌知名度。好選保健的評分核心是『有效濃度 ÷ 每日真實花費』，結合劑型吸收專利與無糖純淨度，幫消費者撕下廣告話術，找出單位效益最高的選擇。」
+          </div>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q2：為什麼首頁「尋找比價庫」去掉了綜合評分，但在「有興趣清單」裡卻保留？</div>
+        <div class="qa-a">
+          <p>這是有意為之的<strong>「第三方中立性原則 (Platform Neutrality)」</strong>：</p>
+          <ul class="step-list">
+            <li><strong>公開比價庫（公域貨架）保持中立：</strong> 如果在公開搜尋目錄上直接標示誰 95 分、誰 80 分，平台很容易被消費者與廠商質疑「球員兼裁判」、「是否收了高分品牌的廣告置入費用」。因此貨架上只揭露客觀事實（成分規格、每日費用、真實優缺點）。</li>
+            <li><strong>有興趣清單（個人決策空間）提供決策輔助：</strong> 當使用者將 2~3 款心儀商品放進自己的清單時，評分轉化為個人化比對的決策參考指標，協助消費者在預算內做出理性取捨。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 第二單元：免費與付費版差異 ==================== -->
+    <section id="sec-freepro" class="section-card">
+      <h2><span class="sec-num">2</span> 免費版 vs. 付費版 (Pro) 差異與 MVP 驗證邏輯</h2>
+
+      <div class="qa-box">
+        <div class="qa-q">Q1：免費版與付費版 (Pro) 具體功能差別在哪裡？</div>
+        <div class="qa-a">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>功能模組</th>
+                <th style="width:28%;">免費體驗版 (Free)</th>
+                <th style="width:38%;">精明消費者訂閱版 (Pro, NT$ 49/月)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>跨品牌透明比價庫</strong></td>
+                <td><span class="pill-tag pill-free">完整開放</span> 全品項自由搜尋比價</td>
+                <td><span class="pill-tag pill-pro">完整開放</span> 另加通路歷史低價追蹤</td>
+              </tr>
+              <tr>
+                <td><strong>互動表單推薦方案</strong></td>
+                <td><span class="pill-tag pill-free">基礎開放</span> 支援單一目標配方</td>
+                <td><span class="pill-tag pill-pro">完整開放</span> 支援複合目標與預算極致優化</td>
+              </tr>
+              <tr>
+                <td><strong>有興趣清單去冗分析</strong></td>
+                <td><span class="pill-tag pill-free">受限</span> 最多比對 2 款，僅看第 1 項重複</td>
+                <td><span class="pill-tag pill-pro">無上限解鎖</span> 多款跨品牌重疊去冗省錢精算</td>
+              </tr>
+              <tr>
+                <td><strong>成分安全上限 (UL) 監控</strong></td>
+                <td><span class="pill-tag pill-free">局部鎖定</span> 模糊遮罩＋門檻提示</td>
+                <td><span class="pill-tag pill-pro">完整解鎖</span> 衛福部每日安全總量超標即時預警</td>
+              </tr>
+              <tr>
+                <td><strong>時段衝突與藥物避坑</strong></td>
+                <td><span class="pill-tag pill-free">局部鎖定</span> 遮罩提示</td>
+                <td><span class="pill-tag pill-pro">完整解鎖</span> 鈣鐵衝突、空腹隨餐時序提醒</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q2：為什麼平台目前不向使用者真的收錢？這在創業 MVP 計畫中代表什麼？</div>
+        <div class="qa-a">
+          <p>這是精實創業（Lean Startup）的核心方法論：<strong>付費意願假說驗證（Willingness-to-Pay Validation）</strong>。</p>
+          <ul class="step-list">
+            <li><strong>過早串接金流是創業常見陷阱：</strong> 在產品知名度未建立前，要求消費者輸入信用卡，會造成 90% 以上的非理性跳出（Drop-off），導致團隊無法區分究竟是「產品沒價值」還是「單純結帳麻煩」。</li>
+            <li><strong>以「留名單預約率」驗證真實意願：</strong> 我們在用戶遇到 Pro 去冗門檻時，引導其留下 LINE 或電話以免費開通體驗。若消費者願意留下真實私人聯絡方式換取服務，這就是最強有力的「高價值付費潛力（High Purchase Intent）」證明！</li>
+            <li><strong>Demo 演示操作：</strong> 專題展示時，組員可先展示免費版的上鎖門檻，點擊留名單送出後，系統瞬間解鎖 Pro 權限，向評審證明轉換漏斗的完整性。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 第三單元：留名單流程與查看方式 ==================== -->
+    <section id="sec-leads" class="section-card">
+      <h2><span class="sec-num">3</span> 留名單機制、資安隱私與如何查看名單</h2>
+
+      <div class="qa-box">
+        <div class="qa-q">Q1：留名單的具體流程是什麼？</div>
+        <div class="qa-a">
+          <p>我們的留名單流程設計追求<strong>「極致零摩擦」</strong>：</p>
+          <ol class="step-list">
+            <li><strong>觸發點：</strong> 使用者在首頁點「索取報告」、在去冗頁點「解鎖 Pro」、或在方案彈窗點「預約名單」。</li>
+            <li><strong>自動預填（Auto-Fill）：</strong> 若使用者先前有以 LINE 登入，系統會自動填入姓名與 LINE 資訊；若已在表單勾選了護眼與預算，也會自動選好，用戶只需花 3 秒確認。</li>
+            <li><strong>存入資料庫並即刻開通：</strong> 點擊「確認送出」後，資料透過 API 寫入後台 SQLite 資料庫的 <code>leads</code> 表，前端立即將用戶提升為 Pro 權限並解除所有分析遮罩！</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q2：為什麼網頁前台沒有「查看名單」的按鈕？</div>
+        <div class="qa-a">
+          <p><strong>個資保護原則（Privacy by Design）：</strong> 留名單包含真實消費者的稱呼、LINE 帳號與健康困擾，這屬於敏感個人資料。若在前台網頁放一個按鈕讓任何人都能點開看，會嚴重違反資安常理與個人資料保護精神。因此前台絕對不對外公開名單。</p>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q3：團隊自己要看收集到的名單，該如何操作？</div>
+        <div class="qa-a">
+          <p>團隊備有專屬管理通道，操作極為簡便：</p>
+          <div class="pitch-script" style="background:#f0fdf4; border-color:#22c55e; color:#14532d;">
+            <strong>名單匯出三步驟：</strong><br />
+            1. 在專案資料夾中雙擊執行 <code>sync.cmd</code>。<br />
+            2. 在主選單中輸入號碼 <strong><code>7</code></strong>（匯出名單為 Excel 試算表檔案）。<br />
+            3. 系統會自動生成帶有 UTF-8 BOM 的標準 Excel 檔案（<code>PurePick_消費者登記名單_YYYY-MM-DD.csv</code>），並自動為您在 Excel 中彈出開啟，<strong>繁體中文 100% 絕無亂碼</strong>！
+          </div>
+          <p>匯出的 Excel 欄位完整包含：<strong>登記序號、登記時間、消費者稱呼、聯絡管道、聯絡帳號或電話、關注健康面向、每月保健預算、來源管道標籤、諮詢問題與備註</strong>。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 第四單元：評審常見問題應答 ==================== -->
+    <section id="sec-pitches" class="section-card">
+      <h2><span class="sec-num">4</span> 評審常見挑戰問題應答守則 (Cheat Sheet)</h2>
+
+      <div class="qa-box">
+        <div class="qa-q">Q1：你們做保健品比較與日曆，會不會有《醫療法》或違法宣稱療效的法律風險？</div>
+        <div class="qa-a">
+          <div class="pitch-script">
+            <strong>回答關鍵：</strong><br />
+            「報告評審，我們非常重視合規性。首先，本平台在頁尾有嚴格的學術免責聲明：<strong>『本網頁僅供政治大學創創入門課程使用，非正式平台』</strong>。其次，我們不做任何臨床疾病診斷或治療處方，我們的定位是<strong>『生活消費決策輔助軟體』</strong>，所有劑量標準均嚴格引述衛生福利部國民健康署公告之『國人膳食營養素參考攝取量 (DRIs)』與安全上限 (UL)，主打幫消費者『去冗防浪費』而非宣稱療效。」
+          </div>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q2：市面上已經有 iHerb、屈臣氏、康是美，甚至 Dcard 推薦文，為什麼還需要好選保健？</div>
+        <div class="qa-a">
+          <div class="pitch-script">
+            <strong>回答關鍵：</strong><br />
+            「報告評審，核心差異在於<strong>商業利益的對立面</strong>：<br />
+            • 通路商（iHerb、屈臣氏）與網紅推薦：他們的獲利來自『銷售抽成』，誘因永遠是說服消費者<strong>越買越多、買更高單價的商品</strong>。<br />
+            • 好選保健：我們的商業模式是『獨立消費者訂閱』，我們的算法誘因是<strong>『幫消費者砍掉重複買的多餘產品』</strong>。只要幫用戶省下重複買的一瓶魚油或維他命（省 $1,000+），就遠遠超過訂閱費，我們是站在消費者同一陣線的把關者。」
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="doc-footer">
+      <p>國立政治大學 創新創業入門 第八組團隊（The Navigators）專案內部文件 • 本文件禁止對外發布</p>
+      <p>© 2026 PurePick Project Team • Built for Academic Defense</p>
+    </footer>
+
+  </div>
+</body>
+</html>

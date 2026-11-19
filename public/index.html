@@ -491,9 +491,6 @@
         <div class="legal-footer-meta">
           <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
           <span>版權所有 © 2026 Academic Project • All Rights Reserved.</span>
-          <button type="button" class="btn-footer-pill" onclick="openLeadsListModal()">
-            查看已登記名單 (創創成效驗證)
-          </button>
         </div>
       </div>
     </footer>
@@ -758,53 +755,6 @@
           <button type="submit" class="btn btn-primary" id="btn-submit-lead">確認送出登記（開通 Pro）</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 4：創創團隊查看已登記名單 (專題成效驗證專用) ==================== -->
-  <div id="leads-list-modal" class="modal-backdrop" style="display:none;">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-header">
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <h3 style="margin:0;">創創成果驗證：已登記消費者名單庫</h3>
-        </div>
-        <button type="button" class="modal-close" onclick="closeLeadsListModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
-          <div>
-            <span style="font-size:0.9rem; color:#475569;">已成功收集潛在客戶名單：</span>
-            <strong id="leads-total-count" style="font-size:1.2rem; color:#7c3aed;">0 筆</strong>
-          </div>
-          <button type="button" class="btn btn-sm btn-outline" onclick="loadLeadsList()">
-            重新整理名單
-          </button>
-        </div>
-        <div class="leads-table-container">
-          <table class="leads-table">
-            <thead>
-              <tr>
-                <th>時間</th>
-                <th>稱呼</th>
-                <th>聯絡管道</th>
-                <th>聯絡帳號</th>
-                <th>關心面向</th>
-                <th>期望預算</th>
-                <th>來源標籤</th>
-                <th>諮詢備註</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="leads-table-body">
-              <tr><td colspan="9" style="text-align:center; padding:1.5rem; color:#64748b;">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" onclick="closeLeadsListModal()">關閉</button>
-      </div>
     </div>
   </div>
 

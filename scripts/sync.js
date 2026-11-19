@@ -117,10 +117,11 @@ async function showMainMenu() {
   console.log('  [4] 機密資訊管理中心 (.env 編輯 / 加密匯出 / 解密同步)');
   console.log('  [5] 重新初始化本地保健品比價資料庫與日曆示範資料');
   console.log('  [6] Git 衝突急救與狀態診斷');
+  console.log('  [7] 查看已登記的潛在消費者名單 (創創成效驗證)');
   console.log('  [0] 離開\n');
   console.log('================================================================');
 
-  const choice = await ask('請輸入選項號碼 (1-6, 0): ');
+  const choice = await ask('請輸入選項號碼 (1-7, 0): ');
 
   switch (choice) {
     case '1':
@@ -140,6 +141,9 @@ async function showMainMenu() {
       break;
     case '6':
       await handleGitDoctor();
+      break;
+    case '7':
+      await handleViewLeads();
       break;
     case '0':
       console.log('\n感謝使用好選保健 PurePick 團隊同步工具，祝專題報告順利！\n');
@@ -360,6 +364,31 @@ async function handleGitDoctor() {
     } else {
       console.log('目前沒有殘留的 index.lock。');
     }
+  }
+  await waitKeyPress();
+}
+
+async function handleViewLeads() {
+  console.log('\n================================================================');
+  console.log('   好選保健 PurePick｜已收集之潛在消費者名單庫 (Leads Database)');
+  console.log('================================================================\n');
+  try {
+    const { dbQuery } = require('../database');
+    const rows = await dbQuery.all('SELECT * FROM leads ORDER BY id DESC');
+    console.log(`總計已登記名單數：${rows.length} 筆\n`);
+    if (rows.length === 0) {
+      console.log('目前尚無名單登記記錄。可透過網頁索取報告或預約表單進行登記！');
+    } else {
+      rows.forEach((r, idx) => {
+        console.log(`[${idx + 1}] 時間: ${r.created_at} | 稱呼: ${r.name}`);
+        console.log(`    聯絡: [${r.contact_type}] ${r.contact_value}`);
+        console.log(`    面向: ${r.health_goal || '無'} | 預算: ${r.monthly_budget || '無'} | 來源: ${r.source}`);
+        if (r.note) console.log(`    備註: ${r.note}`);
+        console.log('----------------------------------------------------------------');
+      });
+    }
+  } catch (err) {
+    console.error('查詢名單失敗:', err.message);
   }
   await waitKeyPress();
 }

@@ -2009,3 +2009,153 @@ body {
     font-size: 0.68rem;
   }
 }
+
+/* ==================== 頂部預約按鈕 ==================== */
+.btn-top-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.75rem;
+  background: var(--primary-light);
+  border: 1.5px solid var(--primary-border);
+  border-radius: var(--radius-sm);
+  color: var(--primary-hover);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-top-lead:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.btn-top-lead .icon-svg-sm {
+  stroke: currentColor;
+}
+
+/* ==================== 潛在消費者名單登記 (Lead CTA) ==================== */
+.lead-cta-card {
+  margin: 1.5rem 0 1.25rem 0;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #f5f3ff 100%);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.lead-cta-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 260px;
+}
+
+.lead-cta-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f3e8ff;
+  border: 1.5px solid #c4b5fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lead-cta-icon-wrap .icon-svg-lg {
+  stroke: var(--primary);
+}
+
+.lead-cta-content h4 {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #2e1065;
+  margin-bottom: 0.2rem;
+}
+
+.lead-cta-content p {
+  font-size: 0.84rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ==================== 創創成果驗證名單表格 ==================== */
+.leads-table-container {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+}
+
+.leads-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.leads-table th {
+  position: sticky;
+  top: 0;
+  background: #f5f3ff;
+  color: #4c1d95;
+  font-weight: 700;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1.5px solid var(--border);
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.leads-table td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid #e9d5ff;
+  vertical-align: middle;
+}
+
+.leads-table tr:hover td {
+  background: #fffbeb;
+}
+
+.badge-source {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.btn-footer-pill {
+  background: transparent;
+  border: 1.5px solid #8b5cf6;
+  color: #5b21b6;
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+  display: inline-block;
+}
+
+.btn-footer-pill:hover {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+}
+

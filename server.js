@@ -503,6 +503,67 @@ app.post('/api/auth/mock-login', async (req, res) => {
   res.json({ success: true, data: mockUser });
 });
 
+// ========================================================
+// 8. 潛在消費者名單登記 (Lead Capture / Waitlist 留名單)
+// ========================================================
+app.post('/api/leads', async (req, res) => {
+  try {
+    const { name, contact_type, contact_value, health_goal, monthly_budget, note, source } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: '請填寫您的稱呼或姓名' });
+    }
+    if (!contact_value || !contact_value.trim()) {
+      return res.status(400).json({ success: false, message: '請填寫聯絡方式（LINE ID、手機或 Email）' });
+    }
+
+    const result = await dbQuery.run(`
+      INSERT INTO leads (name, contact_type, contact_value, health_goal, monthly_budget, note, source)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [
+      name.trim(),
+      contact_type || 'line',
+      contact_value.trim(),
+      health_goal || '',
+      monthly_budget || '',
+      note ? note.trim() : '',
+      source || 'web_waitlist'
+    ]);
+
+    res.json({
+      success: true,
+      message: '名單登記成功！感謝您的預約，團隊將盡快為您提供專屬避坑分析。',
+      data: { leadId: result.id }
+    });
+  } catch (error) {
+    console.error('儲存留名單失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/leads', async (req, res) => {
+  try {
+    const rows = await dbQuery.all('SELECT * FROM leads ORDER BY id DESC');
+    res.json({
+      success: true,
+      count: rows.length,
+      data: rows
+    });
+  } catch (error) {
+    console.error('讀取留名單失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/leads/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await dbQuery.run('DELETE FROM leads WHERE id = ?', [id]);
+    res.json({ success: true, message: '已刪除此筆名單' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(`[PurePick] 跨品牌保健食品比較與管理平台已啟動`);

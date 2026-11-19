@@ -654,6 +654,21 @@ function initDatabase() {
         updated_by TEXT DEFAULT '示範使用者',
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // 5. 潛在消費者名單登記表 (Lead Capture / Waitlist 候補登記)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact_type TEXT DEFAULT 'line', -- 'line' | 'email' | 'phone'
+        contact_value TEXT NOT NULL,
+        health_goal TEXT DEFAULT '',
+        monthly_budget TEXT DEFAULT '',
+        note TEXT DEFAULT '',
+        source TEXT DEFAULT 'web_waitlist',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
     `, () => {
       seedSupplementCatalog();
     });

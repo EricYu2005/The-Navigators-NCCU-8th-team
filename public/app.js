@@ -278,6 +278,22 @@ function renderFinderResult(result) {
         </div>
       </div>
 
+      <!-- 潛在消費者名單登記 CTA (創創團隊驗證專用) -->
+      <div class="lead-cta-card">
+        <div class="lead-cta-content">
+          <div class="lead-cta-icon-wrap">
+            <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div>
+            <h4>索取個人專屬保健避坑與省錢評估報告</h4>
+            <p>我們的演算法已為您初篩合適成分。若想由團隊提供更深度的成分重複檢視或客製化優惠情報，歡迎免費登記！</p>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openLeadModal('finder_result')">
+          免費登記索取報告
+        </button>
+      </div>
+
       ${comparisonsHtml}
     </div>
   `;
@@ -695,6 +711,17 @@ function renderWishlistView() {
         ${timingHtml}
       </div>
     ` : ''}
+
+    <!-- 藥師審查預約名單卡片 -->
+    <div style="margin-top:1.5rem; padding:1.1rem 1.25rem; background:#fffbeb; border:1.5px solid #c4b5fd; border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+      <div style="min-width:240px; flex:1;">
+        <h5 style="font-size:0.96rem; font-weight:800; color:#2e1065; margin-bottom:0.25rem;">想要無偏見藥師幫您一對一檢查目前吃的所有保健品嗎？</h5>
+        <p style="font-size:0.83rem; color:#4b5563; margin:0;">歡迎登記預約，我們提供不推銷特定品牌的學術研究避坑諮詢。</p>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_analysis')">
+        預約免費名單登記
+      </button>
+    </div>
   `;
 }
 
@@ -1191,7 +1218,19 @@ function renderAuthUI() {
   }
 }
 
-function startLineLogin() {
+async function startLineLogin() {
+  try {
+    const res = await fetch('/api/auth/config');
+    const json = await res.json();
+    if (json.success && json.data && json.data.lineConfigured) {
+      // 伺服器已設定 LINE Channel 憑證（例如 Render 上線環境），直接導向官方真實登入
+      window.location.href = '/auth/line';
+      return;
+    }
+  } catch (e) {
+    console.warn('檢查 LINE 設定失敗，開啟登入視窗', e);
+  }
+  // 未設定憑證（例如本機開發環境）或檢查失敗時，開啟登入彈窗
   openLineLoginModal();
 }
 window.startLineLogin = startLineLogin;
@@ -1291,3 +1330,208 @@ async function triggerPwaInstall() {
   }
 }
 window.triggerPwaInstall = triggerPwaInstall;
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ========================================================
+// 9. 潛在消費者名單登記 (Lead Capture / Waitlist 留名單)
+// ========================================================
+function openLeadModal(source = 'general') {
+  const modal = document.getElementById('lead-capture-modal');
+  if (!modal) return;
+
+  const srcInput = document.getElementById('lead-source');
+  if (srcInput) srcInput.value = source;
+
+  // 若使用者已透過 LINE 登入，自動帶入稱呼與 LINE 資訊
+  if (state.currentUser) {
+    const nameInput = document.getElementById('lead-name');
+    if (nameInput && !nameInput.value) {
+      nameInput.value = state.currentUser.displayName || '';
+    }
+    const contactTypeSelect = document.getElementById('lead-contact-type');
+    const contactValInput = document.getElementById('lead-contact-value');
+    if (contactTypeSelect && contactValInput && !contactValInput.value) {
+      contactTypeSelect.value = 'line';
+      updateContactPlaceholder();
+      contactValInput.value = state.currentUser.displayName || '';
+    }
+  }
+
+  // 嘗試預選當前在尋找表單中選擇的預算
+  const activeBudget = document.querySelector('#budget-radio-grid input[name="budgetTier"]:checked')?.value;
+  if (activeBudget) {
+    const budgetMap = {
+      'under_500': '500以下',
+      '500_1200': '500~1200',
+      '1200_2000': '1200~2000',
+      '2000_3000': '2000~3000',
+      'above_3000': '3000以上'
+    };
+    const budgetSelect = document.getElementById('lead-monthly-budget');
+    if (budgetSelect && budgetMap[activeBudget]) {
+      budgetSelect.value = budgetMap[activeBudget];
+    }
+  }
+
+  modal.style.display = 'flex';
+}
+window.openLeadModal = openLeadModal;
+
+function closeLeadModal() {
+  const modal = document.getElementById('lead-capture-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeLeadModal = closeLeadModal;
+
+function updateContactPlaceholder() {
+  const type = document.getElementById('lead-contact-type')?.value || 'line';
+  const label = document.getElementById('lead-contact-label');
+  const input = document.getElementById('lead-contact-value');
+  if (!input) return;
+
+  if (type === 'line') {
+    if (label) label.textContent = 'LINE 帳號 ID *';
+    input.placeholder = '請輸入您的 LINE ID 或 LINE 稱呼';
+  } else if (type === 'phone') {
+    if (label) label.textContent = '手機號碼 *';
+    input.placeholder = '請輸入 09xxxxxxxx 手機號碼';
+  } else if (type === 'email') {
+    if (label) label.textContent = '電子信箱 (Email) *';
+    input.placeholder = '例如：example@gmail.com';
+  }
+}
+window.updateContactPlaceholder = updateContactPlaceholder;
+
+async function handleLeadSubmit(event) {
+  event.preventDefault();
+  const btn = document.getElementById('btn-submit-lead');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '登記傳送中...';
+  }
+
+  const name = (document.getElementById('lead-name')?.value || '').trim();
+  const contact_type = document.getElementById('lead-contact-type')?.value || 'line';
+  const contact_value = (document.getElementById('lead-contact-value')?.value || '').trim();
+  const health_goal = document.getElementById('lead-health-goal')?.value || '';
+  const monthly_budget = document.getElementById('lead-monthly-budget')?.value || '';
+  const note = (document.getElementById('lead-note')?.value || '').trim();
+  const source = document.getElementById('lead-source')?.value || 'general';
+
+  try {
+    const res = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        contact_type,
+        contact_value,
+        health_goal,
+        monthly_budget,
+        note,
+        source
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      closeLeadModal();
+      showToast('【登記成功】感謝您的預約！政大創創團隊將盡快與您聯繫並提供避坑分析報告。');
+      const noteEl = document.getElementById('lead-note');
+      if (noteEl) noteEl.value = '';
+    } else {
+      showToast(json.message || '登記失敗，請檢查資料後再試');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('連線失敗，請檢查網路狀態');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '確認送出登記';
+    }
+  }
+}
+window.handleLeadSubmit = handleLeadSubmit;
+
+async function openLeadsListModal() {
+  const modal = document.getElementById('leads-list-modal');
+  if (modal) modal.style.display = 'flex';
+  await loadLeadsList();
+}
+window.openLeadsListModal = openLeadsListModal;
+
+function closeLeadsListModal() {
+  const modal = document.getElementById('leads-list-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeLeadsListModal = closeLeadsListModal;
+
+async function loadLeadsList() {
+  const tbody = document.getElementById('leads-table-body');
+  const countEl = document.getElementById('leads-total-count');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:1.5rem; color:#64748b;">正在載入已登記名單...</td></tr>';
+
+  try {
+    const res = await fetch('/api/leads');
+    const json = await res.json();
+    if (json.success) {
+      const rows = json.data || [];
+      if (countEl) countEl.textContent = `${rows.length} 筆`;
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:1.5rem; color:#64748b;">目前尚無名單記錄，歡迎在首頁或尋找結果點選登記留名單！</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td style="white-space:nowrap; font-size:0.8rem; color:#64748b;">${(r.created_at || '').slice(0, 16)}</td>
+          <td style="font-weight:700; color:#2e1065;">${escapeHtml(r.name)}</td>
+          <td><span class="badge-source">${escapeHtml(r.contact_type)}</span></td>
+          <td style="font-weight:600;">${escapeHtml(r.contact_value)}</td>
+          <td>${escapeHtml(r.health_goal || '-')}</td>
+          <td style="color:#7c3aed; font-weight:600;">${escapeHtml(r.monthly_budget || '-')}</td>
+          <td><span class="badge-source">${escapeHtml(r.source || 'web')}</span></td>
+          <td style="font-size:0.82rem; color:#475569; max-width:180px;">${escapeHtml(r.note || '-')}</td>
+          <td>
+            <button type="button" class="btn btn-sm btn-danger-soft" onclick="deleteLeadItem(${r.id})" title="刪除">
+              刪除
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    } else {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#e11d48;">載入失敗：${json.message}</td></tr>`;
+    }
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#e11d48;">載入名單連線失敗</td></tr>';
+  }
+}
+window.loadLeadsList = loadLeadsList;
+
+async function deleteLeadItem(id) {
+  if (!confirm('確定要刪除此筆留名單記錄嗎？')) return;
+  try {
+    const res = await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (json.success) {
+      showToast('已刪除名單項目');
+      await loadLeadsList();
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('刪除失敗');
+  }
+}
+window.deleteLeadItem = deleteLeadItem;
+

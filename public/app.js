@@ -326,10 +326,9 @@ function renderCatalog() {
   });
 
   list.sort((a, b) => {
-    if (sortBy === 'daily_asc') return Number(a.daily_cost) - Number(b.daily_cost);
     if (sortBy === 'monthly_asc') return Number(a.monthly_cost) - Number(b.monthly_cost);
     if (sortBy === 'price_asc') return Number(a.price) - Number(b.price);
-    return Number(b.value_score) - Number(a.value_score);
+    return Number(a.daily_cost) - Number(b.daily_cost);
   });
 
   if (list.length === 0) {
@@ -344,8 +343,6 @@ window.renderCatalog = renderCatalog;
 function renderSupplementCardHtml(item, isTopPick) {
   const inWishlist = state.wishlist.some(x => Number(x.id) === Number(item.id));
   const inPurchased = state.purchased.some(x => Number(x.id) === Number(item.id));
-  const score = Number(item.value_score || 80);
-  const scoreClass = score >= 85 ? 'score-high' : 'score-mid';
 
   return `
     <div class="supp-card ${isTopPick ? 'top-recommended' : ''}">
@@ -353,10 +350,9 @@ function renderSupplementCardHtml(item, isTopPick) {
         <div class="supp-top-row">
           <div>
             <span class="supp-cat-badge">${item.category}</span>
-            ${isTopPick ? '<span class="supp-cat-badge" style="background:#7c3aed;color:#fff;margin-left:4px;">預算首選</span>' : ''}
+            ${isTopPick ? '<span class="supp-cat-badge" style="background:#7c3aed;color:#fff;margin-left:4px;">預算推薦</span>' : ''}
             ${item.is_vegan ? '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">素食</span>' : ''}
           </div>
-          <span class="supp-score-badge ${scoreClass}">綜合效益 ${score} 分</span>
         </div>
 
         <div class="supp-brand-title">${item.brand}｜${item.name}</div>
@@ -586,6 +582,7 @@ function renderWishlistView() {
             <div>
               <span class="supp-cat-badge">${item.category}</span>
               ${isFlagged ? '<span class="supp-cat-badge" style="background:#ffe4e6;color:#be123c;margin-left:4px;">建議免買（重複）</span>' : '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">推薦保留</span>'}
+              <span class="supp-score-badge ${Number(item.value_score || 80) >= 85 ? 'score-high' : 'score-mid'}" style="margin-left:4px;">綜合效益 ${item.value_score || 80} 分</span>
               <h4 style="font-size:0.98rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${item.brand}｜${item.name}</h4>
             </div>
             <div style="text-align:right; white-space:nowrap;">

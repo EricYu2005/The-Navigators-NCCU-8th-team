@@ -1516,4 +1516,82 @@ function openExternalSurveyNotice(e) {
 }
 window.openExternalSurveyNotice = openExternalSurveyNotice;
 
+// ========================================================
+// 10. Chrome 擴充套件彈窗與攔截模擬 (Chrome Extension Modal & Live Demo)
+// ========================================================
+function openExtensionModal() {
+  const modal = document.getElementById('extension-install-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openExtensionModal = openExtensionModal;
+
+function closeExtensionModal() {
+  const modal = document.getElementById('extension-install-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeExtensionModal = closeExtensionModal;
+
+function simulateExtensionIntercept() {
+  closeExtensionModal();
+
+  // 移除現有的模擬卡片
+  const existing = document.getElementById('purepick-ext-banner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'purepick-ext-banner';
+  banner.className = 'simulated-ext-floating-card';
+
+  banner.innerHTML = `
+    <div style="background:linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%); color:#ffffff; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;">
+        <svg style="width:16px; height:16px; stroke:#ffffff; stroke-width:2.2; fill:none; stroke-linecap:round; stroke-linejoin:round;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>PurePick 購物車攔截偵測 (電商實境模擬)</span>
+      </div>
+      <button type="button" onclick="document.getElementById('purepick-ext-banner').remove()" style="background:transparent; border:none; color:#ffffff; font-size:18px; cursor:pointer;">&times;</button>
+    </div>
+
+    <div style="padding:14px 16px;">
+      <div style="display:inline-flex; align-items:center; gap:6px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; margin-bottom:8px;">
+        <svg style="width:13px; height:13px; stroke:currentColor; stroke-width:2.2; fill:none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>電商購物車成分重複警示</span>
+      </div>
+
+      <p style="font-size:12.5px; color:#334155; margin:0 0 8px 0; line-height:1.5;">
+        偵測到電商結帳清單包含：<strong>白蘭氏深海魚油 + 善存綜合維他命</strong>。<br />
+        兩者皆含有高劑量<strong>「維生素 E」</strong>！
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:10px;">
+        <div>
+          <div style="font-size:10.5px; color:#64748b;">累積攝取量</div>
+          <div style="font-size:13px; font-weight:800; color:#dc2626;">42 mg (超標 300%)</div>
+        </div>
+        <div>
+          <div style="font-size:10.5px; color:#64748b;">去冗預估省下</div>
+          <div style="font-size:13px; font-weight:800; color:#16a34a;">NT$ 1,280 / 月</div>
+        </div>
+      </div>
+
+      <p style="font-size:11.5px; color:#475569; background:#faf5ff; border-left:3px solid #7c3aed; padding:6px 8px; margin:0 0 10px 0; border-radius:0 4px 4px 0;">
+        多數深海魚油已額外添加維生素 E 抗氧化，若合併綜合維他命將造成重複浪費與代謝負擔。建議二選一即可！
+      </p>
+    </div>
+
+    <div style="display:flex; gap:8px; padding:0 16px 14px 16px;">
+      <button type="button" class="btn btn-primary btn-sm" style="flex:1;" onclick="switchView('view-wishlist'); document.getElementById('purepick-ext-banner').remove();">
+        查看去冗分析清單
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('purepick-ext-banner').remove()">
+        關閉提醒
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(banner);
+  showToast('已啟動 Chrome 擴充套件購物車去冗攔截模擬！');
+}
+window.simulateExtensionIntercept = simulateExtensionIntercept;
+
+
 

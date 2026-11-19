@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.7.0" />
+  <link rel="stylesheet" href="style.css?v=3.8.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -36,6 +36,11 @@
 
       <!-- 右側輕量帳號與工具按鈕 (無任何 Emoji，高可視度灰色線條圖示) -->
       <div class="header-actions">
+        <button type="button" class="btn-top-ext" onclick="openExtensionModal()" title="安裝 Chrome 擴充套件 (購物車去冗神器)">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+          <span>安裝擴充套件</span>
+        </button>
+
         <button type="button" class="btn-top-lead" onclick="openLeadModal('header_nav')" title="索取專屬避坑報告">
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           <span>索取報告</span>
@@ -758,9 +763,93 @@
     </div>
   </div>
 
+  <!-- ==================== Chrome 擴充套件安裝與模擬彈窗 ==================== -->
+  <div id="extension-install-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+          <h3 style="margin:0;">安裝 PurePick Chrome 擴充套件</h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeExtensionModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="ext-modal-hero">
+          <div class="badge-store-status">
+            <span class="status-dot-amber"></span>
+            <span>Chrome 線上應用程式商店審核中 (預計 3-5 工作天)</span>
+          </div>
+          <h4>電商結帳前主動攔截：幫您抓出成分重複與劑量超標！</h4>
+          <p>
+            在 <strong>momo 購物網、蝦皮商城、Costco 線上購物</strong> 挑選保健品時，PurePick 擴充套件會在結帳前自動掃描購物車，一秒抓出重複成分與國人膳食安全上限 (UL) 違規，即時試算每月可省下的浪費金額！
+          </p>
+        </div>
+
+        <div class="ext-steps-container">
+          <h5 style="font-size:0.95rem; font-weight:800; color:#1e1b4b; margin-bottom:0.75rem;">審核通過前，如何使用開發者模式手動載入？</h5>
+
+          <div class="ext-step-item">
+            <span class="ext-step-idx">1</span>
+            <div class="ext-step-content">
+              <strong>下載擴充套件壓縮檔</strong>
+              <p>點擊下方按鈕下載擴充套件包，並將其解壓縮至電腦任意資料夾（例如「桌面」或「下載」）。</p>
+              <a href="/download/extension" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:0.35rem; margin-top:0.35rem; text-decoration:none;">
+                <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>下載擴充套件壓縮包 (purepick-extension.zip)</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="ext-step-item">
+            <span class="ext-step-idx">2</span>
+            <div class="ext-step-content">
+              <strong>前往 Chrome 擴充功能管理頁</strong>
+              <p>在 Google Chrome 網址列輸入並前往：<code class="ext-code-inline">chrome://extensions</code></p>
+            </div>
+          </div>
+
+          <div class="ext-step-item">
+            <span class="ext-step-idx">3</span>
+            <div class="ext-step-content">
+              <strong>開啟右上角「開發者模式」開關</strong>
+              <p>在頁面右上角找到「開發者模式 (Developer mode)」切換鈕並開啟。</p>
+            </div>
+          </div>
+
+          <div class="ext-step-item">
+            <span class="ext-step-idx">4</span>
+            <div class="ext-step-content">
+              <strong>點選「載入未打包項目」並選擇該資料夾</strong>
+              <p>點擊頁面左上角「載入未打包項目 (Load unpacked)」，選取剛才解壓縮的資料夾（或本專案之 <code>extension</code> 資料夾），即安裝完成！</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="ext-demo-box">
+          <div style="flex:1;">
+            <strong>現場 Demo 專用：免裝擴充套件直接體驗攔截效果</strong>
+            <p style="font-size:0.8rem; color:#475569; margin:2px 0 0 0;">若您目前在非 Chrome 瀏覽器或展示時間受限，可點擊右側按鈕直接在目前畫面模擬擴充套件懸浮截擊效果！</p>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="simulateExtensionIntercept()" style="white-space:nowrap; border-color:#7c3aed; color:#7c3aed; font-weight:700;">
+            模擬擴充套件攔截 (Live Demo)
+          </button>
+        </div>
+
+        <div style="font-size:0.75rem; color:#94a3b8; text-align:center; margin-top:0.85rem;">
+          國立政治大學 創新創業入門 第八組團隊專案 • 本網頁僅供政大創創入門課程使用，非正式平台
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeExtensionModal()">關閉</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.7.0"></script>
+  <script src="app.js?v=3.8.0"></script>
 </body>
 </html>

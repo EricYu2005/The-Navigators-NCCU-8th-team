@@ -554,6 +554,16 @@ app.delete('/api/leads/:id', async (req, res) => {
   }
 });
 
+// 提供 Chrome 擴充套件壓縮檔一鍵下載
+app.get('/download/extension', (req, res) => {
+  const zipPath = path.join(__dirname, 'public', 'purepick-extension.zip');
+  if (fs.existsSync(zipPath)) {
+    res.download(zipPath, 'purepick-extension.zip');
+  } else {
+    res.status(404).json({ success: false, message: '擴充套件檔案尚未打包' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(`[PurePick] 跨品牌保健食品比較與管理平台已啟動`);

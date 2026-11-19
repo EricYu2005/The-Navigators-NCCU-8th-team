@@ -1183,9 +1183,13 @@ async function initUserAuth() {
     renderAuthUI();
     showToast(`歡迎回來，${user.displayName}！已為您清空示範資料，您可以開始填寫自己的保健數據。`);
     return;
+  } else if (params.get('auth_error')) {
+    const err = params.get('auth_error');
+    window.history.replaceState({}, document.title, '/');
+    showToast(`LINE 授權未完成：${err}`);
   } else if (params.get('auth_notice') === 'line_config_needed') {
     window.history.replaceState({}, document.title, '/');
-    openLineLoginModal();
+    showToast('LINE 憑證未設定：請在 Render 後台設定 LINE_CHANNEL_ID 與 LINE_CHANNEL_SECRET');
   }
 
   const saved = localStorage.getItem('purepick_user');
@@ -1218,65 +1222,11 @@ function renderAuthUI() {
   }
 }
 
-async function startLineLogin() {
-  try {
-    const res = await fetch('/api/auth/config');
-    const json = await res.json();
-    if (json.success && json.data && json.data.lineConfigured) {
-      // 伺服器已設定 LINE Channel 憑證（例如 Render 上線環境），直接導向官方真實登入
-      window.location.href = '/auth/line';
-      return;
-    }
-  } catch (e) {
-    console.warn('檢查 LINE 設定失敗，開啟登入視窗', e);
-  }
-  // 未設定憑證（例如本機開發環境）或檢查失敗時，開啟登入彈窗
-  openLineLoginModal();
+function startLineLogin() {
+  // 直接跳轉官方真實 LINE OAuth 授權登入
+  window.location.href = '/auth/line';
 }
 window.startLineLogin = startLineLogin;
-
-function openLineLoginModal() {
-  const modal = document.getElementById('line-login-modal');
-  if (modal) modal.style.display = 'flex';
-}
-window.openLineLoginModal = openLineLoginModal;
-
-function closeLineLoginModal() {
-  const modal = document.getElementById('line-login-modal');
-  if (modal) modal.style.display = 'none';
-}
-window.closeLineLoginModal = closeLineLoginModal;
-
-async function submitQuickLineLogin() {
-  const nameInput = document.getElementById('mock-line-name');
-  const roleName = (nameInput?.value || '政大創創組員').trim();
-
-  try {
-    const res = await fetch('/api/auth/mock-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roleName })
-    });
-    const json = await res.json();
-    if (json.success && json.data) {
-      state.currentUser = json.data;
-      localStorage.setItem('purepick_user', JSON.stringify(json.data));
-
-      // 只要登入就清空資料，讓用戶能填寫自己的數據
-      await fetch('/api/demo/clear', { method: 'POST' });
-      state.isDemoCleared = true;
-      await loadBootstrapData();
-
-      renderAuthUI();
-      closeLineLoginModal();
-      showToast(`已登入【${json.data.displayName}】！已為您清空示範資料，現在可以開始記錄自己的保健品。`);
-    }
-  } catch (err) {
-    console.error(err);
-    showToast('登入過程發生錯誤，請稍後再試');
-  }
-}
-window.submitQuickLineLogin = submitQuickLineLogin;
 
 async function logoutAndRestoreDemo() {
   try {

@@ -493,16 +493,6 @@ app.get('/auth/line/callback', async (req, res) => {
   }
 });
 
-app.post('/api/auth/mock-login', async (req, res) => {
-  const { roleName } = req.body;
-  const mockUser = {
-    displayName: roleName || '政大創創組員',
-    pictureUrl: '',
-    userId: 'mock_line_' + Date.now()
-  };
-  res.json({ success: true, data: mockUser });
-});
-
 // ========================================================
 // 8. 潛在消費者名單登記 (Lead Capture / Waitlist 留名單)
 // ========================================================

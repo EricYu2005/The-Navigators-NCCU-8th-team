@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.5.0" />
+  <link rel="stylesheet" href="style.css?v=3.6.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -669,59 +669,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 3：LINE 登入與組員身分切換 ==================== -->
-  <div id="line-login-modal" class="modal-backdrop" style="display:none;">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <svg class="line-svg" viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:#06c755;">
-            <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
-          </svg>
-          <h3 style="margin:0;">LINE 帳號登入與個人數據紀錄</h3>
-        </div>
-        <button type="button" class="modal-close" onclick="closeLineLoginModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin-bottom: 0.9rem; color: #5b21b6; font-size: 0.88rem; line-height: 1.45;">
-          登入後將清空示範資料，讓您輸入並管理自己的真實保健品清單與服用日曆；隨時可點擊右上角「登出並載入示範案例」恢復課堂預設展示情境。
-        </p>
-
-        <!-- 正式 LINE OAuth 登入 (Render 線上環境已就緒) -->
-        <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:0.9rem; margin-bottom:1rem;">
-          <div style="font-weight:700; color:#166534; font-size:0.92rem; margin-bottom:0.35rem;">
-            官方真實 LINE 帳號登入
-          </div>
-          <p style="font-size:0.8rem; color:#14532d; margin-bottom:0.75rem;">
-            線上發布後已串接 LINE Login OAuth 2.0，點擊後將直接透過手機 LINE 或網頁進行快速官方安全授權。
-          </p>
-          <a href="/auth/line" class="btn btn-line-full" style="text-decoration:none; display:flex; justify-content:center; align-items:center; gap:0.4rem;">
-            <svg class="line-svg" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;">
-              <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
-            </svg>
-            <span>使用真實 LINE 帳號授權登入</span>
-          </a>
-        </div>
-
-        <!-- 本機測試與課堂評分快速輸入 -->
-        <div style="background:#faf5ff; border:1.5px solid #c4b5fd; border-radius:12px; padding:0.9rem;">
-          <div style="font-weight:700; color:#5b21b6; font-size:0.92rem; margin-bottom:0.35rem;">
-            本機開發與課堂展示快速登入
-          </div>
-          <p style="font-size:0.8rem; color:#6b21a8; margin-bottom:0.6rem;">
-            若處於無網路或未設定 LINE Channel 密鑰的本機離線環境，可直接輸入姓名開始體驗。
-          </p>
-          <div class="form-group" style="margin-bottom: 0.65rem;">
-            <input type="text" id="mock-line-name" class="form-input" placeholder="例如：政大創創組員 或 您的姓名" value="政大創創第八組" />
-          </div>
-          <button type="button" class="btn btn-outline btn-block" onclick="submitQuickLineLogin()">
-            快速模擬登入並清空開始輸入
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL 4：潛在客戶留名單 (Lead Capture / 候補登記) ==================== -->
+  <!-- ==================== MODAL 3：潛在客戶留名單 (Lead Capture / 候補登記) ==================== -->
   <div id="lead-capture-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -795,7 +743,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 5：創創團隊查看已登記名單 (專題成效驗證專用) ==================== -->
+  <!-- ==================== MODAL 4：創創團隊查看已登記名單 (專題成效驗證專用) ==================== -->
   <div id="leads-list-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog modal-lg">
       <div class="modal-header">
@@ -845,6 +793,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.5.0"></script>
+  <script src="app.js?v=3.6.0"></script>
 </body>
 </html>

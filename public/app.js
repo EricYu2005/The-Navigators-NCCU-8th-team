@@ -44,7 +44,7 @@ function showToast(message) {
 // 1. 初始化與資料載入
 // ========================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  initUserAuth();
+  await initUserAuth();
   await loadBootstrapData();
 });
 
@@ -91,6 +91,9 @@ function updateNavBadges() {
     demoBtn.title = state.isDemoCleared ? '恢復預設範例' : '清空範例';
     demoBtn.setAttribute('aria-label', demoBtn.title);
     demoBtn.classList.toggle('active', state.isDemoCleared);
+    if (state.currentUser) {
+      demoBtn.style.display = 'none';
+    }
   }
 }
 
@@ -1132,9 +1135,9 @@ async function toggleDemoData() {
 window.toggleDemoData = toggleDemoData;
 
 // ========================================================
-// 7. LINE 登入與組員身分綁定
+// 7. LINE 登入、個人數據填寫與示範情境切換
 // ========================================================
-function initUserAuth() {
+async function initUserAuth() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('line_login') === 'success') {
     const user = {
@@ -1142,9 +1145,20 @@ function initUserAuth() {
       pictureUrl: params.get('pic') || '',
       userId: params.get('uid') || 'line_user'
     };
+    state.currentUser = user;
     localStorage.setItem('purepick_user', JSON.stringify(user));
     window.history.replaceState({}, document.title, '/');
-    showToast(`歡迎回來，${user.displayName}！您的保健品清單與日曆已綁定。`);
+
+    // 登入後立即清空示範資料，讓用戶能填寫自己的數據
+    try {
+      await fetch('/api/demo/clear', { method: 'POST' });
+      state.isDemoCleared = true;
+    } catch (e) {
+      console.error(e);
+    }
+    renderAuthUI();
+    showToast(`歡迎回來，${user.displayName}！已為您清空示範資料，您可以開始填寫自己的保健數據。`);
+    return;
   } else if (params.get('auth_notice') === 'line_config_needed') {
     window.history.replaceState({}, document.title, '/');
     openLineLoginModal();
@@ -1163,14 +1177,20 @@ function renderAuthUI() {
   const loginBtn = document.getElementById('btn-line-login');
   const chip = document.getElementById('user-logged-in-chip');
   const nameEl = document.getElementById('user-display-name');
+  const logoutDemoBtn = document.getElementById('btn-logout-demo');
+  const toggleDemoBtn = document.getElementById('btn-toggle-demo');
 
   if (state.currentUser) {
     if (loginBtn) loginBtn.style.display = 'none';
+    if (toggleDemoBtn) toggleDemoBtn.style.display = 'none';
     if (chip) chip.style.display = 'inline-flex';
     if (nameEl) nameEl.textContent = state.currentUser.displayName;
+    if (logoutDemoBtn) logoutDemoBtn.style.display = 'inline-flex';
   } else {
     if (loginBtn) loginBtn.style.display = 'inline-flex';
+    if (toggleDemoBtn) toggleDemoBtn.style.display = 'inline-flex';
     if (chip) chip.style.display = 'none';
+    if (logoutDemoBtn) logoutDemoBtn.style.display = 'none';
   }
 }
 
@@ -1205,21 +1225,44 @@ async function submitQuickLineLogin() {
     if (json.success && json.data) {
       state.currentUser = json.data;
       localStorage.setItem('purepick_user', JSON.stringify(json.data));
+
+      // 只要登入就清空資料，讓用戶能填寫自己的數據
+      await fetch('/api/demo/clear', { method: 'POST' });
+      state.isDemoCleared = true;
+      await loadBootstrapData();
+
       renderAuthUI();
       closeLineLoginModal();
-      showToast(`已以【${json.data.displayName}】LINE 身分登入並綁定保健品清單！`);
+      showToast(`已登入【${json.data.displayName}】！已為您清空示範資料，現在可以開始記錄自己的保健品。`);
     }
   } catch (err) {
     console.error(err);
+    showToast('登入過程發生錯誤，請稍後再試');
   }
 }
 window.submitQuickLineLogin = submitQuickLineLogin;
 
+async function logoutAndRestoreDemo() {
+  try {
+    // 1. 呼叫後端還原示範情境
+    await fetch('/api/demo/restore', { method: 'POST' });
+    // 2. 清除本地登入狀態
+    state.currentUser = null;
+    localStorage.removeItem('purepick_user');
+    state.isDemoCleared = false;
+    // 3. 重新載入初始示範資料
+    await loadBootstrapData();
+    renderAuthUI();
+    showToast('已登出並重新載入示範案例！');
+  } catch (err) {
+    console.error(err);
+    showToast('還原示範案例失敗，請稍後再試');
+  }
+}
+window.logoutAndRestoreDemo = logoutAndRestoreDemo;
+
 function logoutLine() {
-  state.currentUser = null;
-  localStorage.removeItem('purepick_user');
-  renderAuthUI();
-  showToast('已登出帳號');
+  logoutAndRestoreDemo();
 }
 window.logoutLine = logoutLine;
 

@@ -267,17 +267,57 @@ body {
   height: 14px;
 }
 
+.auth-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .user-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   background: var(--primary-light);
   border: 1.5px solid var(--border-strong);
-  padding: 0.18rem 0.6rem;
+  padding: 0.2rem 0.65rem;
   border-radius: 999px;
   font-size: 0.76rem;
   font-weight: 700;
   color: var(--text-dark);
+}
+
+.btn-logout-demo {
+  height: 30px;
+  padding: 0 0.65rem;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: var(--text-dark);
+  border: 1.5px solid var(--border-strong);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.btn-logout-demo:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.btn-logout-demo .icon-svg-sm {
+  stroke: #52525b;
+  transition: stroke 0.15s ease;
+}
+
+.btn-logout-demo:hover .icon-svg-sm {
+  stroke: #b91c1c;
 }
 
 .btn-chip-logout {

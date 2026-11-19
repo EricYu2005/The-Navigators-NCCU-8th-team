@@ -12,6 +12,10 @@ const ENV_PATH = path.join(ROOT_DIR, '.env');
 const EXAMPLE_PATH = path.join(ROOT_DIR, '.env.example');
 const MODULES_PATH = path.join(ROOT_DIR, 'node_modules');
 
+if (process.stdout && process.stdout.isTTY) {
+  process.stdout.write('\x1b]0;好選保健 PurePick - 跨品牌保健品比較與日曆管理平台\x07');
+}
+
 console.clear();
 console.log('==========================================================');
 console.log('   好選保健 PurePick - 跨品牌保健品比較與日曆管理平台');
@@ -48,6 +52,11 @@ try {
   console.log('   └─ 保健品規格爬蟲器：scripts/supplement_crawler.py (就緒)\n');
 } catch (e) {
   console.log('[提示] 未偵測到本機 Python 指令，系統將自動以內建等效精算引擎無縫執行。\n');
+}
+
+if (process.argv.includes('--check') || process.argv.includes('--dry-run')) {
+  console.log('[測試] 啟動環境與相依套件檢查通過，系統狀態良好！');
+  process.exit(0);
 }
 
 // 4. 自動在瀏覽器開啟網頁 (延遲 1.5 秒)

@@ -86,15 +86,15 @@ function waitKeyPress() {
 
 function showSecretStatus() {
   console.log('----------------------------------------------------------------');
-  console.log('🔍 [本機機密設定狀態 (.env)]');
+  console.log('[本機機密設定狀態 (.env)]');
   if (fs.existsSync(ENV_PATH)) {
     const lines = fs.readFileSync(ENV_PATH, 'utf8')
       .split(/\r?\n/)
       .filter(l => l.includes('=') && !l.trim().startsWith('#'));
-    console.log('✅ 本機已存在 .env 設定檔，包含項目：');
+    console.log('本機已存在 .env 設定檔，包含項目：');
     lines.forEach(l => console.log('   • ' + l.split('=')[0]));
   } else {
-    console.log('⚠️ 本機尚未建立 .env 設定檔（可於選單 [4] 進行編輯或自組員處匯入）');
+    console.log('本機尚未建立 .env 設定檔（可於選單 [4] 進行編輯或自組員處匯入）');
   }
   console.log('----------------------------------------------------------------\n');
 }
@@ -102,7 +102,7 @@ function showSecretStatus() {
 async function showMainMenu() {
   console.clear();
   console.log('================================================================');
-  console.log('   🌿 好選保健 PurePick｜團隊進度同步與雲端管理中心 (sync.cmd)');
+  console.log('   好選保健 PurePick｜團隊進度同步與雲端管理中心 (sync.cmd)');
   console.log('   （政大創創入門第八組 The Navigators 跨品牌保健品比較平台）');
   console.log('================================================================\n');
 
@@ -111,12 +111,12 @@ async function showMainMenu() {
 
   console.log(`目前所在 Git 分支：[${branch}]\n`);
   console.log('請選擇要執行的功能：');
-  console.log('  [1] 🚀 一鍵全自動同步 (拉取最新進度 + 自動更新套件 + 推送我的成果)');
-  console.log('  [2] 📥 僅拉取最新代碼 (Pull：下載組員進度 + 套件同步)');
-  console.log('  [3] 📤 僅推送我的進度 (Push：將本地修改提交至 GitHub 與 Render)');
-  console.log('  [4] 🔐 機密資訊管理中心 (.env 編輯 / 加密匯出 / 解密同步)');
-  console.log('  [5] 💊 重新初始化本地保健品比價資料庫與日曆示範資料');
-  console.log('  [6] 🛠️ Git 衝突急救與狀態診斷');
+  console.log('  [1] 一鍵全自動同步 (拉取最新進度 + 自動更新套件 + 推送我的成果)');
+  console.log('  [2] 僅拉取最新代碼 (Pull：下載組員進度 + 套件同步)');
+  console.log('  [3] 僅推送我的進度 (Push：將本地修改提交至 GitHub 與 Render)');
+  console.log('  [4] 機密資訊管理中心 (.env 編輯 / 加密匯出 / 解密同步)');
+  console.log('  [5] 重新初始化本地保健品比價資料庫與日曆示範資料');
+  console.log('  [6] Git 衝突急救與狀態診斷');
   console.log('  [0] 離開\n');
   console.log('================================================================');
 
@@ -142,11 +142,11 @@ async function showMainMenu() {
       await handleGitDoctor();
       break;
     case '0':
-      console.log('\n感謝使用好選保健 PurePick 團隊同步工具，祝專題報告順利！👋\n');
+      console.log('\n感謝使用好選保健 PurePick 團隊同步工具，祝專題報告順利！\n');
       process.exit(0);
       break;
     default:
-      console.log('⚠️ 輸入錯誤，請重新輸入。');
+      console.log('輸入錯誤，請重新輸入。');
       await waitKeyPress();
       break;
   }
@@ -156,28 +156,28 @@ async function showMainMenu() {
 
 async function handleAutoSync(branch) {
   console.log('\n================================================================');
-  console.log('🚀 [步驟 1/3] 正在從 GitHub 拉取組員的最新成果...');
+  console.log('[步驟 1/3] 正在從 GitHub 拉取組員的最新成果...');
   console.log('================================================================');
   try {
     runInteractiveCmd(`git pull origin ${branch}`);
   } catch (e) {
-    console.log('⚠️ 拉取可能遇到衝突，建議返回主選單選擇 [6] 衝突急救。');
+    console.log('拉取可能遇到衝突，建議返回主選單選擇 [6] 衝突急救。');
     await waitKeyPress();
     return;
   }
 
-  console.log('\n📦 [步驟 2/3] 檢查相依套件庫...');
+  console.log('\n[步驟 2/3] 檢查相依套件庫...');
   if (!fs.existsSync(path.join(ROOT_DIR, 'node_modules'))) {
     console.log('偵測到缺少 node_modules，正在自動執行 npm install...');
     runInteractiveCmd('npm install');
   } else {
-    console.log('✅ 套件庫狀態正常。');
+    console.log('套件庫狀態正常。');
   }
 
-  console.log('\n📤 [步驟 3/3] 檢查本地是否有修改需要推送...');
+  console.log('\n[步驟 3/3] 檢查本地是否有修改需要推送...');
   const status = runCmd('git status -s', { ignoreError: true });
   if (!status || !status.trim()) {
-    console.log('✅ 本地工作區非常乾淨，沒有尚未提交的修改。全自動同步完成！');
+    console.log('本地工作區非常乾淨，沒有尚未提交的修改。全自動同步完成！');
     await waitKeyPress();
     return;
   }
@@ -197,21 +197,21 @@ async function handleAutoSync(branch) {
   console.log(`\n正在推送至 GitHub (${branch})，Render 將自動觸發雲端部署...`);
   runInteractiveCmd(`git push origin ${branch}`);
 
-  console.log('\n🎉 一鍵全自動同步圓滿完成！');
+  console.log('\n一鍵全自動同步圓滿完成！');
   await waitKeyPress();
 }
 
 async function handlePullOnly(branch) {
-  console.log('\n📥 正在從 GitHub 拉取最新進度...');
+  console.log('\n正在從 GitHub 拉取最新進度...');
   runInteractiveCmd(`git pull origin ${branch}`);
   console.log('\n檢查相依套件...');
   runInteractiveCmd('npm install');
-  console.log('\n✅ 拉取與套件同步完成！');
+  console.log('\n拉取與套件同步完成！');
   await waitKeyPress();
 }
 
 async function handlePushOnly(branch) {
-  console.log('\n🔍 正在檢查本地變更檔案...');
+  console.log('\n正在檢查本地變更檔案...');
   const status = runCmd('git status -s', { ignoreError: true });
   if (!status || !status.trim()) {
     console.log('目前沒有偵測到任何修改檔案！');
@@ -227,20 +227,20 @@ async function handlePushOnly(branch) {
   runCmd('git reset HEAD .env secrets.vault data.db gcp-key.json', { ignoreError: true });
   runCmd(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`);
 
-  console.log(`\n📤 正在推送至 GitHub (${branch})...`);
+  console.log(`\n正在推送至 GitHub (${branch})...`);
   runInteractiveCmd(`git push origin ${branch}`);
-  console.log('\n🎉 您的代碼已成功推送到 GitHub，Render 雲端將自動更新部署！');
+  console.log('\n您的代碼已成功推送到 GitHub，Render 雲端將自動更新部署！');
   await waitKeyPress();
 }
 
 async function handleResetSupplementDb() {
-  console.log('\n💊 正在重新載入 24 款跨品牌保健品資料、有興趣清單與服用日曆預設值...');
+  console.log('\n正在重新載入 24 款跨品牌保健品資料、有興趣清單與服用日曆預設值...');
   try {
     const { restoreDemoData } = require('../database');
     await restoreDemoData();
-    console.log('✅ 本地保健品比價資料庫 (data.db) 已成功重置為最新完整狀態！');
+    console.log('本地保健品比價資料庫 (data.db) 已成功重置為最新完整狀態！');
   } catch (err) {
-    console.error('❌ 重置資料庫失敗:', err.message);
+    console.error('重置資料庫失敗:', err.message);
   }
   await waitKeyPress();
 }
@@ -249,7 +249,7 @@ async function handleSecretsCenter() {
   while (true) {
     console.clear();
     console.log('================================================================');
-    console.log('       🔐 好選保健 PurePick｜機密資訊管理中心 (.env)');
+    console.log('       好選保健 PurePick｜機密資訊管理中心 (.env)');
     console.log('================================================================\n');
     console.log('什麼是機密資訊？');
     console.log('• 本地的 .env 檔案（包含 Gemini / Groq API Key、LINE Login 憑證等）');
@@ -257,10 +257,10 @@ async function handleSecretsCenter() {
     console.log('• 透過本工具，您可以將機密安全加密，生成密文在 LINE/Discord 分享！\n');
 
     console.log('請選擇機密操作：');
-    console.log('  [1] 📝 編輯本機 .env 設定檔 (使用記事本開啟)');
-    console.log('  [2] 🔒 匯出加密機密包 (設定密碼，產生團隊分享密文字串)');
-    console.log('  [3] 🔓 匯入團隊機密包 (貼上密文並輸入密碼，一秒同步 .env)');
-    console.log('  [4] 📋 自動更新 .env.example 公開範本 (遮蔽數值後供 GitHub 參考)');
+    console.log('  [1] 編輯本機 .env 設定檔 (使用記事本開啟)');
+    console.log('  [2] 匯出加密機密包 (設定密碼，產生團隊分享密文字串)');
+    console.log('  [3] 匯入團隊機密包 (貼上密文並輸入密碼，一秒同步 .env)');
+    console.log('  [4] 自動更新 .env.example 公開範本 (遮蔽數值後供 GitHub 參考)');
     console.log('  [0] 返回主選單\n');
     console.log('================================================================');
 
@@ -274,17 +274,17 @@ async function handleSecretsCenter() {
           fs.writeFileSync(ENV_PATH, 'PORT=3000\nNODE_ENV=development\nGEMINI_API_KEY=\nLINE_CHANNEL_ID=\nLINE_CHANNEL_SECRET=\n', 'utf8');
         }
       }
-      console.log('\n📝 正在為您開啟 .env 設定檔...');
+      console.log('\n正在為您開啟 .env 設定檔...');
       runInteractiveCmd(`notepad.exe "${ENV_PATH}"`);
     } else if (subChoice === '2') {
       if (!fs.existsSync(ENV_PATH)) {
-        console.log('\n❌ 找不到本機 .env 檔案，請先選 [1] 建立！');
+        console.log('\n找不到本機 .env 檔案，請先選 [1] 建立！');
         await waitKeyPress();
         continue;
       }
       const pwd = await ask('\n請設定團隊通關密碼 (需告訴組員以利解密): ');
       if (!pwd) {
-        console.log('❌ 密碼不得為空！');
+        console.log('密碼不得為空！');
         await waitKeyPress();
         continue;
       }
@@ -293,10 +293,10 @@ async function handleSecretsCenter() {
       fs.writeFileSync(VAULT_PATH, encrypted, 'utf8');
 
       console.log('\n===============================================================');
-      console.log('🔐 團隊機密安全加密字串 (AES-256 加密)：');
+      console.log('團隊機密安全加密字串 (AES-256 加密)：');
       console.log(encrypted);
       console.log('===============================================================');
-      console.log('✅ 已成功將本機 .env 加密打包為安全密文，並存於 secrets.vault！\n');
+      console.log('已成功將本機 .env 加密打包為安全密文，並存於 secrets.vault！\n');
       await waitKeyPress();
     } else if (subChoice === '3') {
       const pwd = await ask('\n請輸入團隊通關密碼: ');
@@ -305,21 +305,21 @@ async function handleSecretsCenter() {
         cipher = fs.readFileSync(VAULT_PATH, 'utf8');
       }
       if (!pwd || !cipher) {
-        console.log('❌ 密碼與密文不能為空！');
+        console.log('密碼與密文不能為空！');
         await waitKeyPress();
         continue;
       }
       try {
         const decrypted = decryptText(cipher, pwd);
         fs.writeFileSync(ENV_PATH, decrypted, 'utf8');
-        console.log('\n🎉 解密成功！已將機密資訊同步寫入本機 .env 檔案！');
+        console.log('\n解密成功！已將機密資訊同步寫入本機 .env 檔案！');
       } catch (err) {
-        console.log('\n❌ 解密失敗：密碼錯誤或密文損毀！');
+        console.log('\n解密失敗：密碼錯誤或密文損毀！');
       }
       await waitKeyPress();
     } else if (subChoice === '4') {
       if (!fs.existsSync(ENV_PATH)) {
-        console.log('\n❌ 找不到 .env 檔案！');
+        console.log('\n找不到 .env 檔案！');
         await waitKeyPress();
         continue;
       }
@@ -329,7 +329,7 @@ async function handleSecretsCenter() {
         return line.split('=')[0] + '=';
       }).join('\n');
       fs.writeFileSync(EXAMPLE_PATH, sanitized, 'utf8');
-      console.log('\n✅ .env.example 公開範本檔已同步更新（所有數值皆已遮蔽）！');
+      console.log('\n.env.example 公開範本檔已同步更新（所有數值皆已遮蔽）！');
       await waitKeyPress();
     } else if (subChoice === '0') {
       break;
@@ -339,7 +339,7 @@ async function handleSecretsCenter() {
 
 async function handleGitDoctor() {
   console.log('\n================================================================');
-  console.log('🛠️ Git 狀態診斷報告：');
+  console.log('Git 狀態診斷報告：');
   console.log('================================================================');
   runInteractiveCmd('git status');
   console.log('\n急救選項：');
@@ -351,12 +351,12 @@ async function handleGitDoctor() {
   if (opt === '1') {
     runCmd('git merge --abort', { ignoreError: true });
     runCmd('git rebase --abort', { ignoreError: true });
-    console.log('✅ 已取消衝突狀態，回到乾淨工作區。');
+    console.log('已取消衝突狀態，回到乾淨工作區。');
   } else if (opt === '2') {
     const lockPath = path.join(ROOT_DIR, '.git', 'index.lock');
     if (fs.existsSync(lockPath)) {
       fs.unlinkSync(lockPath);
-      console.log('✅ 已清除 index.lock 鎖定檔。');
+      console.log('已清除 index.lock 鎖定檔。');
     } else {
       console.log('目前沒有殘留的 index.lock。');
     }

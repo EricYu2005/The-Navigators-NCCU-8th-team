@@ -12,18 +12,18 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.1.0" />
+  <link rel="stylesheet" href="style.css?v=3.2.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <!-- ==================== 頂部狀態標題列 (像 LINE App 頂部標題列，精簡不放主功能籤) ==================== -->
+  <!-- ==================== 頂部狀態標題列 ==================== -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand-group" onclick="switchView('view-finder')">
         <div class="brand-logo-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10.5 20.5 3.5 13.5a4.95 4.95 0 1 1 7-7l7 7a4.95 4.95 0 1 1-7 7Z"/>
             <path d="m8.5 8.5 7 7"/>
           </svg>
@@ -34,13 +34,13 @@
         </div>
       </div>
 
-      <!-- 右側輕量帳號與工具按鈕 -->
+      <!-- 右側輕量帳號與工具按鈕 (無任何 Emoji，高可視度灰色線條圖示) -->
       <div class="header-actions">
-        <button type="button" class="btn-install-top" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
-          📲 安裝
+        <button type="button" class="btn-icon-top" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()" title="安裝至桌面" aria-label="安裝至桌面">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
-        <button type="button" class="btn-demo-toggle" id="btn-toggle-demo" onclick="toggleDemoData()" title="清空範例以測試自己的清單，或隨時恢復範例">
-          🧹 清空範例
+        <button type="button" class="btn-icon-top" id="btn-toggle-demo" onclick="toggleDemoData()" title="清空範例 / 恢復預設" aria-label="清空範例 / 恢復預設">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         </button>
 
         <!-- LINE 登入狀態 -->
@@ -95,15 +95,15 @@
             ></textarea>
 
             <div class="sample-chips-row">
-              <span class="sample-label">快速帶入情境：</span>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(1)">💻 盯螢幕眼乾酸＋外食少吃魚</button>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(2)">🌙 常熬夜疲勞＋晚上淺眠多夢</button>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(3)">🌿 排便不順易脹氣＋想找無糖益生菌</button>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(4)">🏃 長輩行動保養＋吞大顆膠囊困難</button>
+              <span class="sample-label">快速帶入：</span>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(1)">看螢幕乾酸＋少吃魚</button>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(2)">常熬夜疲勞＋淺眠多夢</button>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(3)">排便不順脹氣＋無糖</button>
+              <button type="button" class="chip-sample" onclick="fillFinderSample(4)">長輩行動保養＋吞膠囊難</button>
             </div>
           </div>
 
-          <!-- 步驟 2：快速勾選保養目標 -->
+          <!-- 步驟 2：快速勾選保養目標 (灰線條圖示) -->
           <div class="form-step-block">
             <div class="step-header">
               <span class="step-num">2</span>
@@ -115,7 +115,9 @@
             <div class="goal-checkbox-grid" id="goal-checkbox-grid">
               <label class="goal-check-card">
                 <input type="checkbox" name="goal" value="eye" />
-                <span class="goal-icon">👀</span>
+                <span class="goal-icon-box">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
                 <div class="goal-text">
                   <strong>晶亮護眼</strong>
                   <span>長時間看電腦手機、乾澀疲勞</span>
@@ -123,7 +125,9 @@
               </label>
               <label class="goal-check-card">
                 <input type="checkbox" name="goal" value="cardio" checked />
-                <span class="goal-icon">🐟</span>
+                <span class="goal-icon-box">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </span>
                 <div class="goal-text">
                   <strong>外食循環與思緒</strong>
                   <span>三餐外食少吃魚、油膩代謝</span>
@@ -131,7 +135,9 @@
               </label>
               <label class="goal-check-card">
                 <input type="checkbox" name="goal" value="energy" checked />
-                <span class="goal-icon">⚡</span>
+                <span class="goal-icon-box">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </span>
                 <div class="goal-text">
                   <strong>精神體力補給</strong>
                   <span>常熬夜加班、下午容易疲倦</span>
@@ -139,7 +145,9 @@
               </label>
               <label class="goal-check-card">
                 <input type="checkbox" name="goal" value="gut" />
-                <span class="goal-icon">🌿</span>
+                <span class="goal-icon-box">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                </span>
                 <div class="goal-text">
                   <strong>消化順暢與體質</strong>
                   <span>排便不規律、容易脹氣或換季敏感</span>
@@ -147,7 +155,9 @@
               </label>
               <label class="goal-check-card">
                 <input type="checkbox" name="goal" value="bone" />
-                <span class="goal-icon">🌙</span>
+                <span class="goal-icon-box">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </span>
                 <div class="goal-text">
                   <strong>骨骼行動與舒眠</strong>
                   <span>少喝牛奶缺鈣、淺眠難入睡、關節保養</span>
@@ -155,7 +165,9 @@
               </label>
               <label class="goal-check-card">
                 <input type="checkbox" name="goal" value="beauty" />
-                <span class="goal-icon">✨</span>
+                <span class="goal-icon-box">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
+                </span>
                 <div class="goal-text">
                   <strong>氣色澎潤保養</strong>
                   <span>日常基底美妍、彈力與氣色維持</span>
@@ -219,7 +231,7 @@
                 </select>
               </div>
               <button type="submit" class="btn btn-primary btn-lg" id="btn-run-finder">
-                開始分析並制定我的保健方案 ➜
+                制定我的方案
               </button>
             </div>
           </div>
@@ -227,9 +239,7 @@
       </div>
 
       <!-- 分析結果區塊 -->
-      <div id="finder-result-area" class="finder-result-area" style="display:none;">
-        <!-- 動態注入個人化方案建議與跨品牌推薦比對 -->
-      </div>
+      <div id="finder-result-area" class="finder-result-area" style="display:none;"></div>
 
       <!-- 全站跨品牌保健品比價資料庫 -->
       <div class="card catalog-section-card" id="catalog-section-card">
@@ -243,32 +253,30 @@
               type="search"
               id="catalog-search-input"
               class="form-input"
-              placeholder="搜尋品牌、品名或成分 (如: 魚油、游離型、海藻鈣)..."
+              placeholder="搜尋品牌、品名或成分..."
               oninput="renderCatalog()"
             />
             <select id="catalog-sort-select" class="form-select" onchange="renderCatalog()">
-              <option value="score_desc">依綜合效益評分（高 ➜ 低）</option>
-              <option value="daily_asc">依每日實際花費（低 ➜ 高）</option>
-              <option value="monthly_asc">依每月花費（低 ➜ 高）</option>
-              <option value="price_asc">依單盒售價（低 ➜ 高）</option>
+              <option value="score_desc">依綜合效益（高到低）</option>
+              <option value="daily_asc">依每日花費（低到高）</option>
+              <option value="monthly_asc">依每月花費（低到高）</option>
+              <option value="price_asc">依單盒售價（低到高）</option>
             </select>
           </div>
         </div>
 
         <!-- 品類篩選膠囊列 -->
         <div class="category-filter-pills" id="category-filter-pills">
-          <button type="button" class="cat-pill active" data-cat="all" onclick="setCatalogCategory('all')">全部品類</button>
-          <button type="button" class="cat-pill" data-cat="魚油" onclick="setCatalogCategory('魚油')">🐟 魚油 (Omega-3)</button>
-          <button type="button" class="cat-pill" data-cat="葉黃素" onclick="setCatalogCategory('葉黃素')">👀 葉黃素</button>
-          <button type="button" class="cat-pill" data-cat="益生菌" onclick="setCatalogCategory('益生菌')">🌿 益生菌</button>
-          <button type="button" class="cat-pill" data-cat="B群" onclick="setCatalogCategory('B群')">⚡ 維生素 B 群</button>
-          <button type="button" class="cat-pill" data-cat="鈣鎂D" onclick="setCatalogCategory('鈣鎂D')">🌙 鈣鎂D / 關節</button>
-          <button type="button" class="cat-pill" data-cat="膠原蛋白" onclick="setCatalogCategory('膠原蛋白')">✨ 膠原蛋白</button>
+          <button type="button" class="cat-pill active" data-cat="all" onclick="setCatalogCategory('all')">全部</button>
+          <button type="button" class="cat-pill" data-cat="魚油" onclick="setCatalogCategory('魚油')">魚油 (Omega-3)</button>
+          <button type="button" class="cat-pill" data-cat="葉黃素" onclick="setCatalogCategory('葉黃素')">葉黃素</button>
+          <button type="button" class="cat-pill" data-cat="益生菌" onclick="setCatalogCategory('益生菌')">益生菌</button>
+          <button type="button" class="cat-pill" data-cat="B群" onclick="setCatalogCategory('B群')">維生素 B 群</button>
+          <button type="button" class="cat-pill" data-cat="鈣鎂D" onclick="setCatalogCategory('鈣鎂D')">鈣鎂D / 關節</button>
+          <button type="button" class="cat-pill" data-cat="膠原蛋白" onclick="setCatalogCategory('膠原蛋白')">膠原蛋白</button>
         </div>
 
-        <div class="catalog-grid" id="catalog-grid">
-          <!-- 動態渲染跨品牌商品比較卡 -->
-        </div>
+        <div class="catalog-grid" id="catalog-grid"></div>
       </div>
     </section>
 
@@ -278,45 +286,39 @@
     <section id="view-wishlist" class="view-section">
       <div class="section-banner">
         <div>
-          <h1>有興趣的商品清單 ＆ 重疊去冗分析</h1>
+          <h1>有興趣的商品清單與去冗分析</h1>
           <p>把考慮購買的保健品放進來，系統會自動交叉比對您「已購買正在吃」與「有興趣」的商品，抓出重複購買並幫您省下冤枉錢。</p>
         </div>
         <div class="banner-btns">
           <button type="button" class="btn btn-outline" onclick="switchView('view-finder')">
-            ＋ 去比價庫挑選更多商品
+            挑選更多商品
           </button>
         </div>
       </div>
 
       <!-- 頂部省錢與費用摘要指標 -->
-      <div class="wishlist-kpi-grid" id="wishlist-kpi-grid">
-        <!-- 動態注入：有興趣清單總月費、發現重疊可省金額、精簡後最佳月費 -->
-      </div>
+      <div class="wishlist-kpi-grid" id="wishlist-kpi-grid"></div>
 
       <div class="two-col-management">
         <!-- 左欄：有興趣的商品清單 -->
         <div class="card">
           <div class="card-title-bar">
-            <h3>♡ 我有興趣考慮購買的商品</h3>
+            <h3>我有興趣考慮購買的商品</h3>
             <span class="pill-count" id="wishlist-panel-count">0 款</span>
           </div>
-          <div id="wishlist-items-container" class="managed-list-container">
-            <!-- 動態渲染有興趣的商品卡 -->
-          </div>
+          <div id="wishlist-items-container" class="managed-list-container"></div>
         </div>
 
         <!-- 右欄：嚴格重疊去冗與劑量安全分析報告 -->
         <div class="card analysis-report-card">
           <div class="card-title-bar">
-            <h3>⚖️ 跨商品重疊去冗 ＆ 劑量安全分析報告</h3>
+            <h3>跨商品重疊去冗與劑量安全報告</h3>
             <button type="button" class="btn btn-sm btn-outline" onclick="refreshWishlistAnalysis()">
-              重新精算分析
+              重新精算
             </button>
           </div>
 
-          <div id="wishlist-analysis-container">
-            <!-- 動態渲染去冗分析結果 -->
-          </div>
+          <div id="wishlist-analysis-container"></div>
         </div>
       </div>
     </section>
@@ -327,15 +329,13 @@
     <section id="view-calendar" class="view-section">
       <div class="section-banner">
         <div>
-          <h1>已購買保健櫃 ＆ 服用狀態日曆</h1>
-          <p>像記錄生理期日曆一樣，每天輕鬆勾選吃過的保健品並記錄精神、消化與睡眠感受，追蹤保健品吃了一個月後是否真的有感。</p>
+          <h1>已購買保健櫃與服用狀態日曆</h1>
+          <p>像記錄生理期日曆一樣，每天勾選吃過的保健品並記錄精神、消化與睡眠感受，追蹤保健品吃了一個月後是否真的有感。</p>
         </div>
       </div>
 
       <!-- 日曆頂部統計指標 -->
-      <div class="calendar-kpi-row" id="calendar-kpi-row">
-        <!-- 動態注入：本月規律服用率、連續打卡天數、目前已購每月總花費、正在服用罐數 -->
-      </div>
+      <div class="calendar-kpi-row" id="calendar-kpi-row"></div>
 
       <!-- 日曆與當日打卡雙欄區 -->
       <div class="calendar-workspace">
@@ -352,9 +352,9 @@
 
           <!-- 圖例說明 -->
           <div class="calendar-legend">
-            <span class="legend-item"><i class="dot dot-full"></i> 當日已全數服用</span>
-            <span class="legend-item"><i class="dot dot-partial"></i> 部分服用</span>
-            <span class="legend-item">⚡精神 🌿消化 🌙睡眠 👀晶亮 📝筆記</span>
+            <span class="legend-item"><i class="dot dot-full"></i> 全數已服</span>
+            <span class="legend-item"><i class="dot dot-partial"></i> 部分已服</span>
+            <span class="legend-item"><svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg> 含筆記日誌</span>
           </div>
 
           <!-- 星期標頭 -->
@@ -363,16 +363,14 @@
           </div>
 
           <!-- 日期網格 -->
-          <div class="calendar-days-grid" id="calendar-days-grid">
-            <!-- 動態產生月曆格子 -->
-          </div>
+          <div class="calendar-days-grid" id="calendar-days-grid"></div>
         </div>
 
         <!-- 右側：選取日期的服用打卡 ＆ 身體狀態日誌 -->
         <div class="card daily-tracker-card">
           <div class="daily-header">
             <div>
-              <span class="daily-tag">當日服用與身體記錄</span>
+              <span class="daily-tag">當日紀錄</span>
               <h3 id="selected-date-title">2026-11-19 (今天)</h3>
             </div>
             <span class="daily-progress-badge" id="daily-progress-badge">完成 0 / 0</span>
@@ -381,55 +379,80 @@
           <!-- 1. 當日該吃的已購買保健品打卡清單 -->
           <div class="daily-section">
             <div class="daily-sec-head">
-              <h4>💊 點擊勾選今日已服用的保健品</h4>
-              <button type="button" class="btn-link-sm" onclick="checkAllTodaySupplements()">全選今日已吃</button>
+              <h4>今日服用清單</h4>
+              <button type="button" class="btn-link-sm" onclick="checkAllTodaySupplements()">全選已吃</button>
             </div>
-            <div id="daily-checklist-container" class="daily-checklist">
-              <!-- 依時段顯示已購買保健品打卡項 -->
-            </div>
+            <div id="daily-checklist-container" class="daily-checklist"></div>
           </div>
 
-          <!-- 2. 像月經日曆一樣的身體感受快速打卡 -->
+          <!-- 2. 身體感受快速打卡 (灰線條圖示) -->
           <div class="daily-section">
-            <h4>📝 身體感受與狀態日誌（點選即記錄）</h4>
+            <h4>身體狀態日誌</h4>
 
             <div class="mood-group">
               <span class="mood-label">精神體力：</span>
               <div class="mood-pills" data-field="energyLevel">
-                <button type="button" class="mood-pill" data-val="精神飽滿" onclick="selectDailyMood('energyLevel', '精神飽滿')">⚡ 精神飽滿</button>
-                <button type="button" class="mood-pill" data-val="狀態平穩" onclick="selectDailyMood('energyLevel', '狀態平穩')">🙂 狀態平穩</button>
-                <button type="button" class="mood-pill" data-val="疲倦想睡" onclick="selectDailyMood('energyLevel', '疲倦想睡')">🥱 疲倦想睡</button>
+                <button type="button" class="mood-pill" data-val="精神飽滿" onclick="selectDailyMood('energyLevel', '精神飽滿')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>飽滿</span>
+                </button>
+                <button type="button" class="mood-pill" data-val="狀態平穩" onclick="selectDailyMood('energyLevel', '狀態平穩')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span>平穩</span>
+                </button>
+                <button type="button" class="mood-pill" data-val="疲倦想睡" onclick="selectDailyMood('energyLevel', '疲倦想睡')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                  <span>疲倦</span>
+                </button>
               </div>
             </div>
 
             <div class="mood-group">
               <span class="mood-label">消化排便：</span>
               <div class="mood-pills" data-field="digestionStatus">
-                <button type="button" class="mood-pill" data-val="排便順暢" onclick="selectDailyMood('digestionStatus', '排便順暢')">🌿 排便順暢</button>
-                <button type="button" class="mood-pill" data-val="稍微脹氣" onclick="selectDailyMood('digestionStatus', '稍微脹氣')">💨 稍微脹氣</button>
-                <button type="button" class="mood-pill" data-val="排便不順" onclick="selectDailyMood('digestionStatus', '排便不順')">🪨 排便不順</button>
+                <button type="button" class="mood-pill" data-val="排便順暢" onclick="selectDailyMood('digestionStatus', '排便順暢')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/></svg>
+                  <span>順暢</span>
+                </button>
+                <button type="button" class="mood-pill" data-val="稍微脹氣" onclick="selectDailyMood('digestionStatus', '稍微脹氣')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                  <span>脹氣</span>
+                </button>
+                <button type="button" class="mood-pill" data-val="排便不順" onclick="selectDailyMood('digestionStatus', '排便不順')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  <span>不順</span>
+                </button>
               </div>
             </div>
 
             <div class="mood-group">
               <span class="mood-label">睡眠晶亮：</span>
               <div class="mood-pills" data-field="sleepEyeStatus">
-                <button type="button" class="mood-pill" data-val="睡眠深沉" onclick="selectDailyMood('sleepEyeStatus', '睡眠深沉')">🌙 睡眠深沉</button>
-                <button type="button" class="mood-pill" data-val="晶亮舒適" onclick="selectDailyMood('sleepEyeStatus', '晶亮舒適')">👀 晶亮舒適</button>
-                <button type="button" class="mood-pill" data-val="眼睛乾酸" onclick="selectDailyMood('sleepEyeStatus', '眼睛乾酸')">👁️ 眼睛乾酸</button>
+                <button type="button" class="mood-pill" data-val="睡眠深沉" onclick="selectDailyMood('sleepEyeStatus', '睡眠深沉')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                  <span>深沉</span>
+                </button>
+                <button type="button" class="mood-pill" data-val="晶亮舒適" onclick="selectDailyMood('sleepEyeStatus', '晶亮舒適')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span>舒適</span>
+                </button>
+                <button type="button" class="mood-pill" data-val="眼睛乾酸" onclick="selectDailyMood('sleepEyeStatus', '眼睛乾酸')">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                  <span>乾酸</span>
+                </button>
               </div>
             </div>
 
             <div class="daily-note-box">
-              <label for="daily-note-input">當日隨手筆記：</label>
+              <label for="daily-note-input">隨手筆記：</label>
               <textarea
                 id="daily-note-input"
                 class="form-textarea"
                 rows="2"
-                placeholder="記錄今天的體感變化（例如：吃益生菌第 7 天早上排便很順、昨晚睡前吃鎂睡得比較沉）..."
+                placeholder="記錄體感變化（如：益生菌第7天排便順暢、睡前吃鎂比較好睡）..."
               ></textarea>
               <button type="button" class="btn btn-primary btn-block" onclick="saveDailyCalendarLog()">
-                儲存當日打卡與日誌
+                儲存當日紀錄
               </button>
             </div>
           </div>
@@ -440,22 +463,20 @@
       <div class="card purchased-cabinet-card">
         <div class="card-title-bar">
           <div>
-            <h3>📦 我目前已購買正在服用的保健品清單</h3>
+            <h3>我目前已購買服用的保健品清單</h3>
             <p class="card-sub-hint">這裡的商品會自動出現在上方的每日服用日曆中，並作為「有興趣清單」的去冗比對基準</p>
           </div>
           <span class="pill-count" id="purchased-cabinet-count">0 款</span>
         </div>
-        <div id="purchased-cabinet-grid" class="purchased-cabinet-grid">
-          <!-- 動態渲染已購買商品卡 -->
-        </div>
+        <div id="purchased-cabinet-grid" class="purchased-cabinet-grid"></div>
       </div>
     </section>
 
-    <!-- ==================== 課程專題免責聲明 (嚴格保留指定開頭與法規風險內文) ==================== -->
+    <!-- ==================== 課程專題免責聲明 ==================== -->
     <footer class="legal-disclaimer-footer">
       <div class="legal-disclaimer-card">
         <p class="legal-statement-core">
-          ⚖️ 本網頁僅供政治大學創創入門課程使用，非正式平台。
+          本網頁僅供政治大學創創入門課程使用，非正式平台。
         </p>
         <p class="legal-statement-desc">
           本平台（好選保健 PurePick）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示與概念驗證（PoC）模型，非屬我國《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之正式醫療診斷軟體或藥事諮詢機構。網頁所載之各品牌保健食品價格、成分含量換算、重疊去冗建議與服用日曆紀錄，均僅供課堂教學演練與小組專題報告展示用途，不具備任何臨床醫療診斷、處方指示或疾病治療效力。若真實生活中有身體不適、慢性疾病服藥交互作用疑問或醫療需求，請務必諮詢合格執業醫師、藥師或營養師。
@@ -468,44 +489,46 @@
     </footer>
   </main>
 
-  <!-- ==================== 像手機 LINE App 一樣的常駐下方功能導覽列 (電腦與手機通用) ==================== -->
+  <!-- ==================== 像 IG / LINE App 下方導覽列 (中間 + 為無文字獨立圓形按鈕) ==================== -->
   <nav class="line-style-bottom-bar" aria-label="主功能下方導覽列">
     <div class="bottom-bar-inner">
+      <!-- 1. 尋找 -->
       <button type="button" class="b-tab-item active" data-target="view-finder" onclick="switchView('view-finder')">
         <div class="b-tab-icon-wrap">
-          <span class="b-tab-icon">🔍</span>
+          <svg class="b-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
-        <span class="b-tab-label">尋找方案</span>
+        <span class="b-tab-label">尋找</span>
       </button>
 
+      <!-- 2. 分析 -->
       <button type="button" class="b-tab-item" data-target="view-wishlist" onclick="switchView('view-wishlist')">
         <div class="b-tab-icon-wrap">
-          <span class="b-tab-icon">⚖️</span>
+          <svg class="b-svg" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
           <span class="b-tab-badge" id="nav-wishlist-count">0</span>
         </div>
-        <span class="b-tab-label">有興趣分析</span>
+        <span class="b-tab-label">分析</span>
       </button>
 
+      <!-- 3. 中間獨立「+」按鈕：如同 Instagram 發文按鈕，只保留大圖示無文字 -->
+      <button type="button" class="b-center-action-btn" onclick="openAddSupplementModal()" title="新增保健品" aria-label="新增保健品">
+        <svg class="b-center-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+
+      <!-- 4. 日曆 -->
       <button type="button" class="b-tab-item" data-target="view-calendar" onclick="switchView('view-calendar')">
         <div class="b-tab-icon-wrap">
-          <span class="b-tab-icon">📅</span>
+          <svg class="b-svg" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
           <span class="b-tab-badge badge-emerald" id="nav-purchased-count">0</span>
         </div>
-        <span class="b-tab-label">服用日曆</span>
+        <span class="b-tab-label">日曆</span>
       </button>
 
-      <button type="button" class="b-tab-item" onclick="openAddSupplementModal()">
-        <div class="b-tab-icon-wrap">
-          <span class="b-tab-icon">➕</span>
-        </div>
-        <span class="b-tab-label">新增保健品</span>
-      </button>
-
+      <!-- 5. 方案 -->
       <button type="button" class="b-tab-item" onclick="openSubscriptionModal()">
         <div class="b-tab-icon-wrap">
-          <span class="b-tab-icon">💎</span>
+          <svg class="b-svg" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
         </div>
-        <span class="b-tab-label">訂閱方案</span>
+        <span class="b-tab-label">方案</span>
       </button>
     </div>
   </nav>
@@ -514,7 +537,7 @@
   <div id="add-supplement-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>＋ 新增市售保健食品</h3>
+        <h3>新增市售保健食品</h3>
         <button type="button" class="modal-close" onclick="closeAddSupplementModal()">&times;</button>
       </div>
       <form id="add-supplement-form" onsubmit="handleAddSupplementSubmit(event)">
@@ -534,20 +557,20 @@
             <div class="form-group">
               <label>保健品類別 *</label>
               <select id="new-supp-category" class="form-select">
-                <option value="魚油">🐟 魚油 (Omega-3)</option>
-                <option value="葉黃素">👀 葉黃素</option>
-                <option value="益生菌">🌿 益生菌</option>
-                <option value="B群">⚡ 維生素 B 群</option>
-                <option value="鈣鎂D">🌙 鈣鎂D / 關節保養</option>
-                <option value="膠原蛋白">✨ 膠原蛋白</option>
+                <option value="魚油">魚油 (Omega-3)</option>
+                <option value="葉黃素">葉黃素</option>
+                <option value="益生菌">益生菌</option>
+                <option value="B群">維生素 B 群</option>
+                <option value="鈣鎂D">鈣鎂D / 關節保養</option>
+                <option value="膠原蛋白">膠原蛋白</option>
               </select>
             </div>
             <div class="form-group">
               <label>建議服用時段</label>
               <select id="new-supp-timing" class="form-select">
-                <option value="隨餐/飯後">🍱 隨餐 / 飯後</option>
-                <option value="早上空腹">🌅 早上空腹</option>
-                <option value="睡前">🌙 睡前</option>
+                <option value="隨餐/飯後">隨餐 / 飯後</option>
+                <option value="早上空腹">早上空腹</option>
+                <option value="睡前">睡前</option>
               </select>
             </div>
           </div>
@@ -573,10 +596,10 @@
               <input type="text" id="new-supp-summary" class="form-input" placeholder="例如：Omega-3 1000mg (rTG型 85%)" />
             </div>
             <div class="form-group">
-              <label>新增後直接加入哪個清單？</label>
+              <label>新增後加入哪個清單？</label>
               <select id="new-supp-target-list" class="form-select">
-                <option value="wishlist">♡ 加入「有興趣清單」做去冗分析</option>
-                <option value="purchased">✓ 加入「已購買清單」開始日曆打卡</option>
+                <option value="wishlist">加入「有興趣清單」做去冗分析</option>
+                <option value="purchased">加入「已購買清單」開始日曆打卡</option>
                 <option value="catalog_only">僅加入比價資料庫</option>
               </select>
             </div>
@@ -584,7 +607,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeAddSupplementModal()">取消</button>
-          <button type="submit" class="btn btn-primary">儲存並自動換算每日花費</button>
+          <button type="submit" class="btn btn-primary">儲存並自動換算</button>
         </div>
       </form>
     </div>
@@ -594,7 +617,7 @@
   <div id="subscription-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog modal-lg">
       <div class="modal-header">
-        <h3>💎 好選保健 消費者訂閱方案</h3>
+        <h3>好選保健 消費者訂閱方案</h3>
         <button type="button" class="modal-close" onclick="closeSubscriptionModal()">&times;</button>
       </div>
       <div class="modal-body">
@@ -606,10 +629,10 @@
             <div class="plan-badge">免費體驗版</div>
             <div class="plan-price">NT$ 0 <span>/ 永久免費</span></div>
             <ul class="plan-features">
-              <li>✓ 跨品牌保健品每日真實花費比價</li>
-              <li>✓ 互動式需求表單與預算方案推薦</li>
-              <li>✓ 基礎有興趣清單管理（最多 3 款比對）</li>
-              <li>✓ 基礎服用日曆打卡</li>
+              <li>跨品牌保健品每日真實花費比價</li>
+              <li>互動式需求表單與預算方案推薦</li>
+              <li>基礎有興趣清單管理（最多 3 款比對）</li>
+              <li>基礎服用日曆打卡</li>
             </ul>
             <button type="button" class="btn btn-outline btn-block" onclick="closeSubscriptionModal()">目前使用中</button>
           </div>
@@ -617,13 +640,13 @@
             <div class="plan-badge badge-pro">精明消費者訂閱版（專題全功能已解鎖）</div>
             <div class="plan-price">NT$ 49 <span>/ 月（年繳 NT$ 390）</span></div>
             <ul class="plan-features">
-              <li>✓ <strong>無上限跨品牌成分重疊與去冗省錢精算</strong></li>
-              <li>✓ <strong>已購買 vs. 有興趣商品交叉比對（避免重複買）</strong></li>
-              <li>✓ <strong>完整服用日曆、身體感受追蹤與耗盡補貨提醒</strong></li>
-              <li>✓ <strong>跨通路最低價變動通知與透明分潤回饋折抵</strong></li>
+              <li><strong>無上限跨品牌成分重疊與去冗省錢精算</strong></li>
+              <li><strong>已購買 vs. 有興趣商品交叉比對（避免重複買）</strong></li>
+              <li><strong>完整服用日曆、身體感受追蹤與耗盡補貨提醒</strong></li>
+              <li><strong>跨通路最低價變動通知與透明分潤回饋折抵</strong></li>
             </ul>
             <button type="button" class="btn btn-primary btn-block" onclick="activateDemoProPlan()">
-              ✨ 課程展示期間已免費開啟全功能
+              課程展示期間已開啟全功能
             </button>
           </div>
         </div>
@@ -661,6 +684,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.1.0"></script>
+  <script src="app.js?v=3.2.0"></script>
 </body>
 </html>

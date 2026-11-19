@@ -505,7 +505,7 @@ app.post('/api/auth/mock-login', async (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
-  console.log(`🚀 好選保健 PurePick - 跨品牌保健食品比較與管理平台已啟動`);
-  console.log(`🌐 平台網址： http://localhost:${PORT}`);
+  console.log(`[PurePick] 跨品牌保健食品比較與管理平台已啟動`);
+  console.log(`[PurePick] 平台網址： http://localhost:${PORT}`);
   console.log(`====================================================`);
 });

@@ -88,7 +88,9 @@ function updateNavBadges() {
 
   const demoBtn = document.getElementById('btn-toggle-demo');
   if (demoBtn) {
-    demoBtn.innerHTML = state.isDemoCleared ? '🔄 恢復預設範例' : '🧹 清空範例';
+    demoBtn.title = state.isDemoCleared ? '恢復預設範例' : '清空範例';
+    demoBtn.setAttribute('aria-label', demoBtn.title);
+    demoBtn.classList.toggle('active', state.isDemoCleared);
   }
 }
 
@@ -191,7 +193,7 @@ async function handleFinderSubmit(e) {
   const btn = document.getElementById('btn-run-finder');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '正在為您比對各品牌成分與預算...';
+    btn.textContent = '分析比對中...';
   }
 
   try {
@@ -210,7 +212,7 @@ async function handleFinderSubmit(e) {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '開始分析並制定我的保健方案 ➜';
+      btn.textContent = '開始分析方案';
     }
   }
 }
@@ -232,8 +234,8 @@ function renderFinderResult(result) {
     const cardsHtml = (group.products || []).slice(0, 3).map(item => renderSupplementCardHtml(item, item.id === group.topPickId)).join('');
     return `
       <div style="margin-top: 1.35rem;">
-        <h3 style="font-size: 1.1rem; font-weight: 800; color: #2e1065; margin-bottom: 0.75rem;">
-          📌 【${group.category}】跨品牌效益與每日花費比較
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #2e1065; margin-bottom: 0.75rem;">
+          【${group.category}】效益與花費比較
         </h3>
         <div class="catalog-grid">
           ${cardsHtml}
@@ -246,17 +248,17 @@ function renderFinderResult(result) {
   area.innerHTML = `
     <div class="card finder-result-card">
       <div class="result-summary-box">
-        <h3>💡 您的個人化保健購買建議</h3>
+        <h3>個人化保健購買建議</h3>
         <p style="font-size:0.93rem; color:#1e293b;">${result.personalizedSummary}</p>
         ${reasonsHtml}
         <div class="dont-waste-box">
-          <strong>💰 省錢避坑提醒：</strong>${result.dontWasteMoneyOn}
+          <strong>省錢提醒：</strong>${result.dontWasteMoneyOn}
         </div>
       </div>
 
       <div class="bundle-recommendation-bar">
         <div>
-          <div style="font-size:0.8rem; color:#94a3b8;">為您精選的預算內最優組合（共 ${(result.recommendedBundle || []).length} 款）</div>
+          <div style="font-size:0.8rem; color:#94a3b8;">預算內最優組合（共 ${(result.recommendedBundle || []).length} 款）</div>
           <div style="font-size:1rem; font-weight:700; margin-top:0.15rem;">
             ${(result.recommendedBundle || []).map(x => `${x.brand} ${x.name}`).join(' ＋ ')}
           </div>
@@ -268,7 +270,7 @@ function renderFinderResult(result) {
             <span style="font-size:0.78rem; color:#94a3b8;">（每日約 $${result.bundleDailyCost}）</span>
           </div>
           <button type="button" class="btn btn-primary" onclick="addBundleToWishlist([${bundleIds.join(',')}])">
-            ♡ 將此組合加入「有興趣清單」做重疊檢核
+            加入清單分析
           </button>
         </div>
       </div>
@@ -348,7 +350,7 @@ function renderSupplementCardHtml(item, isTopPick) {
         <div class="supp-top-row">
           <div>
             <span class="supp-cat-badge">${item.category}</span>
-            ${isTopPick ? '<span class="supp-cat-badge" style="background:#7c3aed;color:#fff;margin-left:4px;">★ 預算內首選</span>' : ''}
+            ${isTopPick ? '<span class="supp-cat-badge" style="background:#7c3aed;color:#fff;margin-left:4px;">預算首選</span>' : ''}
             ${item.is_vegan ? '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">素食</span>' : ''}
           </div>
           <span class="supp-score-badge ${scoreClass}">綜合效益 ${score} 分</span>
@@ -387,8 +389,8 @@ function renderSupplementCardHtml(item, isTopPick) {
         </div>
 
         <div class="pros-cons-box">
-          <div class="pro-line"><strong>✓ 值得買理由：</strong>${item.pros}</div>
-          <div class="con-line"><strong>⚠️ 注意事項：</strong>${item.cons}</div>
+          <div class="pro-line"><strong>優勢：</strong>${item.pros}</div>
+          <div class="con-line"><strong>注意：</strong>${item.cons}</div>
         </div>
       </div>
 
@@ -398,14 +400,14 @@ function renderSupplementCardHtml(item, isTopPick) {
           class="btn btn-sm ${inWishlist ? 'btn-primary' : 'btn-outline'}"
           onclick="toggleUserListItem(${item.id}, 'wishlist')"
         >
-          ${inWishlist ? '♥ 已在有興趣清單' : '♡ 加入有興趣'}
+          ${inWishlist ? '已關注' : '加入分析'}
         </button>
         <button
           type="button"
           class="btn btn-sm ${inPurchased ? 'btn-teal' : 'btn-outline'}"
           onclick="toggleUserListItem(${item.id}, 'purchased')"
         >
-          ${inPurchased ? '✓ 已在服用日曆' : '📦 我已購買'}
+          ${inPurchased ? '已在日曆' : '加入日曆'}
         </button>
       </div>
     </div>
@@ -580,7 +582,7 @@ function renderWishlistView() {
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
             <div>
               <span class="supp-cat-badge">${item.category}</span>
-              ${isFlagged ? '<span class="supp-cat-badge" style="background:#ffe4e6;color:#be123c;margin-left:4px;">⚠️ 建議免買（成分重複）</span>' : '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">✓ 推薦保留</span>'}
+              ${isFlagged ? '<span class="supp-cat-badge" style="background:#ffe4e6;color:#be123c;margin-left:4px;">建議免買（重複）</span>' : '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">推薦保留</span>'}
               <h4 style="font-size:0.98rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${item.brand}｜${item.name}</h4>
             </div>
             <div style="text-align:right; white-space:nowrap;">
@@ -593,10 +595,10 @@ function renderWishlistView() {
           </div>
           <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.65rem;">
             <button type="button" class="btn btn-sm btn-outline" onclick="moveWishlistToPurchased(${item.id})">
-              ✓ 轉為已購買 (加入日曆)
+              轉為已購 (加入日曆)
             </button>
             <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'wishlist')">
-              ✕ 剔除此商品
+              剔除
             </button>
           </div>
         </div>
@@ -607,19 +609,19 @@ function renderWishlistView() {
   // 3. 右欄：去冗省錢建議、合併劑量檢核、服用時段提醒
   const alertsHtml = (analysis.redundancyAlerts || []).length === 0
     ? `<div style="padding:0.9rem 1rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; color:#065f46; font-size:0.88rem; margin-bottom:1rem;">
-         ✓ 目前有興趣的商品之間、以及與您正在服用的商品之間，沒有發現重複購買或衝突，配置相當精準！
+         目前有興趣與服用中的商品無重複或衝突，配置精準！
        </div>`
     : (analysis.redundancyAlerts || []).map(alert => `
         <div class="redundancy-alert-card">
           <div class="redundancy-header">
-            <span class="redundancy-title">💡 您可能不需要買【${alert.dropProductName}】</span>
+            <span class="redundancy-title">建議無需購買【${alert.dropProductName}】</span>
             <span class="save-badge">刪除可省 NT$ ${alert.savedMonthly} / 月</span>
           </div>
           <p style="font-size:0.85rem; color:#881337; margin-bottom:0.65rem;">
             ${alert.reason}
           </p>
           <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${alert.dropProductId}, 'wishlist')">
-            ✕ 一鍵從清單剔除【${alert.dropProductName}】（立省 $${alert.savedMonthly}/月）
+            從清單剔除（月省 $${alert.savedMonthly}）
           </button>
         </div>
       `).join('');
@@ -661,14 +663,15 @@ function renderWishlistView() {
   }).join('');
 
   const timingHtml = (analysis.timingWarnings || []).map(w => `
-    <div style="padding:0.65rem 0.85rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:0.83rem; color:#92400e; margin-bottom:0.5rem;">
-      ⏰ ${w}
+    <div style="display:flex; align-items:center; gap:0.4rem; padding:0.65rem 0.85rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:0.83rem; color:#92400e; margin-bottom:0.5rem;">
+      <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>${w}</span>
     </div>
   `).join('');
 
   analysisContainer.innerHTML = `
     <div class="verdict-banner">
-      <strong>📋 整體購買評估結論：</strong><br/>
+      <strong>整體評估：</strong><br/>
       ${analysis.overallVerdict}
     </div>
 
@@ -798,16 +801,16 @@ function renderCalendarGrid() {
     cellsHtml.push(`<div class="cal-day-cell empty"></div>`);
   }
 
-  const moodEmojiMap = {
-    '精神飽滿': '⚡',
-    '狀態平穩': '🙂',
-    '疲倦想睡': '🥱',
-    '排便順暢': '🌿',
-    '稍微脹氣': '💨',
-    '排便不順': '🪨',
-    '睡眠深沉': '🌙',
-    '晶亮舒適': '👀',
-    '眼睛乾酸': '👁️'
+  const moodIconMap = {
+    '精神飽滿': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    '狀態平穩': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>',
+    '疲倦想睡': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/></svg>',
+    '排便順暢': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/></svg>',
+    '稍微脹氣': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
+    '排便不順': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="15" x2="16" y2="15"/></svg>',
+    '睡眠深沉': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+    '晶亮舒適': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    '眼睛乾酸': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg>'
   };
 
   for (let day = 1; day <= daysInMonth; day++) {
@@ -825,17 +828,18 @@ function renderCalendarGrid() {
       const isFull = takenCount >= totalPurchased;
       intakeBadge = `
         <span class="cal-intake-pill ${isFull ? 'full' : 'partial'}">
-          ${isFull ? '✓' : '◐'} ${takenCount}/${totalPurchased}
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          ${takenCount}/${totalPurchased}
         </span>
       `;
     }
 
     const icons = [];
     if (log) {
-      if (log.energyLevel && moodEmojiMap[log.energyLevel]) icons.push(moodEmojiMap[log.energyLevel]);
-      if (log.digestionStatus && moodEmojiMap[log.digestionStatus]) icons.push(moodEmojiMap[log.digestionStatus]);
-      if (log.sleepEyeStatus && moodEmojiMap[log.sleepEyeStatus]) icons.push(moodEmojiMap[log.sleepEyeStatus]);
-      if (log.note) icons.push('📝');
+      if (log.energyLevel && moodIconMap[log.energyLevel]) icons.push(moodIconMap[log.energyLevel]);
+      if (log.digestionStatus && moodIconMap[log.digestionStatus]) icons.push(moodIconMap[log.digestionStatus]);
+      if (log.sleepEyeStatus && moodIconMap[log.sleepEyeStatus]) icons.push(moodIconMap[log.sleepEyeStatus]);
+      if (log.note) icons.push('<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>');
     }
 
     cellsHtml.push(`
@@ -897,7 +901,7 @@ function renderDailyTrackerPanel() {
     checklistEl.innerHTML = `
       <div style="padding:1rem; background:#f8fafc; border-radius:8px; color:#64748b; font-size:0.84rem; text-align:center;">
         您尚未將任何商品加入「已購買清單」。<br/>
-        可從比價庫或點擊右上角「＋ 新增我手邊已買的保健品」加入。
+        可從比價庫或點擊下方「＋」按鈕新增手邊保健品。
       </div>
     `;
   } else {
@@ -1011,7 +1015,7 @@ function renderPurchasedCabinet() {
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
           <span class="supp-cat-badge">${item.category}</span>
-          <span class="timing-tag" style="margin-left:4px;">⏰ ${item.intake_time || item.recommended_timing}</span>
+          <span class="timing-tag" style="margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${item.intake_time || item.recommended_timing}</span>
           <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${item.brand}｜${item.name}</h4>
         </div>
         <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">移除</button>
@@ -1104,7 +1108,7 @@ window.closeSubscriptionModal = closeSubscriptionModal;
 
 function activateDemoProPlan() {
   closeSubscriptionModal();
-  showToast('✨ 已為您啟用完整消費者訂閱權益（無上限跨品牌去冗省錢精算＋完整服用日曆）');
+  showToast('已啟用消費者訂閱權益（去冗精算＋完整日曆）');
 }
 window.activateDemoProPlan = activateDemoProPlan;
 
@@ -1114,12 +1118,12 @@ async function toggleDemoData() {
       await fetch('/api/demo/clear', { method: 'POST' });
       state.isDemoCleared = true;
       await loadBootstrapData();
-      showToast('🧹 已清空範例清單與日曆！您現在可以自由挑選或新增自己的保健品。');
+      showToast('已清空範例清單與日曆，可自由新增保健品。');
     } else {
       await fetch('/api/demo/restore', { method: 'POST' });
       state.isDemoCleared = false;
       await loadBootstrapData();
-      showToast('🔄 已恢復預設跨品牌示範清單與服用日曆紀錄！');
+      showToast('已恢復預設範例清單與日曆紀錄！');
     }
   } catch (err) {
     console.error(err);

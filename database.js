@@ -10,9 +10,9 @@ const DB_PATH = path.resolve(__dirname, 'data.db');
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
-    console.error('❌ 資料庫連線失敗:', err.message);
+    console.error('[PurePick DB Error] 資料庫連線失敗:', err.message);
   } else {
-    console.log('✅ 保健品比較與管理資料庫已連線:', DB_PATH);
+    console.log('[PurePick DB] 保健品比較與管理資料庫已連線:', DB_PATH);
   }
 });
 

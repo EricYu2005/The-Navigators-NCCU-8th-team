@@ -1,6 +1,6 @@
 /**
  * scripts/start.js
- * CareNav 一鍵啟動啟動器 (Node.js 引擎，保證繁體中文無亂碼)
+ * 好選保健 PurePick - 一鍵啟動精靈 (Node.js + Python 雙引擎檢查，繁體中文無亂碼)
  */
 
 const { execSync, spawn } = require('child_process');
@@ -13,11 +13,12 @@ const EXAMPLE_PATH = path.join(ROOT_DIR, '.env.example');
 const MODULES_PATH = path.join(ROOT_DIR, 'node_modules');
 
 console.clear();
-console.log('====================================================');
-console.log('       🚀 CareNav 智護領航 - 一鍵啟動精靈');
-console.log('====================================================\n');
+console.log('==========================================================');
+console.log('   🌿 好選保健 PurePick - 跨品牌保健品比較與日曆管理平台');
+console.log('   （政大創創入門第八組 The Navigators 一鍵啟動精靈）');
+console.log('==========================================================\n');
 
-// 1. 檢查 .env
+// 1. 檢查 .env 設定檔
 if (!fs.existsSync(ENV_PATH)) {
   if (fs.existsSync(EXAMPLE_PATH)) {
     console.log('⚙️ 偵測到尚未建立本地設定檔，正在從 .env.example 生成 .env ...');
@@ -26,9 +27,9 @@ if (!fs.existsSync(ENV_PATH)) {
   }
 }
 
-// 2. 檢查 node_modules
+// 2. 檢查 node_modules 相依套件
 if (!fs.existsSync(MODULES_PATH)) {
-  console.log('📦 首次執行或缺少相依套件，正在為您自動執行 npm install ...');
+  console.log('📦 首次執行或缺少相依套件，正在自動執行 npm install ...');
   console.log('（首次安裝約需 1 分鐘，請稍候...）\n');
   try {
     execSync('npm install', { cwd: ROOT_DIR, stdio: 'inherit' });
@@ -39,7 +40,17 @@ if (!fs.existsSync(MODULES_PATH)) {
   }
 }
 
-// 3. 自動在瀏覽器開啟網頁 (延遲 1.5 秒)
+// 3. 檢查 Python 分析與爬蟲腳本環境
+try {
+  const pyVer = execSync('python --version', { encoding: 'utf8', stdio: 'pipe' }).trim();
+  console.log(`🐍 偵測到 Python 分析與爬蟲環境：${pyVer}`);
+  console.log('   ├─ 需求與去冗分析器：scripts/supplement_analyzer.py (就緒)');
+  console.log('   └─ 保健品規格爬蟲器：scripts/supplement_crawler.py (就緒)\n');
+} catch (e) {
+  console.log('💡 未偵測到本機 Python 指令，系統將自動以內建等效精算引擎無縫執行。\n');
+}
+
+// 4. 自動在瀏覽器開啟網頁 (延遲 1.5 秒)
 setTimeout(() => {
   try {
     const startCmd = process.platform === 'win32' ? 'start http://localhost:3000' : 'open http://localhost:3000';
@@ -47,13 +58,13 @@ setTimeout(() => {
   } catch (e) {}
 }, 1500);
 
-// 4. 啟動伺服器
-console.log('🌐 正在啟動後端伺服器與 SQLite 資料庫...');
+// 5. 啟動伺服器
+console.log('🌐 正在啟動好選保健 PurePick 伺服器與跨品牌保健品資料庫...');
 console.log('💡 預設瀏覽器將自動開啟： http://localhost:3000');
 console.log('\n【提示】若要停止伺服器，請直接關閉此視窗或按下 Ctrl + C。');
-console.log('====================================================\n');
+console.log('==========================================================\n');
 
 const serverProcess = spawn('node', ['server.js'], { cwd: ROOT_DIR, stdio: 'inherit' });
 serverProcess.on('exit', (code) => {
-  console.log(`\n伺服器已結束 (代碼: ${code})。`);
+  console.log(`\n好選保健 PurePick 伺服器已結束 (代碼: ${code})。`);
 });

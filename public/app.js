@@ -97,9 +97,19 @@ function switchView(viewId) {
   document.querySelectorAll('.view-section').forEach(sec => {
     sec.classList.toggle('active', sec.id === viewId);
   });
-  document.querySelectorAll('.nav-tab, .m-nav-item').forEach(btn => {
+  document.querySelectorAll('.b-tab-item[data-target]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.target === viewId);
   });
+
+  const viewTitles = {
+    'view-finder': '尋找適合您的保健方案',
+    'view-wishlist': '有興趣清單 ＆ 重疊去冗分析',
+    'view-calendar': '已購買保健櫃 ＆ 服用狀態日曆'
+  };
+  const labelEl = document.getElementById('top-current-view-label');
+  if (labelEl && viewTitles[viewId]) {
+    labelEl.textContent = viewTitles[viewId];
+  }
 
   if (viewId === 'view-wishlist') {
     renderWishlistView();
@@ -212,8 +222,8 @@ function renderFinderResult(result) {
 
   const bundleIds = (result.recommendedBundle || []).map(x => x.id);
   const reasonsHtml = (result.matchedReasons || []).map(r => `
-    <div style="margin-top:0.55rem; padding:0.65rem 0.85rem; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; font-size:0.85rem;">
-      <strong style="color:#0284c7;">【${r.category}｜${r.label}】挑選標準：</strong>
+    <div style="margin-top:0.55rem; padding:0.65rem 0.85rem; background:#fffbeb; border-radius:8px; border:1.5px solid #c4b5fd; font-size:0.85rem;">
+      <strong style="color:#7c3aed;">【${r.category}｜${r.label}】挑選標準：</strong>
       <span>${r.buyingAdvice}</span>
     </div>
   `).join('');
@@ -222,7 +232,7 @@ function renderFinderResult(result) {
     const cardsHtml = (group.products || []).slice(0, 3).map(item => renderSupplementCardHtml(item, item.id === group.topPickId)).join('');
     return `
       <div style="margin-top: 1.35rem;">
-        <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: #2e1065; margin-bottom: 0.75rem;">
           📌 【${group.category}】跨品牌效益與每日花費比較
         </h3>
         <div class="catalog-grid">
@@ -338,7 +348,7 @@ function renderSupplementCardHtml(item, isTopPick) {
         <div class="supp-top-row">
           <div>
             <span class="supp-cat-badge">${item.category}</span>
-            ${isTopPick ? '<span class="supp-cat-badge" style="background:#0284c7;color:#fff;margin-left:4px;">★ 預算內首選</span>' : ''}
+            ${isTopPick ? '<span class="supp-cat-badge" style="background:#7c3aed;color:#fff;margin-left:4px;">★ 預算內首選</span>' : ''}
             ${item.is_vegan ? '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">素食</span>' : ''}
           </div>
           <span class="supp-score-badge ${scoreClass}">綜合效益 ${score} 分</span>

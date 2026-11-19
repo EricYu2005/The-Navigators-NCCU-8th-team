@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>好選保健 PurePick｜跨品牌保健食品比較、去冗評估與服用日曆</title>
   <meta name="description" content="跨品牌保健食品成分與每日真實花費比較、重疊去冗分析、以及日曆式服用與身體狀態追蹤平台。" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#fef7dc" />
 
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.0.0" />
+  <link rel="stylesheet" href="style.css?v=3.1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <!-- ==================== 頂部導覽列 (DESKTOP & MOBILE) ==================== -->
+  <!-- ==================== 頂部狀態標題列 (像 LINE App 頂部標題列，精簡不放主功能籤) ==================== -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand-group" onclick="switchView('view-finder')">
@@ -30,35 +30,14 @@
         </div>
         <div class="brand-titles">
           <span class="brand-name">好選保健 PurePick</span>
-          <span class="brand-sub">跨品牌保健品比較・清單管理・服用日曆</span>
+          <span class="brand-sub" id="top-current-view-label">尋找適合您的保健方案</span>
         </div>
       </div>
 
-      <!-- 三大核心功能切換籤 (Desktop) -->
-      <nav class="main-nav-tabs" aria-label="主要功能導覽">
-        <button type="button" class="nav-tab active" data-target="view-finder" onclick="switchView('view-finder')">
-          <span class="tab-icon">🔍</span>
-          <span>1. 尋找保健方案</span>
-        </button>
-        <button type="button" class="nav-tab" data-target="view-wishlist" onclick="switchView('view-wishlist')">
-          <span class="tab-icon">⚖️</span>
-          <span>2. 有興趣清單分析</span>
-          <span class="nav-badge" id="nav-wishlist-count">0</span>
-        </button>
-        <button type="button" class="nav-tab" data-target="view-calendar" onclick="switchView('view-calendar')">
-          <span class="tab-icon">📅</span>
-          <span>3. 已購買與服用日曆</span>
-          <span class="nav-badge badge-teal" id="nav-purchased-count">0</span>
-        </button>
-      </nav>
-
-      <!-- 右側工具與登入區 -->
+      <!-- 右側輕量帳號與工具按鈕 -->
       <div class="header-actions">
         <button type="button" class="btn-install-top" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()">
           📲 安裝
-        </button>
-        <button type="button" class="btn-sub-plan" onclick="openSubscriptionModal()">
-          💎 訂閱方案
         </button>
         <button type="button" class="btn-demo-toggle" id="btn-toggle-demo" onclick="toggleDemoData()" title="清空範例以測試自己的清單，或隨時恢復範例">
           🧹 清空範例
@@ -93,9 +72,6 @@
           <h1>尋找適合您的保健品方案</h1>
           <p>描述您的日常困擾並設定每月預算，我們幫您跨品牌比對成分含量與每日真實花費，找出真正需要且划算的選擇。</p>
         </div>
-        <button type="button" class="btn btn-outline" onclick="openAddSupplementModal()">
-          ＋ 手動新增市售保健品
-        </button>
       </div>
 
       <!-- 互動式需求表單卡片 -->
@@ -250,13 +226,13 @@
         </form>
       </div>
 
-      <!-- 分析結果區塊 (點擊制定方案後展開，預設亦載入示範結果) -->
+      <!-- 分析結果區塊 -->
       <div id="finder-result-area" class="finder-result-area" style="display:none;">
         <!-- 動態注入個人化方案建議與跨品牌推薦比對 -->
       </div>
 
       <!-- 全站跨品牌保健品比價資料庫 -->
-      <div class="card catalog-section-card">
+      <div class="card catalog-section-card" id="catalog-section-card">
         <div class="catalog-header">
           <div>
             <h2>跨品牌保健品透明比價庫</h2>
@@ -339,11 +315,7 @@
           </div>
 
           <div id="wishlist-analysis-container">
-            <!-- 動態渲染：
-                 1. 整體購買建議結論
-                 2. 去冗省錢警示（「不需要買 A，因為已經有 B」＋ 一鍵剔除省錢按鈕）
-                 3. 合併每日營養素劑量檢核表（對照每日建議量與上限 UL）
-                 4. 服用時段衝突與吸收提醒 -->
+            <!-- 動態渲染去冗分析結果 -->
           </div>
         </div>
       </div>
@@ -358,9 +330,6 @@
           <h1>已購買保健櫃 ＆ 服用狀態日曆</h1>
           <p>像記錄生理期日曆一樣，每天輕鬆勾選吃過的保健品並記錄精神、消化與睡眠感受，追蹤保健品吃了一個月後是否真的有感。</p>
         </div>
-        <button type="button" class="btn btn-outline" onclick="openAddSupplementModal('purchased')">
-          ＋ 新增我手邊已買的保健品
-        </button>
       </div>
 
       <!-- 日曆頂部統計指標 -->
@@ -385,7 +354,7 @@
           <div class="calendar-legend">
             <span class="legend-item"><i class="dot dot-full"></i> 當日已全數服用</span>
             <span class="legend-item"><i class="dot dot-partial"></i> 部分服用</span>
-            <span class="legend-item"><i class="dot dot-log"></i> 有記錄身體狀態日誌</span>
+            <span class="legend-item">⚡精神 🌿消化 🌙睡眠 👀晶亮 📝筆記</span>
           </div>
 
           <!-- 星期標頭 -->
@@ -404,7 +373,7 @@
           <div class="daily-header">
             <div>
               <span class="daily-tag">當日服用與身體記錄</span>
-              <h3 id="selected-date-title">2026-11-18 (今天)</h3>
+              <h3 id="selected-date-title">2026-11-19 (今天)</h3>
             </div>
             <span class="daily-progress-badge" id="daily-progress-badge">完成 0 / 0</span>
           </div>
@@ -499,20 +468,46 @@
     </footer>
   </main>
 
-  <!-- ==================== 手機底部快捷導覽列 ==================== -->
-  <nav class="mobile-bottom-nav" aria-label="手機底部導覽">
-    <button type="button" class="m-nav-item active" data-target="view-finder" onclick="switchView('view-finder')">
-      <span class="m-nav-icon">🔍</span>
-      <span>尋找方案</span>
-    </button>
-    <button type="button" class="m-nav-item" data-target="view-wishlist" onclick="switchView('view-wishlist')">
-      <span class="m-nav-icon">⚖️</span>
-      <span>有興趣分析 (<b id="m-wishlist-count">0</b>)</span>
-    </button>
-    <button type="button" class="m-nav-item" data-target="view-calendar" onclick="switchView('view-calendar')">
-      <span class="m-nav-icon">📅</span>
-      <span>服用日曆 (<b id="m-purchased-count">0</b>)</span>
-    </button>
+  <!-- ==================== 像手機 LINE App 一樣的常駐下方功能導覽列 (電腦與手機通用) ==================== -->
+  <nav class="line-style-bottom-bar" aria-label="主功能下方導覽列">
+    <div class="bottom-bar-inner">
+      <button type="button" class="b-tab-item active" data-target="view-finder" onclick="switchView('view-finder')">
+        <div class="b-tab-icon-wrap">
+          <span class="b-tab-icon">🔍</span>
+        </div>
+        <span class="b-tab-label">尋找方案</span>
+      </button>
+
+      <button type="button" class="b-tab-item" data-target="view-wishlist" onclick="switchView('view-wishlist')">
+        <div class="b-tab-icon-wrap">
+          <span class="b-tab-icon">⚖️</span>
+          <span class="b-tab-badge" id="nav-wishlist-count">0</span>
+        </div>
+        <span class="b-tab-label">有興趣分析</span>
+      </button>
+
+      <button type="button" class="b-tab-item" data-target="view-calendar" onclick="switchView('view-calendar')">
+        <div class="b-tab-icon-wrap">
+          <span class="b-tab-icon">📅</span>
+          <span class="b-tab-badge badge-emerald" id="nav-purchased-count">0</span>
+        </div>
+        <span class="b-tab-label">服用日曆</span>
+      </button>
+
+      <button type="button" class="b-tab-item" onclick="openAddSupplementModal()">
+        <div class="b-tab-icon-wrap">
+          <span class="b-tab-icon">➕</span>
+        </div>
+        <span class="b-tab-label">新增保健品</span>
+      </button>
+
+      <button type="button" class="b-tab-item" onclick="openSubscriptionModal()">
+        <div class="b-tab-icon-wrap">
+          <span class="b-tab-icon">💎</span>
+        </div>
+        <span class="b-tab-label">訂閱方案</span>
+      </button>
+    </div>
   </nav>
 
   <!-- ==================== MODAL 1：手動新增市售保健品 ==================== -->
@@ -644,7 +639,7 @@
         <button type="button" class="modal-close" onclick="closeLineLoginModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="margin-bottom: 1rem; color: #475569; font-size: 0.92rem;">
+        <p style="margin-bottom: 1rem; color: #5b21b6; font-size: 0.92rem;">
           登入後可將您的「有興趣清單」、「已購買保健品」與「服用日曆」綁定至您的名稱，方便小組報告展示與跨裝置查看。
         </p>
         <div class="form-group" style="margin-bottom: 1rem;">
@@ -666,6 +661,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.0.0"></script>
+  <script src="app.js?v=3.1.0"></script>
 </body>
 </html>

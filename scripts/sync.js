@@ -1,7 +1,6 @@
 /**
  * scripts/sync.js
- * CareNav 團隊進度同步與機密管理核心 (Node.js 跨平台引擎)
- * 解決 Windows CMD 執行批次檔時長達數十年的 UTF-8 中文指針跳行與亂碼臭蟲
+ * 好選保健 PurePick - 團隊進度同步、保健品資料庫重置與機密管理中心 (sync.cmd)
  */
 
 const readline = require('readline');
@@ -81,6 +80,10 @@ function ask(question) {
   });
 }
 
+function waitKeyPress() {
+  return ask('\n請按 Enter 鍵繼續...');
+}
+
 function showSecretStatus() {
   console.log('----------------------------------------------------------------');
   console.log('🔍 [本機機密設定狀態 (.env)]');
@@ -99,7 +102,8 @@ function showSecretStatus() {
 async function showMainMenu() {
   console.clear();
   console.log('================================================================');
-  console.log('      🔄 CareNav 團隊進度同步與機密安全中心 (sync.cmd)');
+  console.log('   🌿 好選保健 PurePick｜團隊進度同步與雲端管理中心 (sync.cmd)');
+  console.log('   （政大創創入門第八組 The Navigators 跨品牌保健品比較平台）');
   console.log('================================================================\n');
 
   const branch = getCurrentBranch();
@@ -109,13 +113,14 @@ async function showMainMenu() {
   console.log('請選擇要執行的功能：');
   console.log('  [1] 🚀 一鍵全自動同步 (拉取最新進度 + 自動更新套件 + 推送我的成果)');
   console.log('  [2] 📥 僅拉取最新代碼 (Pull：下載組員進度 + 套件同步)');
-  console.log('  [3] 📤 僅推送我的進度 (Push：將本地完成的功能提交至 GitHub)');
+  console.log('  [3] 📤 僅推送我的進度 (Push：將本地修改提交至 GitHub 與 Render)');
   console.log('  [4] 🔐 機密資訊管理中心 (.env 編輯 / 加密匯出 / 解密同步)');
-  console.log('  [5] 🛠️ Git 衝突急救與狀態診斷');
+  console.log('  [5] 💊 重新初始化本地保健品比價資料庫與日曆示範資料');
+  console.log('  [6] 🛠️ Git 衝突急救與狀態診斷');
   console.log('  [0] 離開\n');
   console.log('================================================================');
 
-  const choice = await ask('請輸入選項號碼 (1-5, 0): ');
+  const choice = await ask('請輸入選項號碼 (1-6, 0): ');
 
   switch (choice) {
     case '1':
@@ -131,10 +136,13 @@ async function showMainMenu() {
       await handleSecretsCenter();
       break;
     case '5':
+      await handleResetSupplementDb();
+      break;
+    case '6':
       await handleGitDoctor();
       break;
     case '0':
-      console.log('\n感謝使用 CareNav 團隊同步工具，祝協作順利！👋\n');
+      console.log('\n感謝使用好選保健 PurePick 團隊同步工具，祝專題報告順利！👋\n');
       process.exit(0);
       break;
     default:
@@ -153,7 +161,7 @@ async function handleAutoSync(branch) {
   try {
     runInteractiveCmd(`git pull origin ${branch}`);
   } catch (e) {
-    console.log('⚠️ 拉取可能遇到衝突，建議返回主選單選擇 [5] 衝突急救。');
+    console.log('⚠️ 拉取可能遇到衝突，建議返回主選單選擇 [6] 衝突急救。');
     await waitKeyPress();
     return;
   }
@@ -182,12 +190,11 @@ async function handleAutoSync(branch) {
     return;
   }
 
-  // 確保機密隔離
   runCmd('git add .');
   runCmd('git reset HEAD .env secrets.vault data.db gcp-key.json', { ignoreError: true });
   runCmd(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`);
 
-  console.log(`\n正在推送至 GitHub (${branch})...`);
+  console.log(`\n正在推送至 GitHub (${branch})，Render 將自動觸發雲端部署...`);
   runInteractiveCmd(`git push origin ${branch}`);
 
   console.log('\n🎉 一鍵全自動同步圓滿完成！');
@@ -213,8 +220,8 @@ async function handlePushOnly(branch) {
   }
 
   console.log('異動清單：\n' + status);
-  let commitMsg = await ask('請輸入本次修改說明 (例: 美化指引卡樣式): ');
-  if (!commitMsg) commitMsg = 'chore: 更新專案進度';
+  let commitMsg = await ask('請輸入本次修改說明 (例: 新增跨品牌保健品比價資料與UI調整): ');
+  if (!commitMsg) commitMsg = 'chore: 更新好選保健平台功能與介面';
 
   runCmd('git add .');
   runCmd('git reset HEAD .env secrets.vault data.db gcp-key.json', { ignoreError: true });
@@ -222,7 +229,19 @@ async function handlePushOnly(branch) {
 
   console.log(`\n📤 正在推送至 GitHub (${branch})...`);
   runInteractiveCmd(`git push origin ${branch}`);
-  console.log('\n🎉 您的代碼已成功推送到 GitHub，組員可以同步看見了！');
+  console.log('\n🎉 您的代碼已成功推送到 GitHub，Render 雲端將自動更新部署！');
+  await waitKeyPress();
+}
+
+async function handleResetSupplementDb() {
+  console.log('\n💊 正在重新載入 24 款跨品牌保健品資料、有興趣清單與服用日曆預設值...');
+  try {
+    const { restoreDemoData } = require('../database');
+    await restoreDemoData();
+    console.log('✅ 本地保健品比價資料庫 (data.db) 已成功重置為最新完整狀態！');
+  } catch (err) {
+    console.error('❌ 重置資料庫失敗:', err.message);
+  }
   await waitKeyPress();
 }
 
@@ -230,10 +249,10 @@ async function handleSecretsCenter() {
   while (true) {
     console.clear();
     console.log('================================================================');
-    console.log('       🔐 機密資訊管理中心 (儲存、同步與加密保護)');
+    console.log('       🔐 好選保健 PurePick｜機密資訊管理中心 (.env)');
     console.log('================================================================\n');
     console.log('什麼是機密資訊？');
-    console.log('• 本地的 .env 檔案（包含 Ollama 設定、API Key、資料庫密碼等）');
+    console.log('• 本地的 .env 檔案（包含 Gemini / Groq API Key、LINE Login 憑證等）');
     console.log('• 這些資訊絕對不能直接推送到 GitHub 公開！');
     console.log('• 透過本工具，您可以將機密安全加密，生成密文在 LINE/Discord 分享！\n');
 
@@ -252,7 +271,7 @@ async function handleSecretsCenter() {
         if (fs.existsSync(EXAMPLE_PATH)) {
           fs.copyFileSync(EXAMPLE_PATH, ENV_PATH);
         } else {
-          fs.writeFileSync(ENV_PATH, 'PORT=3000\nNODE_ENV=development\nOLLAMA_BASE_URL=http://localhost:11434\nOLLAMA_MODEL=llama3.2\n', 'utf8');
+          fs.writeFileSync(ENV_PATH, 'PORT=3000\nNODE_ENV=development\nGEMINI_API_KEY=\nLINE_CHANNEL_ID=\nLINE_CHANNEL_SECRET=\n', 'utf8');
         }
       }
       console.log('\n📝 正在為您開啟 .env 設定檔...');
@@ -277,10 +296,7 @@ async function handleSecretsCenter() {
       console.log('🔐 團隊機密安全加密字串 (AES-256 加密)：');
       console.log(encrypted);
       console.log('===============================================================');
-      console.log('✅ 已成功將本機 .env 加密打包為安全密文，並存於 secrets.vault！');
-      console.log('💡 團隊同步方式：');
-      console.log('   將上方這段密文直接傳在 LINE/Discord 群組，組員透過 sync.cmd');
-      console.log('   選擇匯入並輸入同一組密碼，即可一秒同步所有機密設定！\n');
+      console.log('✅ 已成功將本機 .env 加密打包為安全密文，並存於 secrets.vault！\n');
       await waitKeyPress();
     } else if (subChoice === '3') {
       const pwd = await ask('\n請輸入團隊通關密碼: ');
@@ -348,21 +364,4 @@ async function handleGitDoctor() {
   await waitKeyPress();
 }
 
-function waitKeyPress() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  return new Promise(resolve => {
-    rl.question('\n按 Enter 鍵繼續...', () => {
-      rl.close();
-      resolve();
-    });
-  });
-}
-
-// 啟動主流程
-showMainMenu().catch(err => {
-  console.error('\n程式發生未預期錯誤:', err);
-  process.exit(1);
-});
+showMainMenu();

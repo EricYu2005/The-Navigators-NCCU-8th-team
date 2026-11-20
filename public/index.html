@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.9.6" />
+  <link rel="stylesheet" href="style.css?v=3.9.7" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -22,10 +22,12 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="brand-group" onclick="switchView('view-finder')">
-        <div class="brand-logo-box">
+        <div class="brand-logo-box" title="好選保健 PurePick">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- PurePick 營養膠囊與智慧精選打勾 -->
             <path d="M10.5 20.5 3.5 13.5a4.95 4.95 0 1 1 7-7l7 7a4.95 4.95 0 1 1-7 7Z"/>
-            <path d="m8.5 8.5 7 7"/>
+            <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/>
+            <path d="m15 11 2.5 2.5 4.5-4.5" stroke="#34d399" stroke-width="2.4"/>
           </svg>
         </div>
         <div class="brand-titles">
@@ -755,7 +757,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 3：潛在客戶留名單與使用回饋 (Lead Capture / 反饋解鎖 Pro) ==================== -->
+  <!-- ==================== MODAL 3：潛在客戶留名單與使用回饋 (Lead Capture / 反饋解鎖 Pro - LINE 實名專屬) ==================== -->
   <div id="lead-capture-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -765,10 +767,44 @@
         </div>
         <button type="button" class="modal-close" onclick="closeLeadModal()">&times;</button>
       </div>
-      <form id="lead-capture-form" onsubmit="handleLeadSubmit(event)">
+
+      <!-- 未登入 LINE：實名驗證防灌水門檻 (Gate) -->
+      <div id="lead-auth-gate" style="display:none; padding:1.5rem 1.25rem; text-align:center;">
+        <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.75rem; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:999px; color:#065f46; font-size:0.78rem; font-weight:800; margin-bottom:0.75rem;">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#059669;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>評審實名防灌水機制：LINE 實名登入專屬</span>
+        </div>
+        <h4 style="font-size:1.1rem; color:#1e1b4b; margin-bottom:0.55rem; font-weight:800;">請先以 LINE 帳號登入</h4>
+        <p style="font-size:0.86rem; color:#475569; line-height:1.55; max-width:440px; margin:0 auto 1.35rem auto;">
+          為確保創業 MVP 數據具備學術嚴謹度，<strong>杜絕組員自我灌水或匿名重複洗榜</strong>，本平台回饋問卷與 Pro 資格開通<strong>僅限真實 LINE 實名登入會員專屬</strong>。登入後即可留下真實回饋並即刻開通 Pro 權限！
+        </p>
+        <div style="display:flex; flex-direction:column; gap:0.6rem; max-width:320px; margin:0 auto;">
+          <button type="button" class="btn btn-primary btn-block" style="background:#06c755; border-color:#06c755; display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; font-weight:800; padding:0.75rem 1rem;" onclick="startLineLogin()">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="stroke:#fff;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>使用 LINE 帳號一鍵安全登入</span>
+          </button>
+          <button type="button" class="btn btn-outline btn-sm btn-block" onclick="loginWithDemoLineUser()" style="color:#64748b; font-size:0.78rem;">
+            （課堂展示快速通道）以 LINE 實名測試帳號登入
+          </button>
+        </div>
+      </div>
+
+      <!-- 已登入 LINE：顯示實名會員問卷表單 -->
+      <form id="lead-capture-form" onsubmit="handleLeadSubmit(event)" style="display:none;">
         <input type="hidden" id="lead-source" value="general" />
         <div class="modal-body">
-          <p style="margin-bottom: 1rem; color: #5b21b6; font-size: 0.88rem; line-height: 1.45;">
+          <!-- LINE 實名驗證標章橫條 -->
+          <div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:1px solid #bbf7d0; padding:0.55rem 0.85rem; border-radius:8px; margin-bottom:1rem; flex-wrap:wrap; gap:0.35rem;">
+            <div style="display:flex; align-items:center; gap:0.45rem;">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#16a34a;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+              <span style="font-size:0.83rem; color:#166534;">
+                已驗證 LINE 實名會員：<strong id="lead-verified-line-name">LINE 會員</strong>
+              </span>
+            </div>
+            <span style="font-size:0.72rem; color:#15803d; background:#dcfce7; padding:0.15rem 0.5rem; border-radius:999px; font-weight:800;">官方實名認證防灌水</span>
+          </div>
+
+          <p style="margin-bottom: 1rem; color: #5b21b6; font-size: 0.86rem; line-height: 1.45;">
             由政大創創第八組建立的中立研究模型，<strong>不推銷特定品牌、完全站在消費者立場</strong>。留下您的稱呼與信箱並為使用流程評分，系統將立即為您免費開通 Pro 完整去冗精算與身體動態日誌（原價 NT$ 99 / 月）！
           </p>
 
@@ -824,6 +860,8 @@
           <button type="submit" class="btn btn-primary" id="btn-submit-lead">送出回饋並解鎖 Pro 權限</button>
         </div>
       </form>
+    </div>
+  </div>
     </div>
   </div>
 
@@ -914,6 +952,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.9.6"></script>
+  <script src="app.js?v=3.9.7"></script>
 </body>
 </html>

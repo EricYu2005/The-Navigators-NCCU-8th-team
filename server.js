@@ -494,14 +494,23 @@ app.get('/auth/line/callback', async (req, res) => {
 });
 
 // ========================================================
-// 8. 潛在消費者名單登記與流程順暢回饋 (Lead Capture & Feedback)
+// 8. 潛在消費者名單登記與流程順暢回饋 (Lead Capture & Feedback - LINE 實名專屬)
 // ========================================================
 app.post('/api/leads', async (req, res) => {
   try {
-    const { name, age, email, contact_value, satisfaction_score, note, source } = req.body;
+    const { name, age, email, contact_value, satisfaction_score, note, source, line_user_id } = req.body;
     const finalName = (name || '').trim();
     const finalAge = (age || '').trim();
     const finalEmail = (email || contact_value || '').trim();
+    const finalLineUserId = (line_user_id || '').trim();
+
+    // 嚴格評審防灌水機制：強制驗證 LINE 實名帳號
+    if (!finalLineUserId) {
+      return res.status(401).json({
+        success: false,
+        message: '為確保名單真實性與杜絕灌水，請先以 LINE 帳號登入後再進行登記'
+      });
+    }
 
     if (!finalName) {
       return res.status(400).json({ success: false, message: '請填寫您的稱呼或姓名' });
@@ -513,12 +522,13 @@ app.post('/api/leads', async (req, res) => {
     const score = Math.max(1, Math.min(5, parseInt(satisfaction_score, 10) || 5));
 
     const result = await dbQuery.run(`
-      INSERT INTO leads (name, age, contact_type, contact_value, health_goal, monthly_budget, satisfaction_score, note, source)
-      VALUES (?, ?, 'email', ?, '', '', ?, ?, ?)
+      INSERT INTO leads (name, age, contact_type, contact_value, line_user_id, health_goal, monthly_budget, satisfaction_score, note, source)
+      VALUES (?, ?, 'email', ?, ?, '', '', ?, ?, ?)
     `, [
       finalName,
       finalAge,
       finalEmail,
+      finalLineUserId,
       score,
       note ? note.trim() : '',
       source || 'web_feedback_pro'

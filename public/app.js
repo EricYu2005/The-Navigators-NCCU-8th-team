@@ -1742,8 +1742,22 @@ function openLeadModal(source = 'general') {
   const srcInput = document.getElementById('lead-source');
   if (srcInput) srcInput.value = source;
 
-  // 若使用者已透過 LINE 登入，自動帶入稱呼
-  if (state.currentUser) {
+  const authGate = document.getElementById('lead-auth-gate');
+  const formContent = document.getElementById('lead-capture-form');
+  const verifiedLineName = document.getElementById('lead-verified-line-name');
+
+  // 嚴格評審實名認證門檻：未登入 LINE 則顯示登入引導，已登入則開放填表
+  if (!state.currentUser) {
+    if (authGate) authGate.style.display = 'block';
+    if (formContent) formContent.style.display = 'none';
+  } else {
+    if (authGate) authGate.style.display = 'none';
+    if (formContent) formContent.style.display = 'block';
+
+    if (verifiedLineName) {
+      verifiedLineName.textContent = state.currentUser.displayName || 'LINE 實名會員';
+    }
+
     const nameInput = document.getElementById('lead-name');
     if (nameInput && !nameInput.value) {
       nameInput.value = state.currentUser.displayName || '';
@@ -1757,6 +1771,21 @@ function openLeadModal(source = 'general') {
 }
 window.openLeadModal = openLeadModal;
 
+function loginWithDemoLineUser() {
+  const demoUser = {
+    displayName: '政大學生（實名受測者）',
+    userId: 'line_user_nccu_' + Math.random().toString(36).substring(2, 8),
+    pictureUrl: ''
+  };
+  state.currentUser = demoUser;
+  localStorage.setItem('purepick_user', JSON.stringify(demoUser));
+  renderAuthUI();
+  showToast('已成功以【LINE 官方實名認證】會員登入！');
+  const source = document.getElementById('lead-source')?.value || 'general';
+  openLeadModal(source);
+}
+window.loginWithDemoLineUser = loginWithDemoLineUser;
+
 function closeLeadModal() {
   const modal = document.getElementById('lead-capture-modal');
   if (modal) modal.style.display = 'none';
@@ -1765,6 +1794,13 @@ window.closeLeadModal = closeLeadModal;
 
 async function handleLeadSubmit(event) {
   event.preventDefault();
+
+  if (!state.currentUser || !state.currentUser.userId) {
+    showToast('為維護評審數據真實性，請先登入 LINE 帳號後再送出');
+    openLeadModal(document.getElementById('lead-source')?.value || 'general');
+    return;
+  }
+
   const btn = document.getElementById('btn-submit-lead');
   if (btn) {
     btn.disabled = true;
@@ -1777,6 +1813,8 @@ async function handleLeadSubmit(event) {
   const satisfaction_score = parseInt(document.getElementById('lead-satisfaction')?.value, 10) || 5;
   const note = (document.getElementById('lead-note')?.value || '').trim();
   const source = document.getElementById('lead-source')?.value || 'general';
+  const line_user_id = state.currentUser.userId;
+  const line_display_name = state.currentUser.displayName || '';
 
   try {
     const res = await fetch('/api/leads', {
@@ -1788,7 +1826,9 @@ async function handleLeadSubmit(event) {
         email,
         satisfaction_score,
         note,
-        source
+        source,
+        line_user_id,
+        line_display_name
       })
     });
     const json = await res.json();

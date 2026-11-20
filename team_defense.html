@@ -381,9 +381,9 @@
         <div class="qa-a">
           <p>我們的留名單流程設計追求<strong>「極致零摩擦」</strong>：</p>
           <ol class="step-list">
-            <li><strong>觸發點：</strong> 使用者在首頁點「索取報告」、在去冗頁點「解鎖 Pro」、在日曆點「解鎖日誌」、或在方案彈窗點「登記回饋開通」。</li>
-            <li><strong>自動預填與簡短問卷：</strong> 若使用者先前有登入，系統會自動預填稱呼；問卷僅需填寫稱呼、年齡、電子信箱、評選流程順暢度（1~5 分）及選填諮詢問題，使用者只需 5 秒即可完成，完全留在站內無外部跳轉！</li>
-            <li><strong>存入資料庫並即刻開通：</strong> 點擊「送出回饋」後，資料透過 API 寫入後台 SQLite 資料庫的 <code>leads</code> 表，前端立即將用戶提升為 Pro 權限並解除所有去冗精算遮罩與身體動態日誌！</li>
+            <li><strong>觸發點與 LINE 實名認證門檻：</strong> 使用者在首頁點「索取報告」、在去冗頁點「解鎖 Pro」、在日曆點「解鎖日誌」、或在方案彈窗點「登記回饋開通」時，系統強制檢驗 LINE 實名登入狀態；未登入者必須透過官方 LINE OAuth 登入以杜絕匿名洗榜與組員自我灌水。</li>
+            <li><strong>自動預填與簡短問卷：</strong> 已登入 LINE 的使用者，系統會自動帶入 LINE 實名稱呼；問卷僅需確認稱呼、年齡、電子信箱、評選流程順暢度（1~5 分）及選填諮詢問題，使用者只需 5 秒即可完成，完全留在站內無外部跳轉！</li>
+            <li><strong>存入資料庫並即刻開通：</strong> 點擊「送出回饋」後，資料透過 API 寫入後台 SQLite 資料庫的 <code>leads</code> 表並綁定 LINE UID，前端立即將用戶提升為 Pro 權限並解除所有去冗精算遮罩與身體動態日誌！</li>
           </ol>
         </div>
       </div>
@@ -405,7 +405,17 @@
             2. 在主選單中輸入號碼 <strong><code>7</code></strong>（匯出名單為 Excel 試算表檔案）。<br />
             3. 系統會自動生成帶有 UTF-8 BOM 的標準 Excel 檔案（<code>PurePick_消費者登記名單_YYYY-MM-DD.csv</code>），並自動為您在 Excel 中彈出開啟，<strong>繁體中文 100% 絕無亂碼</strong>！
           </div>
-          <p>匯出的 Excel 欄位完整包含：<strong>登記序號、登記時間、消費者稱呼、年齡、電子信箱、流程順暢度評分 (1~5分)、來源管道標籤、諮詢問題與回饋建議</strong>。</p>
+          <p>匯出的 Excel 欄位完整包含：<strong>登記序號、登記時間、消費者稱呼、LINE實名驗證UID、年齡、電子信箱、流程順暢度評分 (1~5分)、來源管道標籤、諮詢問題與回饋建議</strong>。</p>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q4：評審質疑名單會不會是你們組員自己隨便在網頁上填寫灌水的？</div>
+        <div class="qa-a">
+          <div class="pitch-script">
+            <strong>回答關鍵：</strong><br />
+            「報告評審，我們在系統底層架構上設計了 <strong>LINE 官方 OAuth 2.0 實名認證門檻</strong>。所有留下名單與解鎖 Pro 的受測者，後台 API 強制驗證其真實 LINE User ID（UID）與實名授權。前端未登入 LINE 者無法送出名單；後台資料庫與匯出的 Excel 表格中均詳實記錄了對應的真實 LINE UID。這從技術層面徹底杜絕匿名刷榜與組員自我灌水作弊，保證名單 100% 來自真實獨立使用者！」
+          </div>
         </div>
       </div>
     </section>

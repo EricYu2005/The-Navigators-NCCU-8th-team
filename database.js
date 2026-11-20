@@ -664,6 +664,7 @@ function initDatabase() {
         age TEXT DEFAULT '',
         contact_type TEXT DEFAULT 'email', -- 'line' | 'email' | 'phone'
         contact_value TEXT NOT NULL,
+        line_user_id TEXT DEFAULT '',
         health_goal TEXT DEFAULT '',
         monthly_budget TEXT DEFAULT '',
         satisfaction_score INTEGER DEFAULT 5, -- 流程順暢度 1~5 分
@@ -672,9 +673,10 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `, () => {
-      // 確保現有資料庫亦具備 satisfaction_score 與 age 欄位
+      // 確保現有資料庫亦具備 satisfaction_score, age, line_user_id 欄位
       db.run('ALTER TABLE leads ADD COLUMN satisfaction_score INTEGER DEFAULT 5', () => {});
       db.run('ALTER TABLE leads ADD COLUMN age TEXT DEFAULT ""', () => {});
+      db.run('ALTER TABLE leads ADD COLUMN line_user_id TEXT DEFAULT ""', () => {});
       seedSupplementCatalog();
     });
   });

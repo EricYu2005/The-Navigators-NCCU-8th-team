@@ -985,9 +985,29 @@ function renderDailyTrackerPanel() {
   const takenSet = new Set((log.takenIds || []).map(Number));
   const totalCount = state.purchased.length;
   const doneCount = state.purchased.filter(p => takenSet.has(Number(p.id))).length;
+  const isSick = !!log.isSickMode;
+
+  const sickBar = document.getElementById('sick-mode-bar');
+  const sickBtnText = document.getElementById('sick-mode-btn-text');
+  if (sickBar) {
+    sickBar.classList.toggle('active', isSick);
+  }
+  if (sickBtnText) {
+    sickBtnText.textContent = isSick ? '已暫停 (休養中)' : '啟動暫停';
+  }
 
   if (progressBadge) {
-    progressBadge.textContent = `已吃 ${doneCount} / ${totalCount} 款`;
+    if (isSick) {
+      progressBadge.textContent = '生病休養中（暫停服用）';
+      progressBadge.style.background = '#fef3c7';
+      progressBadge.style.color = '#b45309';
+      progressBadge.style.borderColor = '#fde68a';
+    } else {
+      progressBadge.textContent = `已吃 ${doneCount} / ${totalCount} 款`;
+      progressBadge.style.background = '';
+      progressBadge.style.color = '';
+      progressBadge.style.borderColor = '';
+    }
   }
 
   if (state.purchased.length === 0) {
@@ -995,6 +1015,13 @@ function renderDailyTrackerPanel() {
       <div style="padding:1rem; background:#f8fafc; border-radius:8px; color:#64748b; font-size:0.84rem; text-align:center;">
         您尚未將任何商品加入「已購買清單」。<br/>
         可從比價庫或點擊下方「＋」按鈕新增手邊保健品。
+      </div>
+    `;
+  } else if (isSick) {
+    checklistEl.innerHTML = `
+      <div style="padding:0.9rem 1rem; background:#fffbeb; border:1.5px solid #fde68a; border-radius:8px; color:#92400e; font-size:0.84rem; line-height:1.45;">
+        <strong>生病休養防護中：</strong><br />
+        今日已為您暫停所有保健品提醒。重感冒或正服用感冒西藥期間，暫停口服補劑有助減輕肝腎代謝排泄負擔並杜絕潛在藥物拮抗。請遵照醫師處方多溫水休息！
       </div>
     `;
   } else {
@@ -1032,6 +1059,43 @@ function renderDailyTrackerPanel() {
   if (noteInput) {
     noteInput.value = log.note || '';
   }
+
+  // 動態健康反饋推薦檢查
+  const feedbackCard = document.getElementById('dynamic-health-feedback');
+  const fbTitle = document.getElementById('feedback-title');
+  const fbDesc = document.getElementById('feedback-desc');
+
+  if (feedbackCard && fbTitle && fbDesc) {
+    if (isSick) {
+      feedbackCard.style.display = 'block';
+      fbTitle.textContent = '感冒康復期之動態打底建議';
+      fbDesc.textContent = '偵測到今日記錄「重感冒/生病休養」。休養期間請多喝水休息；康復後建議前往尋找頁面重新比對高生物利用度維生素 C 與優質維生素 D3 方案以打底保護力！';
+      window.__activeFeedbackGoal__ = '全方位綜合';
+      window.__activeFeedbackText__ = '近期有重感冒休養紀錄，想尋求康復後能鞏固防護力、好吸收且不與常備品重複的溫和打底方案。';
+    } else if (log.sleepEyeStatus === '眼睛乾酸') {
+      feedbackCard.style.display = 'block';
+      fbTitle.textContent = '晶亮疲勞警訊：動態調整護眼配方';
+      fbDesc.textContent = '偵測到今日記錄「眼睛乾酸」。您目前的保健品組合可能缺乏足量游離型葉黃素 (10mg) 或高濃度花青素，建議重新評估抗藍光晶亮配比！';
+      window.__activeFeedbackGoal__ = '晶亮護眼';
+      window.__activeFeedbackText__ = '近期日誌記錄眼睛頻繁乾澀酸疲，希望比對高濃度游離型葉黃素、玉米黃素與花青素組合，並檢查是否與現有維他命重複。';
+    } else if (log.energyLevel === '疲倦想睡') {
+      feedbackCard.style.display = 'block';
+      fbTitle.textContent = '體力透支警訊：動態補給評估';
+      fbDesc.textContent = '偵測到今日記錄「疲倦想睡」。建議檢視是否需要補充高單位緩釋型 B 群或牛磺酸，並透過去冗引擎避免與綜合維生素重複購買。';
+      window.__activeFeedbackGoal__ = '精神體力';
+      window.__activeFeedbackText__ = '近期日誌記錄常態疲倦想睡、工作壓力大，想尋找實惠長效的緩釋 B 群或體力補給，並避免重複過量。';
+    } else if (log.digestionStatus === '排便不順' || log.digestionStatus === '稍微脹氣') {
+      feedbackCard.style.display = 'block';
+      fbTitle.textContent = '消化順暢度提醒：益生菌活菌數檢視';
+      fbDesc.textContent = '偵測到今日記錄「消化脹氣/排便不順」。建議重新評估具有耐酸專利且菌數達 300 億以上的複合益生菌配方！';
+      window.__activeFeedbackGoal__ = '消化排便';
+      window.__activeFeedbackText__ = '近期日誌記錄排便不順與消化脹氣，想尋求真正有包埋專利、足量百億菌株且價格實惠的益生菌方案。';
+    } else {
+      feedbackCard.style.display = 'none';
+      window.__activeFeedbackGoal__ = null;
+      window.__activeFeedbackText__ = null;
+    }
+  }
 }
 
 async function toggleSupplementTaken(supplementId, isChecked) {
@@ -1053,6 +1117,52 @@ async function checkAllTodaySupplements() {
   await persistCalendarLog(log, false);
 }
 window.checkAllTodaySupplements = checkAllTodaySupplements;
+
+async function toggleSickMode() {
+  const log = getOrCreateSelectedDateLog();
+  log.isSickMode = !log.isSickMode;
+  if (log.isSickMode) {
+    log.takenIds = [];
+  }
+  await persistCalendarLog(log, false);
+  if (log.isSickMode) {
+    showToast('已啟動生病休養模式：已暫停今日保健品提醒！');
+  } else {
+    showToast('已關閉生病休養模式，恢復正常服用排程！');
+  }
+}
+window.toggleSickMode = toggleSickMode;
+
+function applyHealthFeedbackToFinder() {
+  const goal = window.__activeFeedbackGoal__ || '晶亮護眼';
+  const customText = window.__activeFeedbackText__ || '';
+
+  // 切換至尋找分頁
+  switchView('view-finder');
+
+  // 自動帶入需求
+  const textInput = document.getElementById('user-free-text');
+  if (textInput && customText) {
+    textInput.value = customText;
+  }
+
+  // 點選對應的快速標籤
+  const quickTags = document.querySelectorAll('.quick-tag');
+  quickTags.forEach(t => {
+    if (t.dataset.val === goal) {
+      t.classList.add('active');
+    }
+  });
+
+  // 平滑滾動至尋找表單
+  const formCard = document.querySelector('.finder-form-card');
+  if (formCard) {
+    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  showToast(`已將健康日誌狀態反饋至尋找表單（目標：${goal}）！`);
+}
+window.applyHealthFeedbackToFinder = applyHealthFeedbackToFinder;
 
 async function selectDailyMood(field, value) {
   const log = getOrCreateSelectedDateLog();

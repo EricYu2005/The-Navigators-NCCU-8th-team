@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.8.0" />
+  <link rel="stylesheet" href="style.css?v=3.9.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -388,6 +388,20 @@
             <span class="daily-progress-badge" id="daily-progress-badge">完成 0 / 0</span>
           </div>
 
+          <!-- 生病休養 / 重感冒暫停服用模式 -->
+          <div class="sick-mode-bar" id="sick-mode-bar">
+            <div class="sick-mode-info">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div>
+                <strong>生病休養 / 重感冒暫停服用</strong>
+                <span class="sick-mode-desc">若今日重感冒、發燒或服用感冒西藥，建議暫停保健品以減輕代謝負擔</span>
+              </div>
+            </div>
+            <button type="button" class="btn-toggle-sick" id="btn-toggle-sick" onclick="toggleSickMode()">
+              <span id="sick-mode-btn-text">啟動暫停</span>
+            </button>
+          </div>
+
           <!-- 1. 當日該吃的已購買保健品打卡清單 -->
           <div class="daily-section">
             <div class="daily-sec-head">
@@ -465,6 +479,21 @@
               ></textarea>
               <button type="button" class="btn btn-primary btn-block" onclick="saveDailyCalendarLog()">
                 儲存當日紀錄
+              </button>
+            </div>
+
+            <!-- 動態健康狀況反饋迴圈 (Dynamic Health Feedback) -->
+            <div class="dynamic-feedback-card" id="dynamic-health-feedback" style="display:none;">
+              <div class="feedback-badge">
+                <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>動態健康反饋機制</span>
+              </div>
+              <h4 id="feedback-title" style="margin:0.4rem 0 0.25rem 0; font-size:0.92rem; color:#1e1b4b;">根據近期健康紀錄建議</h4>
+              <p id="feedback-desc" style="font-size:0.8rem; color:#475569; margin:0 0 0.65rem 0; line-height:1.45;">
+                偵測到您近期頻繁記錄「眼睛乾酸」與「精神疲倦」，目前保健品組合可能缺乏足量晶亮或B群防護！
+              </p>
+              <button type="button" class="btn btn-primary btn-sm btn-block" onclick="applyHealthFeedbackToFinder()">
+                帶入身體現況至「尋找」重新評估配方
               </button>
             </div>
           </div>
@@ -850,6 +879,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.8.0"></script>
+  <script src="app.js?v=3.9.0"></script>
 </body>
 </html>

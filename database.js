@@ -661,6 +661,7 @@ function initDatabase() {
       CREATE TABLE IF NOT EXISTS leads (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
+        age TEXT DEFAULT '',
         contact_type TEXT DEFAULT 'email', -- 'line' | 'email' | 'phone'
         contact_value TEXT NOT NULL,
         health_goal TEXT DEFAULT '',
@@ -671,8 +672,9 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `, () => {
-      // 確保現有資料庫亦具備 satisfaction_score 欄位
+      // 確保現有資料庫亦具備 satisfaction_score 與 age 欄位
       db.run('ALTER TABLE leads ADD COLUMN satisfaction_score INTEGER DEFAULT 5', () => {});
+      db.run('ALTER TABLE leads ADD COLUMN age TEXT DEFAULT ""', () => {});
       seedSupplementCatalog();
     });
   });

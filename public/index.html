@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.9.5" />
+  <link rel="stylesheet" href="style.css?v=3.9.6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -778,9 +778,21 @@
               <input type="text" id="lead-name" class="form-input" placeholder="例如：陳同學、王小姐、Alex" required />
             </div>
             <div class="form-group">
-              <label>電子信箱 (Email) *</label>
-              <input type="email" id="lead-email" class="form-input" placeholder="例如：student@nccu.edu.tw" required />
+              <label>年齡區間 *</label>
+              <select id="lead-age" class="form-select">
+                <option value="18~24歲" selected>18 ~ 24 歲（大學生 / 研究所）</option>
+                <option value="25~34歲">25 ~ 34 歲（職場新手 / 輕熟族）</option>
+                <option value="35~49歲">35 ~ 49 歲（資深中堅 / 熟齡族）</option>
+                <option value="50~64歲">50 ~ 64 歲（樂齡活力族）</option>
+                <option value="65歲以上">65 歲以上（銀髮長青族）</option>
+                <option value="18歲以下">18 歲以下</option>
+              </select>
             </div>
+          </div>
+
+          <div class="form-group">
+            <label>電子信箱 (Email) *</label>
+            <input type="email" id="lead-email" class="form-input" placeholder="例如：student@nccu.edu.tw" required />
           </div>
 
           <div class="form-group">
@@ -902,6 +914,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.9.5"></script>
+  <script src="app.js?v=3.9.6"></script>
 </body>
 </html>

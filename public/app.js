@@ -1772,6 +1772,7 @@ async function handleLeadSubmit(event) {
   }
 
   const name = (document.getElementById('lead-name')?.value || '').trim();
+  const age = document.getElementById('lead-age')?.value || '';
   const email = (document.getElementById('lead-email')?.value || '').trim();
   const satisfaction_score = parseInt(document.getElementById('lead-satisfaction')?.value, 10) || 5;
   const note = (document.getElementById('lead-note')?.value || '').trim();
@@ -1783,6 +1784,7 @@ async function handleLeadSubmit(event) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
+        age,
         email,
         satisfaction_score,
         note,

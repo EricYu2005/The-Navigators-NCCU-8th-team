@@ -498,8 +498,9 @@ app.get('/auth/line/callback', async (req, res) => {
 // ========================================================
 app.post('/api/leads', async (req, res) => {
   try {
-    const { name, email, contact_value, satisfaction_score, note, source } = req.body;
+    const { name, age, email, contact_value, satisfaction_score, note, source } = req.body;
     const finalName = (name || '').trim();
+    const finalAge = (age || '').trim();
     const finalEmail = (email || contact_value || '').trim();
 
     if (!finalName) {
@@ -512,10 +513,11 @@ app.post('/api/leads', async (req, res) => {
     const score = Math.max(1, Math.min(5, parseInt(satisfaction_score, 10) || 5));
 
     const result = await dbQuery.run(`
-      INSERT INTO leads (name, contact_type, contact_value, health_goal, monthly_budget, satisfaction_score, note, source)
-      VALUES (?, 'email', ?, '', '', ?, ?, ?)
+      INSERT INTO leads (name, age, contact_type, contact_value, health_goal, monthly_budget, satisfaction_score, note, source)
+      VALUES (?, ?, 'email', ?, '', '', ?, ?, ?)
     `, [
       finalName,
+      finalAge,
       finalEmail,
       score,
       note ? note.trim() : '',

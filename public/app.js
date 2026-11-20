@@ -422,8 +422,9 @@ function renderSupplementCardHtml(item, isTopPick) {
           type="button"
           class="btn btn-sm ${inPurchased ? 'btn-teal' : 'btn-outline'}"
           onclick="toggleUserListItem(${item.id}, 'purchased')"
+          title="加入已購買服用日曆櫃"
         >
-          ${inPurchased ? '已在日曆' : '加入日曆'}
+          ${inPurchased ? '已在日曆櫃' : '已在外部購買（加入日曆）'}
         </button>
       </div>
     </div>
@@ -612,7 +613,7 @@ function renderWishlistView() {
           </div>
           <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.65rem;">
             <button type="button" class="btn btn-sm btn-outline" onclick="moveWishlistToPurchased(${item.id})">
-              轉為已購 (加入日曆)
+              已在外部購買（轉入日曆）
             </button>
             <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'wishlist')">
               剔除
@@ -806,6 +807,27 @@ function renderWeeklySummary() {
   const container = document.getElementById('weekly-summary-body');
   const dateRangeEl = document.getElementById('weekly-date-range');
   if (!container) return;
+
+  if (!state.isPro) {
+    if (dateRangeEl) {
+      dateRangeEl.textContent = 'Pro 專屬體感大數據診斷';
+    }
+    container.innerHTML = `
+      <div style="padding:1.25rem; text-align:center; background:#faf5ff; border:1.5px dashed #c084fc; border-radius:10px;">
+        <div style="display:inline-flex; align-items:center; gap:0.4rem; color:#6b21a8; font-weight:800; font-size:0.95rem; margin-bottom:0.35rem;">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>每週身體健康總結與 1-to-1 配方升級建議（Pro 專屬）</span>
+        </div>
+        <p style="font-size:0.83rem; color:#475569; max-width:540px; margin:0 auto 0.75rem auto; line-height:1.45;">
+          系統會根據您過去 7 天的身體狀態日誌（如眼乾、疲勞、排便脹氣頻率），自動進行體感痛點複盤，並推薦同品類性價比更高的進化商品！
+        </p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('weekly_summary_lock')">
+          填寫簡短回饋，免費開通 Pro 權限 (NT$ 99 / 月)
+        </button>
+      </div>
+    `;
+    return;
+  }
 
   // 計算過去 7 天的日期陣列
   const today = new Date();
@@ -1161,6 +1183,18 @@ function renderDailyTrackerPanel() {
   const noteInput = document.getElementById('daily-note-input');
   if (!dateTitle || !checklistEl) return;
 
+  const proTeaser = document.getElementById('pro-locked-log-teaser');
+  const proControls = document.getElementById('pro-log-controls');
+  if (proTeaser && proControls) {
+    if (state.isPro) {
+      proTeaser.style.display = 'none';
+      proControls.style.display = 'block';
+    } else {
+      proTeaser.style.display = 'block';
+      proControls.style.display = 'none';
+    }
+  }
+
   const todayStr = formatDateStr(new Date());
   const dateStr = state.selectedDateStr;
   dateTitle.textContent = dateStr === todayStr ? `${dateStr}（今天）` : dateStr;
@@ -1497,7 +1531,7 @@ function openSubscriptionModal() {
     } else {
       actionArea.innerHTML = `
         <button type="button" class="btn btn-primary btn-block" onclick="openLeadModal('subscription_modal')">
-          登記候補名單（免費開通 Pro 權限）
+          填寫體驗回饋（免費開通 Pro 權限）
         </button>
       `;
     }
@@ -1517,6 +1551,9 @@ function toggleProStatusForDemo() {
   localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
   if (state.activeView === 'view-wishlist') {
     renderWishlistView();
+  }
+  if (state.activeView === 'view-calendar') {
+    renderCalendarView();
   }
   closeSubscriptionModal();
   showToast(state.isPro ? '已切換為 Pro 方案（展示全功能解鎖狀態）' : '已切換為 免費版（展示 MVP 留名單門檻）');
@@ -1676,8 +1713,28 @@ function escapeHtml(str) {
 }
 
 // ========================================================
-// 9. 潛在消費者名單登記 (Lead Capture / Waitlist 留名單)
+// 9. 潛在消費者名單登記與使用回饋 (Lead Capture & Feedback)
 // ========================================================
+function setLeadScore(score) {
+  const scoreInput = document.getElementById('lead-satisfaction');
+  if (scoreInput) scoreInput.value = score;
+
+  const hintEl = document.getElementById('rating-text-hint');
+  const labels = {
+    1: '1 分（最不流暢）',
+    2: '2 分（略為卡頓）',
+    3: '3 分（普通尚可）',
+    4: '4 分（良好流暢）',
+    5: '5 分（非常流暢）'
+  };
+  if (hintEl) hintEl.textContent = labels[score] || `${score} 分`;
+
+  document.querySelectorAll('#satisfaction-rating-group .rating-pill').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.score) === Number(score));
+  });
+}
+window.setLeadScore = setLeadScore;
+
 function openLeadModal(source = 'general') {
   const modal = document.getElementById('lead-capture-modal');
   if (!modal) return;
@@ -1685,36 +1742,16 @@ function openLeadModal(source = 'general') {
   const srcInput = document.getElementById('lead-source');
   if (srcInput) srcInput.value = source;
 
-  // 若使用者已透過 LINE 登入，自動帶入稱呼與 LINE 資訊
+  // 若使用者已透過 LINE 登入，自動帶入稱呼
   if (state.currentUser) {
     const nameInput = document.getElementById('lead-name');
     if (nameInput && !nameInput.value) {
       nameInput.value = state.currentUser.displayName || '';
     }
-    const contactTypeSelect = document.getElementById('lead-contact-type');
-    const contactValInput = document.getElementById('lead-contact-value');
-    if (contactTypeSelect && contactValInput && !contactValInput.value) {
-      contactTypeSelect.value = 'line';
-      updateContactPlaceholder();
-      contactValInput.value = state.currentUser.displayName || '';
-    }
   }
 
-  // 嘗試預選當前在尋找表單中選擇的預算
-  const activeBudget = document.querySelector('#budget-radio-grid input[name="budgetTier"]:checked')?.value;
-  if (activeBudget) {
-    const budgetMap = {
-      'under_500': '500以下',
-      '500_1200': '500~1200',
-      '1200_2000': '1200~2000',
-      '2000_3000': '2000~3000',
-      'above_3000': '3000以上'
-    };
-    const budgetSelect = document.getElementById('lead-monthly-budget');
-    if (budgetSelect && budgetMap[activeBudget]) {
-      budgetSelect.value = budgetMap[activeBudget];
-    }
-  }
+  // 預設將流程評分設為 5 分（非常流暢）
+  setLeadScore(5);
 
   modal.style.display = 'flex';
 }
@@ -1726,38 +1763,17 @@ function closeLeadModal() {
 }
 window.closeLeadModal = closeLeadModal;
 
-function updateContactPlaceholder() {
-  const type = document.getElementById('lead-contact-type')?.value || 'line';
-  const label = document.getElementById('lead-contact-label');
-  const input = document.getElementById('lead-contact-value');
-  if (!input) return;
-
-  if (type === 'line') {
-    if (label) label.textContent = 'LINE 帳號 ID *';
-    input.placeholder = '請輸入您的 LINE ID 或 LINE 稱呼';
-  } else if (type === 'phone') {
-    if (label) label.textContent = '手機號碼 *';
-    input.placeholder = '請輸入 09xxxxxxxx 手機號碼';
-  } else if (type === 'email') {
-    if (label) label.textContent = '電子信箱 (Email) *';
-    input.placeholder = '例如：example@gmail.com';
-  }
-}
-window.updateContactPlaceholder = updateContactPlaceholder;
-
 async function handleLeadSubmit(event) {
   event.preventDefault();
   const btn = document.getElementById('btn-submit-lead');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '登記傳送中...';
+    btn.textContent = '回饋傳送中...';
   }
 
   const name = (document.getElementById('lead-name')?.value || '').trim();
-  const contact_type = document.getElementById('lead-contact-type')?.value || 'line';
-  const contact_value = (document.getElementById('lead-contact-value')?.value || '').trim();
-  const health_goal = document.getElementById('lead-health-goal')?.value || '';
-  const monthly_budget = document.getElementById('lead-monthly-budget')?.value || '';
+  const email = (document.getElementById('lead-email')?.value || '').trim();
+  const satisfaction_score = parseInt(document.getElementById('lead-satisfaction')?.value, 10) || 5;
   const note = (document.getElementById('lead-note')?.value || '').trim();
   const source = document.getElementById('lead-source')?.value || 'general';
 
@@ -1767,10 +1783,8 @@ async function handleLeadSubmit(event) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
-        contact_type,
-        contact_value,
-        health_goal,
-        monthly_budget,
+        email,
+        satisfaction_score,
         note,
         source
       })
@@ -1780,9 +1794,11 @@ async function handleLeadSubmit(event) {
       state.isPro = true;
       localStorage.setItem('purepick_pro', 'true');
       closeLeadModal();
-      showToast('【登記成功】感謝您的預約！已免費為您開通 Pro 去冗精算與成分安全監控！');
+      showToast('【登記成功】感謝您的寶貴回饋！已為您免費開通 Pro 完整去冗精算、身體動態日誌與週度複盤！');
       if (state.activeView === 'view-wishlist') {
         renderWishlistView();
+      } else if (state.activeView === 'view-calendar') {
+        renderCalendarView();
       }
       const noteEl = document.getElementById('lead-note');
       if (noteEl) noteEl.value = '';
@@ -1795,20 +1811,11 @@ async function handleLeadSubmit(event) {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '確認送出登記（開通 Pro）';
+      btn.textContent = '送出回饋並解鎖 Pro 權限';
     }
   }
 }
 window.handleLeadSubmit = handleLeadSubmit;
-
-function openExternalSurveyNotice(e) {
-  const customSurveyUrl = window.CUSTOM_SURVEY_URL || '';
-  if (customSurveyUrl) {
-    window.open(customSurveyUrl, '_blank');
-    e.preventDefault();
-  }
-}
-window.openExternalSurveyNotice = openExternalSurveyNotice;
 
 // ========================================================
 // 10. Chrome 擴充套件彈窗與攔截模擬 (Chrome Extension Modal & Live Demo)

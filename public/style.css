@@ -2692,4 +2692,99 @@ body {
   gap: 0.5rem;
 }
 
+/* ========================================================
+   流程滿意度 1-5 分按鈕組 (Satisfaction Rating Pills)
+   ======================================================== */
+.rating-pills {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.rating-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.35rem;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.rating-pill .pill-desc {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 0.2rem;
+  line-height: 1.2;
+}
+
+.rating-pill:hover {
+  background: #f5f3ff;
+  border-color: #a78bfa;
+  color: #6d28d9;
+}
+
+.rating-pill.active {
+  background: #7c3aed;
+  border-color: #6d28d9;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+}
+
+.rating-pill.active .pill-desc {
+  color: #ede9fe;
+}
+
+@media (max-width: 640px) {
+  .rating-pills {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.25rem;
+  }
+  .rating-pill {
+    padding: 0.45rem 0.15rem;
+    font-size: 0.78rem;
+  }
+  .rating-pill .pill-desc {
+    font-size: 0.62rem;
+  }
+}
+
+/* ========================================================
+   日曆狀態日誌 Pro 鎖定提示卡片
+   ======================================================== */
+.pro-locked-card {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1.5px dashed #c084fc;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  margin-top: 1rem;
+}
+
+.pro-locked-card .pro-locked-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cabinet-channels-hint {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+}
+
+
 

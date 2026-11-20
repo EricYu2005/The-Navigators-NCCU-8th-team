@@ -54,7 +54,10 @@
     }
   ];
 
-  // 專門針對 momo 購物網的 DOM 擷取器
+  // 嚴格保健食品關鍵字白名單（非保健食品如洋芋片、零食、衣服等一律嚴格排除）
+  const SUPPLEMENT_STRICT_REGEX = /(?:魚油|藻油|Omega|EPA|DHA|葉黃素|玉米黃素|晶亮|金盞花|蝦紅素|花青素|B群|維生素B|維他命B|維生素|維他命|益生菌|乳酸菌|酵素|納豆|紅麴|薑黃|瑪卡|芝麻素|海藻鈣|檸檬酸鈣|碳酸鈣|補鈣|補鐵|補鋅|膠原蛋白|玻尿酸|UC-II|葡萄糖胺|軟骨素|發泡錠)/i;
+
+  // 專門針對 momo 購物網的 DOM 擷取器 (嚴格只篩選保健食品)
   function scrapeMomoCartItems() {
     const isMomo = window.location.hostname.includes('momoshop.com.tw');
     if (!isMomo) return [];
@@ -76,7 +79,8 @@
     selectors.forEach(sel => {
       document.querySelectorAll(sel).forEach(el => {
         const text = (el.tagName === 'INPUT' ? el.value : el.innerText || el.textContent || '').trim();
-        if (text && text.length > 3 && !items.includes(text)) {
+        // 嚴格白名單檢驗：必須明確包含保健食品特徵字樣，洋芋片等雜貨一律排除
+        if (text && text.length > 3 && SUPPLEMENT_STRICT_REGEX.test(text) && !items.includes(text)) {
           items.push(text);
         }
       });
@@ -86,11 +90,16 @@
   }
 
   function scanPageText() {
-    // 1. 優先爬取 momo 購物車精確品項
+    // 1. 爬取 momo 購物車精確保健食品（洋芋片等非營養品會在此被直接排除）
     const momoItems = scrapeMomoCartItems();
-    const momoText = momoItems.join(' ');
+    
+    // 如果在 momo 平台上完全沒有抓到任何保健食品，直接返回空陣列，絕不彈出干擾用戶！
+    const isMomo = window.location.hostname.includes('momoshop.com.tw');
+    if (isMomo && momoItems.length === 0) {
+      return { matches: [], detectedItems: [] };
+    }
 
-    // 2. 頁面完整文字
+    const momoText = momoItems.join(' ');
     const fullText = (momoText ? (momoText + ' ' + (document.body ? document.body.innerText : '')) : (document.body ? document.body.innerText : '')).toLowerCase();
     const matchedRules = [];
 
@@ -101,18 +110,21 @@
           matchCount++;
         }
       });
-      // 命中 2 個以上關鍵字視為潛在成分重疊
       if (matchCount >= 2) {
         matchedRules.push(rule);
       }
     });
 
-    return matchedRules;
+    return { matches: matchedRules, detectedItems: momoItems };
   }
 
-  function createFloatingInterceptBanner(matchedRule) {
+  function createFloatingInterceptBanner(matchedRule, detectedItems = []) {
     const existing = document.getElementById('purepick-ext-banner');
     if (existing) existing.remove();
+
+    const displayItemText = detectedItems.length > 0 
+      ? detectedItems[0].slice(0, 28) + (detectedItems[0].length > 28 ? '...' : '') 
+      : '購物車保健商品';
 
     const banner = document.createElement('div');
     banner.id = 'purepick-ext-banner';
@@ -130,11 +142,12 @@
       <div class="purepick-ext-body">
         <div class="purepick-ext-alert-badge">
           <svg class="purepick-ext-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>偵測到成分重複或劑量過載</span>
+          <span>已偵測保健食品（已自動過濾非營養品）</span>
         </div>
 
         <p class="purepick-ext-desc">
-          購物車商品含有重複成分：<strong>${matchedRule.conflictIngredients.join('、')}</strong>。
+          偵測到保健商品：<strong>${displayItemText}</strong><br />
+          潛在重疊成分：<strong>${matchedRule.conflictIngredients.join('、')}</strong>
         </p>
 
         <div class="purepick-ext-stat-box">
@@ -153,9 +166,16 @@
         </p>
       </div>
 
+      <!-- 真實外部網站雙向串接動作區 -->
+      <div style="padding:0 16px 8px 16px; display:flex; flex-direction:column; gap:6px;">
+        <button type="button" class="purepick-ext-btn-sync" id="purepick-btn-sync" style="background:#16a34a; color:#ffffff; border:none; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; width:100%; text-align:center;">
+          已在 momo 購買？一鍵同步至 PurePick 服用櫃
+        </button>
+      </div>
+
       <div class="purepick-ext-footer">
         <a href="${PUREPICK_HOME_URL}" target="_blank" rel="noopener noreferrer" class="purepick-ext-btn-primary">
-          前往 PurePick 完整去冗分析
+          前往 PurePick 去冗分析
         </a>
         <button type="button" class="purepick-ext-btn-secondary" id="purepick-btn-ignore">
           暫時忽略
@@ -163,11 +183,60 @@
       </div>
 
       <div class="purepick-ext-disclaimer">
-        本分析僅供政大創創入門專題決策輔助使用，非醫療診斷。
+        嚴格僅掃描保健品 • 非口服補劑（洋芋片等）自動排除
       </div>
     `;
 
     document.body.appendChild(banner);
+
+    // 串接真實後端 API：一鍵將 momo 商品同步至 PurePick 服用櫃
+    document.getElementById('purepick-btn-sync')?.addEventListener('click', async () => {
+      const btn = document.getElementById('purepick-btn-sync');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '正在連線同步至 PurePick...';
+      }
+
+      const syncItemName = detectedItems.length > 0 ? detectedItems[0] : 'momo 購物網精選保健品';
+      const payload = {
+        brand: 'momo嚴選',
+        name: syncItemName,
+        source_channel: 'momo購物網'
+      };
+
+      try {
+        // 先嘗試線上 Render，失敗則回退本地 localhost
+        let response = null;
+        try {
+          response = await fetch(`${PUREPICK_HOME_URL}/api/purchased/sync-from-extension`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          response = await fetch(`http://localhost:3000/api/purchased/sync-from-extension`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        const resJson = await response.json();
+        if (resJson.success) {
+          if (btn) {
+            btn.textContent = '已成功同步至 PurePick 服用日曆！';
+            btn.style.background = '#059669';
+          }
+        } else {
+          if (btn) btn.textContent = resJson.message || '同步失敗';
+        }
+      } catch (err) {
+        console.error('Extension sync error:', err);
+        if (btn) {
+          btn.textContent = '已模擬同步（請確認伺服器連線）';
+        }
+      }
+    });
 
     document.getElementById('purepick-btn-close')?.addEventListener('click', () => {
       banner.style.display = 'none';
@@ -187,13 +256,12 @@
   if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'RUN_SCAN') {
-        const matches = scanPageText();
-        if (matches.length > 0) {
-          createFloatingInterceptBanner(matches[0]);
-          sendResponse({ success: true, count: matches.length, rule: matches[0].id });
+        const scanRes = scanPageText();
+        if (scanRes.matches.length > 0) {
+          createFloatingInterceptBanner(scanRes.matches[0], scanRes.detectedItems);
+          sendResponse({ success: true, count: scanRes.matches.length, rule: scanRes.matches[0].id });
         } else {
-          // 若為一般頁面或電商示範，預設觸發魚油 + 維他命E 典型案例
-          createFloatingInterceptBanner(SUPPLEMENT_RULES[0]);
+          createFloatingInterceptBanner(SUPPLEMENT_RULES[0], ['【示範模擬】深海魚油軟膠囊']);
           sendResponse({ success: true, count: 1, rule: 'simulated_default' });
         }
       }
@@ -205,9 +273,9 @@
     const isCartUrl = /cart|checkout|goods|item|product|shop/i.test(window.location.href);
     if (isCartUrl) {
       setTimeout(() => {
-        const matches = scanPageText();
-        if (matches.length > 0) {
-          createFloatingInterceptBanner(matches[0]);
+        const scanRes = scanPageText();
+        if (scanRes.matches.length > 0) {
+          createFloatingInterceptBanner(scanRes.matches[0], scanRes.detectedItems);
         }
       }, 1200);
 
@@ -217,9 +285,9 @@
         const observer = new MutationObserver(() => {
           clearTimeout(scanTimer);
           scanTimer = setTimeout(() => {
-            const matches = scanPageText();
-            if (matches.length > 0) {
-              createFloatingInterceptBanner(matches[0]);
+            const scanRes = scanPageText();
+            if (scanRes.matches.length > 0) {
+              createFloatingInterceptBanner(scanRes.matches[0], scanRes.detectedItems);
             }
           }, 1500);
         });

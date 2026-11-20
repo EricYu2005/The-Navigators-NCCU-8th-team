@@ -320,7 +320,7 @@
               <tr>
                 <th>功能模組</th>
                 <th style="width:28%;">免費體驗版 (Free)</th>
-                <th style="width:38%;">精明消費者訂閱版 (Pro, NT$ 49/月)</th>
+                <th style="width:38%;">精明消費者訂閱版 (Pro, NT$ 99/月)</th>
               </tr>
             </thead>
             <tbody>
@@ -349,6 +349,11 @@
                 <td><span class="pill-tag pill-free">局部鎖定</span> 遮罩提示</td>
                 <td><span class="pill-tag pill-pro">完整解鎖</span> 鈣鐵衝突、空腹隨餐時序提醒</td>
               </tr>
+              <tr>
+                <td><strong>服用日曆與身體動態日誌</strong></td>
+                <td><span class="pill-tag pill-free">基礎開放</span> 每日服用確認打卡（有吃打勾）</td>
+                <td><span class="pill-tag pill-pro">完整解鎖</span> 精神/排便/睡眠眼部體感日誌、重感冒停藥防護、每週痛點分析與 1-to-1 配方升級推薦</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -360,7 +365,7 @@
           <p>這是精實創業（Lean Startup）的核心方法論：<strong>付費意願假說驗證（Willingness-to-Pay Validation）</strong>。</p>
           <ul class="step-list">
             <li><strong>過早串接金流是創業常見陷阱：</strong> 在產品知名度未建立前，要求消費者輸入信用卡，會造成 90% 以上的非理性跳出（Drop-off），導致團隊無法區分究竟是「產品沒價值」還是「單純結帳麻煩」。</li>
-            <li><strong>以「留名單預約率」驗證真實意願：</strong> 我們在用戶遇到 Pro 去冗門檻時，引導其留下 LINE 或電話以免費開通體驗。若消費者願意留下真實私人聯絡方式換取服務，這就是最強有力的「高價值付費潛力（High Purchase Intent）」證明！</li>
+            <li><strong>以「留名單與使用回饋」驗證真實意願：</strong> 我們在用戶遇到 Pro 去冗或狀態日誌門檻時，引導其留下稱呼、信箱並為流程順暢度評分 (1~5分) 以免費開通體驗。若消費者願意留下真實私人電子郵件與回饋換取服務，這就是最強有力的「高價值付費潛力（High Purchase Intent）」證明！</li>
             <li><strong>Demo 演示操作：</strong> 專題展示時，組員可先展示免費版的上鎖門檻，點擊留名單送出後，系統瞬間解鎖 Pro 權限，向評審證明轉換漏斗的完整性。</li>
           </ul>
         </div>
@@ -376,9 +381,9 @@
         <div class="qa-a">
           <p>我們的留名單流程設計追求<strong>「極致零摩擦」</strong>：</p>
           <ol class="step-list">
-            <li><strong>觸發點：</strong> 使用者在首頁點「索取報告」、在去冗頁點「解鎖 Pro」、或在方案彈窗點「預約名單」。</li>
-            <li><strong>自動預填（Auto-Fill）：</strong> 若使用者先前有以 LINE 登入，系統會自動填入姓名與 LINE 資訊；若已在表單勾選了護眼與預算，也會自動選好，用戶只需花 3 秒確認。</li>
-            <li><strong>存入資料庫並即刻開通：</strong> 點擊「確認送出」後，資料透過 API 寫入後台 SQLite 資料庫的 <code>leads</code> 表，前端立即將用戶提升為 Pro 權限並解除所有分析遮罩！</li>
+            <li><strong>觸發點：</strong> 使用者在首頁點「索取報告」、在去冗頁點「解鎖 Pro」、在日曆點「解鎖日誌」、或在方案彈窗點「登記回饋開通」。</li>
+            <li><strong>自動預填與簡短問卷：</strong> 若使用者先前有登入，系統會自動預填稱呼；問卷僅需填寫稱呼、電子信箱、評選流程順暢度（1~5 分）及選填諮詢問題，使用者只需 5 秒即可完成，完全留在站內無外部跳轉！</li>
+            <li><strong>存入資料庫並即刻開通：</strong> 點擊「送出回饋」後，資料透過 API 寫入後台 SQLite 資料庫的 <code>leads</code> 表，前端立即將用戶提升為 Pro 權限並解除所有去冗精算遮罩與身體動態日誌！</li>
           </ol>
         </div>
       </div>
@@ -386,7 +391,7 @@
       <div class="qa-box">
         <div class="qa-q">Q2：為什麼網頁前台沒有「查看名單」的按鈕？</div>
         <div class="qa-a">
-          <p><strong>個資保護原則（Privacy by Design）：</strong> 留名單包含真實消費者的稱呼、LINE 帳號與健康困擾，這屬於敏感個人資料。若在前台網頁放一個按鈕讓任何人都能點開看，會嚴重違反資安常理與個人資料保護精神。因此前台絕對不對外公開名單。</p>
+          <p><strong>個資保護原則（Privacy by Design）：</strong> 留名單包含真實消費者的稱呼、電子信箱與健康困擾，這屬於敏感個人資料。若在前台網頁放一個按鈕讓任何人都能點開看，會嚴重違反資安常理與個人資料保護精神。因此前台絕對不對外公開名單。</p>
         </div>
       </div>
 
@@ -400,7 +405,7 @@
             2. 在主選單中輸入號碼 <strong><code>7</code></strong>（匯出名單為 Excel 試算表檔案）。<br />
             3. 系統會自動生成帶有 UTF-8 BOM 的標準 Excel 檔案（<code>PurePick_消費者登記名單_YYYY-MM-DD.csv</code>），並自動為您在 Excel 中彈出開啟，<strong>繁體中文 100% 絕無亂碼</strong>！
           </div>
-          <p>匯出的 Excel 欄位完整包含：<strong>登記序號、登記時間、消費者稱呼、聯絡管道、聯絡帳號或電話、關注健康面向、每月保健預算、來源管道標籤、諮詢問題與備註</strong>。</p>
+          <p>匯出的 Excel 欄位完整包含：<strong>登記序號、登記時間、消費者稱呼、電子信箱、流程順暢度評分 (1~5分)、來源管道標籤、諮詢問題與回饋建議</strong>。</p>
         </div>
       </div>
     </section>

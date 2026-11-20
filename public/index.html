@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.9.0" />
+  <link rel="stylesheet" href="style.css?v=3.9.5" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -402,21 +402,7 @@
             <span class="daily-progress-badge" id="daily-progress-badge">完成 0 / 0</span>
           </div>
 
-          <!-- 生病休養 / 重感冒暫停服用模式 -->
-          <div class="sick-mode-bar" id="sick-mode-bar">
-            <div class="sick-mode-info">
-              <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <div>
-                <strong>生病休養 / 重感冒暫停服用</strong>
-                <span class="sick-mode-desc">若今日重感冒、發燒或服用感冒西藥，建議暫停保健品以減輕代謝負擔</span>
-              </div>
-            </div>
-            <button type="button" class="btn-toggle-sick" id="btn-toggle-sick" onclick="toggleSickMode()">
-              <span id="sick-mode-btn-text">啟動暫停</span>
-            </button>
-          </div>
-
-          <!-- 1. 當日該吃的已購買保健品打卡清單 -->
+          <!-- 1. 當日該吃的已購買保健品打卡清單 (免費版與 Pro 版皆可打卡) -->
           <div class="daily-section">
             <div class="daily-sec-head">
               <h4>今日服用清單</h4>
@@ -425,11 +411,43 @@
             <div id="daily-checklist-container" class="daily-checklist"></div>
           </div>
 
-          <!-- 2. 身體感受快速打卡 (灰線條圖示) -->
-          <div class="daily-section">
-            <h4>身體狀態日誌</h4>
+          <!-- Pro 專屬鎖定提示 (免費版顯示) -->
+          <div id="pro-locked-log-teaser" class="pro-locked-card" style="display:none;">
+            <div class="pro-locked-header">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span class="badge-pro" style="padding:0.2rem 0.55rem; border-radius:999px; font-size:0.75rem; font-weight:800; background:#7c3aed; color:#fff;">Pro 專屬功能</span>
+                <h4 style="margin:0; font-size:0.95rem; color:#1e1b4b;">身體狀態日誌與每週健康複盤</h4>
+              </div>
+              <p style="margin:0.4rem 0 0.75rem 0; font-size:0.83rem; color:#475569; line-height:1.45;">
+                免費版僅保留「服用打卡（確認有沒有吃）」。升級 Pro 方案（<strong>NT$ 99 / 月</strong>）即可每日記錄精神體力、消化排便、睡眠晶亮感受、重感冒停藥防護，並自動獲得每週痛點分析與配方升級建議！
+              </p>
+              <button type="button" class="btn btn-primary btn-sm btn-block" onclick="openLeadModal('daily_log_pro_lock')">
+                填寫簡短回饋，免費開通 Pro 權限 (NT$ 99/月)
+              </button>
+            </div>
+          </div>
 
-            <div class="mood-group">
+          <!-- 2. Pro 專屬：身體狀態日誌、感冒停藥與體感打卡 -->
+          <div id="pro-log-controls">
+            <!-- 生病休養 / 重感冒暫停服用模式 -->
+            <div class="sick-mode-bar" id="sick-mode-bar">
+              <div class="sick-mode-info">
+                <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div>
+                  <strong>生病休養 / 重感冒暫停服用</strong>
+                  <span class="sick-mode-desc">若今日重感冒、發燒或服用感冒西藥，建議暫停保健品以減輕代謝負擔</span>
+                </div>
+              </div>
+              <button type="button" class="btn-toggle-sick" id="btn-toggle-sick" onclick="toggleSickMode()">
+                <span id="sick-mode-btn-text">啟動暫停</span>
+              </button>
+            </div>
+
+            <!-- 身體感受快速打卡 (灰線條圖示) -->
+            <div class="daily-section">
+              <h4>身體狀態日誌</h4>
+
+              <div class="mood-group">
               <span class="mood-label">精神體力：</span>
               <div class="mood-pills" data-field="energyLevel">
                 <button type="button" class="mood-pill" data-val="精神飽滿" onclick="selectDailyMood('energyLevel', '精神飽滿')">
@@ -521,7 +539,19 @@
             <h3>我目前已購買服用的保健品清單</h3>
             <p class="card-sub-hint">這裡的商品會自動出現在上方的每日服用日曆中，並作為「有興趣清單」的去冗比對基準</p>
           </div>
-          <span class="pill-count" id="purchased-cabinet-count">0 款</span>
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="openAddSupplementModal('purchased')">
+              ＋ 手動新增外部已購
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openExtensionModal()">
+              從 momo 購物車同步
+            </button>
+            <span class="pill-count" id="purchased-cabinet-count">0 款</span>
+          </div>
+        </div>
+        <div class="cabinet-channels-hint">
+          <strong>支援三大已購商品匯入管道：</strong>
+          1. 點擊右上「＋ 手動新增外部已購」自訂產品 ｜ 2. 在「尋找」或「分析」卡片點擊「已在外部購買（加入日曆）」 ｜ 3. 使用 Chrome 擴充套件於 momo 購物網結帳車一鍵同步（自動排除洋芋片等非保健品）。
         </div>
         <div id="purchased-cabinet-grid" class="purchased-cabinet-grid"></div>
       </div>
@@ -687,17 +717,19 @@
               <li>跨品牌保健品每日真實花費比價</li>
               <li>互動式需求表單與預算方案推薦</li>
               <li>基礎有興趣清單管理（最多 3 款比對）</li>
-              <li>基礎服用日曆打卡</li>
+              <li>基礎每日服用確認打卡（有吃打勾）</li>
             </ul>
             <button type="button" class="btn btn-outline btn-block" onclick="closeSubscriptionModal()">目前使用中</button>
           </div>
           <div class="sub-plan-card featured" id="sub-plan-pro-card">
             <div class="plan-badge badge-pro">精明消費者訂閱版 (Pro)</div>
-            <div class="plan-price">NT$ 49 <span>/ 月（年繳 NT$ 390）</span></div>
+            <div class="plan-price">NT$ 99 <span>/ 月（年繳 NT$ 790）</span></div>
             <ul class="plan-features">
               <li><strong>無上限跨品牌成分重疊與去冗省錢精算</strong></li>
               <li><strong>已購買 vs. 有興趣商品交叉比對（避免重複買）</strong></li>
               <li><strong>每日有效成分安全上限 (UL) 監控與警示</strong></li>
+              <li><strong>身體狀態動態日誌（精神/排便/睡眠眼部體感記錄）</strong></li>
+              <li><strong>生病重感冒停藥備忘與每週動態健康反饋推薦</strong></li>
               <li><strong>服用時段衝突檢驗與專屬避坑分析書</strong></li>
             </ul>
 
@@ -708,13 +740,13 @@
                 <span>MVP 概念驗證說明（不收取真實費用）</span>
               </div>
               <p class="mvp-notice-text">
-                本平台為政大創創入門專題驗證模型，現階段<strong>不收取任何真實費用</strong>。我們透過「留名單預約機制」驗證消費者對去冗精算的真實付費意願。只需登記候補名單，即可免費解鎖 Pro 權限！
+                本平台為政大創創入門專題驗證模型，現階段<strong>不收取任何真實費用</strong>。我們透過「留名單與使用體驗回饋機制」驗證消費者對去冗精算與動態管理的真實付費意願。只需完成簡短回饋登記，即可免費解鎖 Pro 權限（原價 NT$ 99 / 月）！
               </p>
             </div>
 
             <div id="sub-pro-action-area" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;">
               <button type="button" class="btn btn-primary btn-block" onclick="openLeadModal('subscription_modal')">
-                登記候補名單（免費開通 Pro 權限）
+                填寫體驗回饋（免費開通 Pro 權限）
               </button>
             </div>
           </div>
@@ -723,13 +755,13 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 3：潛在客戶留名單 (Lead Capture / 候補登記) ==================== -->
+  <!-- ==================== MODAL 3：潛在客戶留名單與使用回饋 (Lead Capture / 反饋解鎖 Pro) ==================== -->
   <div id="lead-capture-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          <h3 style="margin:0;">登記預約 / 索取專屬避坑報告</h3>
+          <h3 style="margin:0;">登記使用回饋 / 免費解鎖 Pro 權限</h3>
         </div>
         <button type="button" class="modal-close" onclick="closeLeadModal()">&times;</button>
       </div>
@@ -737,70 +769,47 @@
         <input type="hidden" id="lead-source" value="general" />
         <div class="modal-body">
           <p style="margin-bottom: 1rem; color: #5b21b6; font-size: 0.88rem; line-height: 1.45;">
-            由政大創創第八組建立的中立研究模型，<strong>不推銷、不賣特定品牌</strong>。留下您的聯絡方式，我們將為您量身整理「成分重複去冗避坑報告」或預約專屬諮詢。
+            由政大創創第八組建立的中立研究模型，<strong>不推銷特定品牌、完全站在消費者立場</strong>。留下您的稱呼與信箱並為使用流程評分，系統將立即為您免費開通 Pro 完整去冗精算與身體動態日誌（原價 NT$ 99 / 月）！
           </p>
 
           <div class="form-row-2">
             <div class="form-group">
               <label>您的稱呼或姓名 *</label>
-              <input type="text" id="lead-name" class="form-input" placeholder="例如：陳先生、王小姐、Alex" required />
+              <input type="text" id="lead-name" class="form-input" placeholder="例如：陳同學、王小姐、Alex" required />
             </div>
             <div class="form-group">
-              <label>偏好聯絡管道 *</label>
-              <select id="lead-contact-type" class="form-select" onchange="updateContactPlaceholder()">
-                <option value="line">LINE 帳號 ID (最推薦)</option>
-                <option value="phone">手機號碼 (簡訊聯繫)</option>
-                <option value="email">電子信箱 (Email)</option>
-              </select>
+              <label>電子信箱 (Email) *</label>
+              <input type="email" id="lead-email" class="form-input" placeholder="例如：student@nccu.edu.tw" required />
             </div>
           </div>
 
           <div class="form-group">
-            <label id="lead-contact-label">LINE 帳號 ID *</label>
-            <input type="text" id="lead-contact-value" class="form-input" placeholder="請輸入您的 LINE ID 或 LINE 稱呼" required />
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>目前最關注的健康面向</label>
-              <select id="lead-health-goal" class="form-select">
-                <option value="晶亮護眼">晶亮護眼（螢幕乾澀酸疲）</option>
-                <option value="循環思緒">循環思緒（三餐外食少魚、代謝）</option>
-                <option value="精神體力">精神體力補給（熬夜疲勞、B群）</option>
-                <option value="消化排便">消化順暢（排便不順、益生菌）</option>
-                <option value="骨骼睡眠">骨骼睡眠（少喝奶缺鈣、淺眠多夢）</option>
-                <option value="全方位綜合">全方位日常打底</option>
-              </select>
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+              <span>您對目前平台使用流程順暢度給幾分？ *</span>
+              <span id="rating-text-hint" style="font-size:0.8rem; color:#7c3aed; font-weight:700;">5 分（非常流暢）</span>
+            </label>
+            <div class="rating-pills" id="satisfaction-rating-group">
+              <button type="button" class="rating-pill" data-score="1" onclick="setLeadScore(1)">1 分<span class="pill-desc">最不流暢</span></button>
+              <button type="button" class="rating-pill" data-score="2" onclick="setLeadScore(2)">2 分<span class="pill-desc">略為卡頓</span></button>
+              <button type="button" class="rating-pill" data-score="3" onclick="setLeadScore(3)">3 分<span class="pill-desc">普通尚可</span></button>
+              <button type="button" class="rating-pill" data-score="4" onclick="setLeadScore(4)">4 分<span class="pill-desc">良好流暢</span></button>
+              <button type="button" class="rating-pill active" data-score="5" onclick="setLeadScore(5)">5 分<span class="pill-desc">非常流暢</span></button>
             </div>
-            <div class="form-group">
-              <label>每月保健預算期望</label>
-              <select id="lead-monthly-budget" class="form-select">
-                <option value="500以下">NT$ 500 以下 / 月</option>
-                <option value="500~1200" selected>NT$ 500 ~ 1,200 / 月</option>
-                <option value="1200~2000">NT$ 1,200 ~ 2,000 / 月</option>
-                <option value="2000~3000">NT$ 2,000 ~ 3,000 / 月</option>
-                <option value="3000以上">NT$ 3,000 以上 / 月</option>
-              </select>
-            </div>
+            <input type="hidden" id="lead-satisfaction" value="5" />
           </div>
 
           <div class="form-group">
-            <label>您目前正在吃或想諮詢的問題（選填）</label>
-            <textarea id="lead-note" class="form-textarea" rows="2" placeholder="例如：目前正在吃好市多魚油，想知道跟葉黃素一起吃有沒有重複？"></textarea>
+            <label>您對平台的建議或目前想諮詢的保健問題（選填）</label>
+            <textarea id="lead-note" class="form-textarea" rows="2" placeholder="例如：尋找流程很清晰、想知道手上這款魚油跟葉黃素該何時吃..."></textarea>
           </div>
 
           <div style="font-size:0.78rem; color:#6b21a8; background:#f5f0ff; border:1px solid #ddd6fe; padding:0.5rem 0.75rem; border-radius:8px; margin-top:0.65rem;">
-            <strong>立即開通：</strong>確認送出後，系統將免費為您開通 Pro 去冗精算與成分安全上限監控權限！
-          </div>
-
-          <div style="text-align:center; margin-top:0.75rem; font-size:0.8rem; color:#64748b; border-top:1px dashed #c4b5fd; padding-top:0.65rem;">
-            <span>偏好填寫外部詳細問卷？</span>
-            <a href="https://forms.gle/demo" target="_blank" rel="noopener noreferrer" style="color:#7c3aed; font-weight:700; text-decoration:underline; margin-left:4px;" id="external-survey-link" onclick="openExternalSurveyNotice(event)">前往 Google 表單 / SurveyCake 問卷 ↗</a>
+            <strong>即時開通：</strong>送出問卷後，系統將立即為您解鎖 Pro 去冗精算、安全上限 (UL) 監控、身體動態日誌與週度健康反饋！
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeLeadModal()">稍後再說</button>
-          <button type="submit" class="btn btn-primary" id="btn-submit-lead">確認送出登記（開通 Pro）</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-lead">送出回饋並解鎖 Pro 權限</button>
         </div>
       </form>
     </div>
@@ -893,6 +902,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.9.0"></script>
+  <script src="app.js?v=3.9.5"></script>
 </body>
 </html>

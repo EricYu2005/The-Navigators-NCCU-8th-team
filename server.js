@@ -494,38 +494,119 @@ app.get('/auth/line/callback', async (req, res) => {
 });
 
 // ========================================================
-// 8. 潛在消費者名單登記 (Lead Capture / Waitlist 留名單)
+// 8. 潛在消費者名單登記與流程順暢回饋 (Lead Capture & Feedback)
 // ========================================================
 app.post('/api/leads', async (req, res) => {
   try {
-    const { name, contact_type, contact_value, health_goal, monthly_budget, note, source } = req.body;
-    if (!name || !name.trim()) {
+    const { name, email, contact_value, satisfaction_score, note, source } = req.body;
+    const finalName = (name || '').trim();
+    const finalEmail = (email || contact_value || '').trim();
+
+    if (!finalName) {
       return res.status(400).json({ success: false, message: '請填寫您的稱呼或姓名' });
     }
-    if (!contact_value || !contact_value.trim()) {
-      return res.status(400).json({ success: false, message: '請填寫聯絡方式（LINE ID、手機或 Email）' });
+    if (!finalEmail) {
+      return res.status(400).json({ success: false, message: '請填寫電子信箱 (Email)' });
     }
 
+    const score = Math.max(1, Math.min(5, parseInt(satisfaction_score, 10) || 5));
+
     const result = await dbQuery.run(`
-      INSERT INTO leads (name, contact_type, contact_value, health_goal, monthly_budget, note, source)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO leads (name, contact_type, contact_value, health_goal, monthly_budget, satisfaction_score, note, source)
+      VALUES (?, 'email', ?, '', '', ?, ?, ?)
     `, [
-      name.trim(),
-      contact_type || 'line',
-      contact_value.trim(),
-      health_goal || '',
-      monthly_budget || '',
+      finalName,
+      finalEmail,
+      score,
       note ? note.trim() : '',
-      source || 'web_waitlist'
+      source || 'web_feedback_pro'
     ]);
 
     res.json({
       success: true,
-      message: '名單登記成功！感謝您的預約，團隊將盡快為您提供專屬避坑分析。',
-      data: { leadId: result.id }
+      message: '感謝您的回饋！已為您免費開通 Pro 完整去冗精算與動態身體日誌權限。',
+      data: { leadId: result.id, satisfactionScore: score }
     });
   } catch (error) {
-    console.error('儲存留名單失敗:', error);
+    console.error('儲存留名單回饋失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========================================================
+// 8.1 擴充套件專用：從 momo 購物網等電商一鍵同步已購保健品至日曆櫃
+// ========================================================
+app.post('/api/purchased/sync-from-extension', async (req, res) => {
+  try {
+    const { brand, name, category, price, active_summary, recommended_timing, source_channel } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: '商品名稱不能為空' });
+    }
+
+    // 嚴格過濾非保健食品 (避免洋芋片、生活用品誤入)
+    const SUPPLEMENT_REGEX = /(?:魚油|藻油|Omega|EPA|DHA|葉黃素|玉米黃素|晶亮|金盞花|蝦紅素|花青素|B群|維生素B|維他命B|維生素|維他命|益生菌|乳酸菌|酵素|納豆|紅麴|薑黃|瑪卡|芝麻素|鈣|檸檬酸鈣|海藻鈣|鎂|鋅|鐵|膠原蛋白|玻尿酸|UC-II|葡萄糖胺|軟骨素|發泡錠)/i;
+    if (!SUPPLEMENT_REGEX.test(name)) {
+      return res.status(400).json({ success: false, message: '非保健食品，系統已自動略過（不記錄洋芋片等非營養品）' });
+    }
+
+    // 檢查現有商品庫是否已有相似商品
+    let supp = await dbQuery.get('SELECT * FROM supplements WHERE name LIKE ? OR (brand = ? AND category = ?)', [
+      `%${name.trim().slice(0, 8)}%`,
+      brand || 'momo嚴選',
+      category || '綜合保養'
+    ]);
+
+    let supplementId;
+    if (supp) {
+      supplementId = supp.id;
+    } else {
+      const cat = category || (name.includes('魚油') ? '魚油' : (name.includes('葉黃素') ? '葉黃素' : (name.includes('益生菌') ? '益生菌' : (name.includes('B') ? 'B群' : '綜合保養'))));
+      const p = parseInt(price, 10) || 890;
+      const timing = recommended_timing || (cat === '魚油' || cat === '葉黃素' ? '隨餐/飯後' : (cat === 'B群' ? '早晨/日間' : '睡前'));
+      const newSupp = await dbQuery.run(`
+        INSERT INTO supplements (
+          brand, name, category, price, total_units, daily_units, days_supply, daily_cost, monthly_cost,
+          dosage_form, absorption_form, active_summary, nutrients_json, additives_note, value_score,
+          pros, cons, recommended_timing, is_vegan, source_channel
+        ) VALUES (?, ?, ?, ?, 60, 2, 30, ?, ?, '軟膠囊', '專利標準型', ?, '{}', '純淨配方', 88, '從電商購物車即時同步匯入', '日常基礎打底', ?, 0, ?)
+      `, [
+        brand || 'momo嚴選',
+        name.trim(),
+        cat,
+        p,
+        Math.round(p / 30),
+        p,
+        active_summary || `${cat} 有效成分添加`,
+        timing,
+        source_channel || 'momo購物網'
+      ]);
+      supplementId = newSupp.id;
+    }
+
+    // 寫入 user_supplements purchased 清單
+    const existing = await dbQuery.get(
+      'SELECT id FROM user_supplements WHERE supplement_id = ? AND status = ?',
+      [supplementId, 'purchased']
+    );
+
+    if (!existing) {
+      await dbQuery.run(`
+        INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name)
+        VALUES (?, 'purchased', ?, date('now'), 30, '消費者')
+      `, [
+        supplementId,
+        recommended_timing || (supp ? supp.recommended_timing : '隨餐/飯後')
+      ]);
+    }
+
+    const { wishlist, purchased } = await getUserLists();
+    res.json({
+      success: true,
+      message: `已成功將「${name.trim()}」同步至您的 PurePick 服用日曆櫃！`,
+      data: { purchasedCount: purchased.length, supplementId }
+    });
+  } catch (error) {
+    console.error('擴充套件同步已購商品失敗:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

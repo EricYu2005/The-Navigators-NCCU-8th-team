@@ -661,15 +661,18 @@ function initDatabase() {
       CREATE TABLE IF NOT EXISTS leads (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        contact_type TEXT DEFAULT 'line', -- 'line' | 'email' | 'phone'
+        contact_type TEXT DEFAULT 'email', -- 'line' | 'email' | 'phone'
         contact_value TEXT NOT NULL,
         health_goal TEXT DEFAULT '',
         monthly_budget TEXT DEFAULT '',
+        satisfaction_score INTEGER DEFAULT 5, -- 流程順暢度 1~5 分
         note TEXT DEFAULT '',
-        source TEXT DEFAULT 'web_waitlist',
+        source TEXT DEFAULT 'web_feedback_pro',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `, () => {
+      // 確保現有資料庫亦具備 satisfaction_score 欄位
+      db.run('ALTER TABLE leads ADD COLUMN satisfaction_score INTEGER DEFAULT 5', () => {});
       seedSupplementCatalog();
     });
   });

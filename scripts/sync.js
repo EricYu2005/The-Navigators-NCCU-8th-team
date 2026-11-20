@@ -402,22 +402,18 @@ async function handleViewLeads() {
         '登記序號',
         '登記時間',
         '消費者稱呼',
-        '聯絡管道',
-        '聯絡帳號或電話',
-        '關注健康面向',
-        '每月保健預算',
+        '電子信箱',
+        '流程順暢度評分 (1~5分)',
         '來源管道標籤',
-        '諮詢問題與備註'
+        '諮詢問題與回饋建議'
       ].map(escapeCsv).join(',');
 
       const lines = rows.map(r => [
         escapeCsv(r.id),
         escapeCsv(r.created_at),
         escapeCsv(r.name),
-        escapeCsv(r.contact_type),
         escapeCsv(r.contact_value),
-        escapeCsv(r.health_goal),
-        escapeCsv(r.monthly_budget),
+        escapeCsv(r.satisfaction_score ? `${r.satisfaction_score} 分` : '5 分'),
         escapeCsv(r.source),
         escapeCsv(r.note)
       ].join(','));

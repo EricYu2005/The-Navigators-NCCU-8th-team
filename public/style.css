@@ -1,21 +1,21 @@
 /**
  * style.css
- * 好選保健 PurePick - 溫暖淡黃底色 ＋ 紫色邊框主題 ＋ LINE App 式下方常駐導覽列
+ * 好選保健 PurePick - 方案 B：微溫米白底色 ＋ 高對比炭黑文字 ＋ 中性細緻邊框 ＋ LINE App 式下方常駐導覽列
  */
 
 :root {
-  /* 主色調：溫暖紫色系 (邊框與互動重點) */
+  /* 主色調：沉穩品牌紫 (僅用於主要按鈕、選中項目、重點標章) */
   --primary: #7c3aed;
   --primary-hover: #6d28d9;
-  --primary-light: #f3e8ff;
-  --primary-border: #a78bfa;
+  --primary-light: #f5f3ff;
+  --primary-border: #ddd6fe;
   --primary-border-strong: #7c3aed;
 
-  /* 輔助色調：溫暖奶油黃與柔和狀態色 */
-  --bg-page: #fef7dc;        /* 溫暖淡黃色網頁底色 */
-  --bg-card: #fffdf5;        /* 帶有暖意的柔和米白卡片底 */
-  --bg-soft-yellow: #fef0b8; /* 暖黃強調底色 */
-  --bg-soft-purple: #f5f0ff; /* 柔紫區塊底色 */
+  /* 輔助色調：方案 B - 柔和微溫米白與自然純白 (大幅降噪，消除互補色震顫) */
+  --bg-page: #fcfbf7;        /* 方案 B：極淡微溫米白，溫潤舒適、不刺眼 */
+  --bg-card: #ffffff;        /* 純白卡片底，文字最清晰 */
+  --bg-soft-yellow: #fefce8; /* 極淡暖黃（次要警示微調） */
+  --bg-soft-purple: #faf5ff; /* 極柔紫區塊底色 */
 
   --teal: #0d9488;
   --teal-light: #ccfbf1;
@@ -26,17 +26,19 @@
   --emerald: #059669;
   --emerald-light: #d1fae5;
 
-  --text-dark: #2e1065;      /* 深紫褐文字，比死黑更溫暖柔和 */
-  --text-body: #4c1d95;      /* 溫潤紫灰內文 */
-  --text-neutral: #3f3cbb;
-  --text-muted: #6b5b95;
+  /* 高對比清晰炭黑文字階層（告別紫色模糊內文） */
+  --text-dark: #111827;      /* 大標題：極清晰深炭黑 (Gray 900) */
+  --text-body: #1f2937;      /* 內文：扎實高對比炭黑 (Gray 800) */
+  --text-neutral: #374151;   /* 次要：清晰深灰 (Gray 700) */
+  --text-muted: #4b5563;     /* 輔助：細緻說明灰 (Gray 600) */
 
-  /* 紫色邊框系統 */
-  --border: #c4b5fd;
-  --border-strong: #8b5cf6;
+  /* 中性細微邊框系統（告別過度搶眼的鮮紫框線） */
+  --border: #e5e7eb;
+  --border-strong: #cbd5e1;
 
-  --shadow-sm: 0 2px 8px rgba(124, 58, 237, 0.08);
-  --shadow-md: 0 6px 18px rgba(124, 58, 237, 0.14);
+  /* 現代自然柔和陰影 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 20px;
@@ -87,9 +89,8 @@
 body {
   font-family: 'Plus Jakarta Sans', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-page);
-  background-image: radial-gradient(circle at 15% 10%, #fffbeb 0%, #fef7dc 55%, #fdeFC2 100%);
-  background-attachment: fixed;
-  color: #3b2854;
+  background-image: none;
+  color: var(--text-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   padding-bottom: 84px; /* 預留給下方 LINE App 式常駐功能列 */
@@ -100,11 +101,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 251, 230, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(10px);
   color: var(--text-dark);
-  border-bottom: 2px solid var(--border-strong);
-  box-shadow: 0 2px 12px rgba(124, 58, 237, 0.1);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .header-inner {

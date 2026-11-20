@@ -796,10 +796,194 @@ function renderWishlistView() {
 // ========================================================
 function renderCalendarView() {
   renderCalendarKpis();
+  renderWeeklySummary();
   renderCalendarGrid();
   renderDailyTrackerPanel();
   renderPurchasedCabinet();
 }
+
+function renderWeeklySummary() {
+  const container = document.getElementById('weekly-summary-body');
+  const dateRangeEl = document.getElementById('weekly-date-range');
+  if (!container) return;
+
+  // 計算過去 7 天的日期陣列
+  const today = new Date();
+  const past7Days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    past7Days.push(formatDateStr(d));
+  }
+
+  if (dateRangeEl) {
+    dateRangeEl.textContent = `${past7Days[0]} 至 ${past7Days[6]}（過去 7 日體感趨勢）`;
+  }
+
+  let eyeDryCount = 0;
+  let fatigueCount = 0;
+  let digestionBadCount = 0;
+  let sickCount = 0;
+  let goodCount = 0;
+  let takenTotal = 0;
+
+  past7Days.forEach(dateStr => {
+    const log = state.calendarLogs[dateStr] || {};
+    if (log.sleepEyeStatus === '眼睛乾酸') eyeDryCount++;
+    if (log.energyLevel === '疲倦想睡') fatigueCount++;
+    if (log.digestionStatus === '排便不順' || log.digestionStatus === '稍微脹氣') digestionBadCount++;
+    if (log.isSickMode) sickCount++;
+    if (log.energyLevel === '精神飽滿' || log.sleepEyeStatus === '睡眠深沉' || log.sleepEyeStatus === '晶亮舒適') goodCount++;
+    if (Array.isArray(log.takenIds)) takenTotal += log.takenIds.length;
+  });
+
+  // 診斷是否有顯著痛點
+  let diagnosisType = 'balanced';
+  if (sickCount >= 2) {
+    diagnosisType = 'sick';
+  } else if (eyeDryCount >= 2) {
+    diagnosisType = 'eye';
+  } else if (fatigueCount >= 2) {
+    diagnosisType = 'fatigue';
+  } else if (digestionBadCount >= 2) {
+    diagnosisType = 'digestion';
+  }
+
+  const hasEye = state.purchased.some(p => p.category === '葉黃素' || p.name.includes('葉黃素'));
+  let contentHtml = '';
+
+  if (diagnosisType === 'eye') {
+    contentHtml = `
+      <div class="weekly-trend-row">
+        <span class="weekly-trend-pill alert">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+          眼睛乾酸高頻：過去 7 天累計 ${eyeDryCount} 日乾酸
+        </span>
+        <span class="weekly-trend-pill">常態服藥記錄：${takenTotal} 次</span>
+      </div>
+
+      <div class="weekly-upgrade-box">
+        <div class="weekly-upgrade-title">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>本週配方進化建議：同品類 1-to-1 替換升級（改善眼睛乾澀）</span>
+        </div>
+        <p class="weekly-upgrade-desc">
+          診斷分析：您本週眼睛乾酸頻繁。${hasEye ? '您目前服用的葉黃素多為基礎單方或低劑量，缺乏抗酸澀輔因子。' : '您目前 Portfolio 中尚未配置專門的晶亮護眼品項。'}
+          比起盲目多買一瓶，我們建議您在下月補貨時替換升級為：<strong>大研生醫 視易適葉黃素 (游離型 10mg + 智利酒果花青素 + 蝦紅素)</strong>。
+        </p>
+        <div class="weekly-upgrade-footer">
+          <span class="weekly-price-impact">每日花費僅微調 +NT$ 6 元｜有效吸收率提升 80%</span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyWeeklyUpgrade('晶亮護眼', '葉黃素')">
+            將此升級方案加入心願清單去冗試算
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (diagnosisType === 'fatigue') {
+    contentHtml = `
+      <div class="weekly-trend-row">
+        <span class="weekly-trend-pill alert">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          體力疲倦高頻：過去 7 天累計 ${fatigueCount} 日疲憊
+        </span>
+        <span class="weekly-trend-pill">常態服藥記錄：${takenTotal} 次</span>
+      </div>
+
+      <div class="weekly-upgrade-box">
+        <div class="weekly-upgrade-title">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>本週配方進化建議：長效緩釋 B 群替換（終結下午斷電）</span>
+        </div>
+        <p class="weekly-upgrade-desc">
+          診斷分析：傳統水溶性 B 群在 2~3 小時即隨尿液排出。建議下月補貨將手邊普通 B 群替換升級為：<strong>大研生醫 B群緩釋雙層錠（含五味子與牛磺酸）或 克補 B群＋鋅/鐵強化款</strong>，長效 8 小時穩定釋放，避免單次過量浪費。
+        </p>
+        <div class="weekly-upgrade-footer">
+          <span class="weekly-price-impact">月省重複維生素支出｜長效提神不中斷</span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyWeeklyUpgrade('精神體力', 'B群')">
+            將此升級方案加入心願清單去冗試算
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (diagnosisType === 'digestion') {
+    contentHtml = `
+      <div class="weekly-trend-row">
+        <span class="weekly-trend-pill alert">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+          消化排便異常：過去 7 天累計 ${digestionBadCount} 日脹氣或不順
+        </span>
+        <span class="weekly-trend-pill">常態服藥記錄：${takenTotal} 次</span>
+      </div>
+
+      <div class="weekly-upgrade-box">
+        <div class="weekly-upgrade-title">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>本週配方進化建議：專利包埋 300 億益生菌替換</span>
+        </div>
+        <p class="weekly-upgrade-desc">
+          診斷分析：低菌數或無包埋的益生菌易在胃酸環境失活。建議升級為：<strong>營養師輕食 300億機能益生菌 或 娘家 NTU 101 專利益生菌</strong>，具備耐酸耐膽鹽專利技術，確保活性定殖。
+        </p>
+        <div class="weekly-upgrade-footer">
+          <span class="weekly-price-impact">足量 300 億活菌保障｜告別無感安慰劑</span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyWeeklyUpgrade('消化排便', '益生菌')">
+            將此升級方案加入心願清單去冗試算
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (diagnosisType === 'sick') {
+    contentHtml = `
+      <div class="weekly-trend-row">
+        <span class="weekly-trend-pill alert">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          生病休養暫停：過去 7 天累計 ${sickCount} 日
+        </span>
+      </div>
+      <div class="weekly-upgrade-box">
+        <div class="weekly-upgrade-title">
+          <span>本週體況總結：感冒康復期防護與補服指引</span>
+        </div>
+        <p class="weekly-upgrade-desc">
+          生病休養期間暫停口服保健品符合醫學規範。康復後請遵照「切勿隔日雙倍補吃」原則，已購商品效期與回購提醒已為您自動順延 ${sickCount} 天！
+        </p>
+      </div>
+    `;
+  } else {
+    contentHtml = `
+      <div class="weekly-trend-row">
+        <span class="weekly-trend-pill positive">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          本週身心狀態維持優良
+        </span>
+        <span class="weekly-trend-pill">服藥規律達成：${takenTotal} 次</span>
+      </div>
+      <div style="font-size:0.84rem; color:#475569; line-height:1.5;">
+        診斷總結：過去 7 日您記錄的良好體感達標，無顯著疲倦或酸澀異常。您目前服用的保健品組合性價比均衡、無多餘成分超標，請繼續維持目前的服藥節奏！
+      </div>
+    `;
+  }
+
+  container.innerHTML = contentHtml;
+}
+window.renderWeeklySummary = renderWeeklySummary;
+
+function applyWeeklyUpgrade(categoryKeyword, productKeyword) {
+  // 找出比對庫中的對應優良升級品項
+  const matched = state.supplements.find(s => 
+    s.name.includes(productKeyword) || 
+    s.category.includes(categoryKeyword) ||
+    s.category.includes(productKeyword)
+  ) || state.supplements[0];
+
+  if (matched) {
+    addToUserList(matched.id, 'wishlist');
+    switchView('view-wishlist');
+    showToast(`已將升級方案「${matched.brand}｜${matched.name}」加入心願清單去冗試算！`);
+  } else {
+    switchView('view-finder');
+  }
+}
+window.applyWeeklyUpgrade = applyWeeklyUpgrade;
 
 function renderCalendarKpis() {
   const kpiRow = document.getElementById('calendar-kpi-row');

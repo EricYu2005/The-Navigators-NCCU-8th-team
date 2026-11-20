@@ -54,14 +54,50 @@
     }
   ];
 
+  // 專門針對 momo 購物網的 DOM 擷取器
+  function scrapeMomoCartItems() {
+    const isMomo = window.location.hostname.includes('momoshop.com.tw');
+    if (!isMomo) return [];
+
+    const items = [];
+    const selectors = [
+      '.goodsName a',
+      '.goodsName',
+      '.prdName a',
+      '.prdName',
+      'table.cartTable tr td a',
+      '.item_title',
+      'input[name="goodsName"]',
+      '#goodsName',
+      '.prdname',
+      '.productName'
+    ];
+
+    selectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        const text = (el.tagName === 'INPUT' ? el.value : el.innerText || el.textContent || '').trim();
+        if (text && text.length > 3 && !items.includes(text)) {
+          items.push(text);
+        }
+      });
+    });
+
+    return items;
+  }
+
   function scanPageText() {
-    const pageText = (document.body ? document.body.innerText : '').toLowerCase();
+    // 1. 優先爬取 momo 購物車精確品項
+    const momoItems = scrapeMomoCartItems();
+    const momoText = momoItems.join(' ');
+
+    // 2. 頁面完整文字
+    const fullText = (momoText ? (momoText + ' ' + (document.body ? document.body.innerText : '')) : (document.body ? document.body.innerText : '')).toLowerCase();
     const matchedRules = [];
 
     SUPPLEMENT_RULES.forEach(rule => {
       let matchCount = 0;
       rule.triggerKeywords.forEach(kw => {
-        if (pageText.includes(kw.toLowerCase())) {
+        if (fullText.includes(kw.toLowerCase())) {
           matchCount++;
         }
       });
@@ -174,6 +210,21 @@
           createFloatingInterceptBanner(matches[0]);
         }
       }, 1200);
+
+      // 監聽 momo 購物車動態 AJAX 修改
+      if (window.location.hostname.includes('momoshop.com.tw')) {
+        let scanTimer = null;
+        const observer = new MutationObserver(() => {
+          clearTimeout(scanTimer);
+          scanTimer = setTimeout(() => {
+            const matches = scanPageText();
+            if (matches.length > 0) {
+              createFloatingInterceptBanner(matches[0]);
+            }
+          }, 1500);
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
     }
   });
 

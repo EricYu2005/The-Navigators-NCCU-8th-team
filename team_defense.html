@@ -247,6 +247,7 @@
       <a href="#sec-future-dispenser">5. 方案二未來展望 (智慧藥盒/小撕包)</a>
       <a href="#sec-future-ads">6. 非保健品周邊廣告收益提案</a>
       <a href="#sec-personas">7. Persona 客群定義與灘頭堡市場</a>
+      <a href="#sec-nhi">8. 健保快易通介接與終極護城河</a>
     </nav>
 
     <!-- ==================== 第一單元：綜合效益評分 ==================== -->
@@ -736,6 +737,77 @@
             <li><strong>身體日誌動態反饋至「尋找」</strong>：使用者在日曆連續記錄「眼睛乾酸」或「精神疲倦」，系統主動提示：「目前 Portfolio 缺乏足量花青素/B群，建議微調」，點擊一鍵帶入尋找表單重新精算，讓平台從靜態工具升級為<strong>「隨身體狀況動態演化的數位營養管家」</strong>。</li>
             <li><strong>生病休養 / 重感冒智慧暫停模式</strong>：消費者重感冒時吃感冒西藥（如普拿疼、抗生素），此時若硬塞綜合維他命或魚油，可能加重肝腎代謝負擔或造成凝血異常。PurePick 支援一鍵開啟「生病休養暫停」，不計入缺漏紀錄，展現真正的專業醫學關懷。</li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 第八單元：健保快易通（健康存摺 SDK）介接可行性與終極護城河 ==================== -->
+    <section id="sec-nhi" class="section-card">
+      <h2><span class="sec-num">8</span> 健保快易通（健康存摺 SDK）介接可行性與終極防禦護城河</h2>
+
+      <div class="qa-box">
+        <div class="qa-q">Q1：為什麼單純的保健品比價或去冗平台容易被抄襲？什麼是 PurePick 的不可替代性護城河？</div>
+        <div class="qa-a">
+          <p>如果 PurePick 只有「公開市售保健品比價」與「成分去冗計算」，任何資深全端工程師花兩週也能用 AI vibe-coding 做出類似工具。要建立任何競品絕對無法跨越的<strong>「結構性護城河」</strong>，核心在於掌握<strong>「使用者真實的健保西藥處方箋用藥紀錄」</strong>！</p>
+          <p>一旦掌握了民眾真實就醫開立的西藥處方，PurePick 就能做到全台灣各大電商（momo、蝦皮、iHerb）永遠不敢碰、也無法實現的殺手級功能：<strong>「西藥處方箋與保健品即時交互作用攔截（Drug-Nutrient Contraindication Guard）」</strong>！</p>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q2：衛福部健保署「健康存摺 SDK」是什麼？技術介接可行性如何？</div>
+        <div class="qa-a">
+          <p><strong>官方開放政策背景：</strong> 衛生福利部中央健康保險署於 2019 年正式發布「全民健保健康存摺 SDK」，推動「民眾自主健康資料授權（Patient-Mediated Data Exchange）」，已成功授權智抗糖、各大型醫學中心與國泰/富邦人壽等第三方健康 App。</p>
+          <p><strong>技術可行性評估（等級：高）：</strong></p>
+          <ul class="step-list">
+            <li><strong>身分認證與授權架構：</strong> 採用國際標準 OAuth 2.0 與 OpenID Connect。當使用者在 PurePick 點擊「連結健保健康存摺」，系統會無縫喚起手機上的「健保快易通 App」，使用者透過生物辨識（指紋 / Face ID）或健保卡驗證後，自主同意授權給 PurePick。</li>
+            <li><strong>數據傳輸規格：</strong> RESTful API，支援國際醫療資訊交換標準 <strong>HL7 FHIR (Fast Healthcare Interoperability Resources)</strong> 與標準 JSON 格式。</li>
+            <li><strong>核心數據欄位（處方箋明細）：</strong> 包含就醫日期、醫療機構、西醫門診處方藥品（<strong>健保藥品代碼、英文藥名、ATC 解剖學治療學化學代碼、每日劑量、服用天數、適應症</strong>）。這為保健品交互作用比對提供了 100% 精確的醫學黃金數據！</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q3：介接健保健康存摺後，會產生哪些震撼市場的殺手級應用場景？</div>
+        <div class="qa-a">
+          <div class="verdict-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin: 1rem 0;">
+            <div style="background:#fef2f2; border:1.5px solid #fecaca; border-radius:10px; padding:1.1rem;">
+              <span style="display:inline-block; font-size:0.75rem; font-weight:800; padding:0.2rem 0.6rem; background:#dc2626; color:#fff; border-radius:4px; margin-bottom:0.5rem;">場景一：致命出血阻斷</span>
+              <h4 style="font-size:1.05rem; color:#991b1b; margin-bottom:0.4rem;">抗凝血處方藥 vs 魚油/銀杏</h4>
+              <p style="font-size:0.83rem; color:#7f1d1d; line-height:1.5;">
+                健保存摺記錄用戶正服用 Warfarin（華法林）或 Plavix（保栓通），當其在 momo 結帳魚油或銀杏時，Chrome 擴充套件立刻啟動<strong>紅色最高級攔截</strong>：「致命凝血衝突！處方抗凝血藥與高濃度魚油併用將大幅增加腦出血與內出血風險！」，直接挽救生命。
+              </p>
+            </div>
+
+            <div style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px; padding:1.1rem;">
+              <span style="display:inline-block; font-size:0.75rem; font-weight:800; padding:0.2rem 0.6rem; background:#d97706; color:#fff; border-radius:4px; margin-bottom:0.5rem;">場景二：抗生素螯合失效</span>
+              <h4 style="font-size:1.05rem; color:#92400e; margin-bottom:0.4rem;">四環黴素抗生素 vs 鈣/鐵/鎂</h4>
+              <p style="font-size:0.83rem; color:#78350f; line-height:1.5;">
+                健保記錄正在服用抗生素，系統在日曆排程自動將海藻鈣或綜合維他命往後錯開 2 小時，避免二價金屬離子與抗生素螯合沉澱，導致抗生素殺菌無效而引發抗藥性。
+              </p>
+            </div>
+
+            <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:10px; padding:1.1rem;">
+              <span style="display:inline-block; font-size:0.75rem; font-weight:800; padding:0.2rem 0.6rem; background:#16a34a; color:#fff; border-radius:4px; margin-bottom:0.5rem;">場景三：生化檢驗數值連動</span>
+              <h4 style="font-size:1.05rem; color:#14532d; margin-bottom:0.4rem;">成人健檢肝腎指數反饋</h4>
+              <p style="font-size:0.83rem; color:#166534; line-height:1.5;">
+                健康存摺亦包含抽血報告（GOT/GPT、肌酸酐、血脂、空腹血糖）。若檢驗顯示腎絲球過濾率偏低（eGFR < 60），系統自動將高蛋白、高磷鉀保健品打入警戒區，打造頂級安全護航。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q4：法規與資安審查門檻評估：學生團隊該如何務實推進？</div>
+        <div class="qa-a">
+          <p><strong>審查門檻現實：</strong> 健保署官方 SDK 開發者帳號目前僅核發給立案公司或學術機構計畫，且要求 App 需通過「行動應用資安標章（MAS）」或第三方滲透測試，初期審查流程約需 2~4 個月。</p>
+          <div class="pitch-script">
+            <strong>團隊務實的兩階段破局策略（Two-Stage Implementation）：</strong><br />
+            1. <strong>Phase 1（專題發表 / MVP 驗證）：健康存摺手動匯出解析器（Local JSON Parser）</strong><br />
+            健保快易通 App 官方本身就有提供民眾**「將個人就醫紀錄匯出為加密 JSON 檔案」**的功能。我們在 PurePick 前端打造「健康存摺檔案一鍵上傳解析器」，純前端在瀏覽器沙盒內解析西藥處方 ATC 碼，<strong>免除向健保署申請 API 的漫長審查，0 天即可在口試現場向評審展示西藥與魚油/B群的震撼交互作用阻斷！</strong><br /><br />
+            2. <strong>Phase 2（正式商轉與產學合作）：正式申請健康存摺官方 SDK</strong><br />
+            在專案成立正式衍生公司（Spin-off）後，依規定向健保署申請第三方健康服務介接資格，以正式 OAuth API 取代手動上傳，達成終極商業防禦壁壘！
+          </div>
         </div>
       </div>
     </section>

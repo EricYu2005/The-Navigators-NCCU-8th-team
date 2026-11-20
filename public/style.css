@@ -1808,6 +1808,123 @@ body {
   stroke: #6d28d9;
 }
 
+/* ==================== 本週健康總結與配方升級卡片 ==================== */
+.weekly-summary-card {
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #fbf9ff 60%, #f5f3ff 100%);
+  border: 1.5px solid #ddd6fe;
+  border-radius: var(--radius);
+  padding: 1.25rem 1.45rem;
+  box-shadow: 0 4px 16px rgba(109, 40, 217, 0.06);
+}
+
+.weekly-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1.5px dashed #e2e8f0;
+  margin-bottom: 0.95rem;
+}
+
+.weekly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #6d28d9;
+  color: #ffffff;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.weekly-badge .icon-svg-sm {
+  stroke: #ffffff;
+}
+
+.weekly-date-range {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.weekly-trend-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.weekly-trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+.weekly-trend-pill.alert {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.weekly-trend-pill.positive {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+  font-weight: 700;
+}
+
+.weekly-upgrade-box {
+  background: #ffffff;
+  border: 1.5px solid #c4b5fd;
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.weekly-upgrade-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #2e1065;
+}
+
+.weekly-upgrade-desc {
+  font-size: 0.83rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.weekly-upgrade-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.weekly-price-impact {
+  font-size: 0.78rem;
+  color: #6d28d9;
+  font-weight: 700;
+}
+
 .purchased-cabinet-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

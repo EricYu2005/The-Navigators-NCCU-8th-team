@@ -3,6 +3,16 @@
  * 好選保健 PurePick - 跨品牌保健食品比較、去冗評估與服用日曆管理前端互動邏輯
  */
 
+function loadSavedNhiMeds() {
+  try {
+    const raw = localStorage.getItem('purepick_nhi_meds');
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 const state = {
   supplements: [],
   wishlist: [],
@@ -17,7 +27,9 @@ const state = {
   selectedDateStr: formatDateStr(new Date()),
   currentUser: null,
   isDemoCleared: false,
-  isPro: localStorage.getItem('purepick_pro') === 'true'
+  isPro: localStorage.getItem('purepick_pro') === 'true',
+  nhiMedications: loadSavedNhiMeds(),
+  nhiImportSource: localStorage.getItem('purepick_nhi_source') || '尚未匯入資料'
 };
 
 let deferredPwaPrompt = null;
@@ -764,7 +776,26 @@ function renderWishlistView() {
     </div>
   `;
 
+  const nhiInteractions = evaluateNhiInteractions();
+  const criticalNhi = nhiInteractions.filter(x => x.risk === 'high' || x.risk === 'moderate');
+  const nhiSummaryBannerHtml = criticalNhi.length > 0 ? `
+    <div style="margin-bottom:1rem; padding:0.9rem 1rem; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:10px; display:flex; justify-content:space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <div style="flex:1; min-width:220px;">
+        <div style="font-size:0.86rem; font-weight:800; color:#b91c1c; margin-bottom:0.2rem;">
+          【健保快易通交互作用警示】偵測到 ${criticalNhi.length} 項西藥處方與保健品衝突！
+        </div>
+        <div style="font-size:0.8rem; color:#7f1d1d;">
+          ${escapeHtml(criticalNhi[0].title)}
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-primary" style="background:#dc2626; border-color:#dc2626;" onclick="jumpToNhiHealthBank()">
+        查看完整避坑詳情
+      </button>
+    </div>
+  ` : '';
+
   analysisContainer.innerHTML = `
+    ${nhiSummaryBannerHtml}
     ${proGateBannerHtml}
 
     <div class="verdict-banner">
@@ -780,9 +811,9 @@ function renderWishlistView() {
     ${dosageAndTimingSection}
 
     <!-- 藥師審查預約名單卡片 -->
-    <div style="margin-top:1.5rem; padding:1.1rem 1.25rem; background:#fffbeb; border:1.5px solid #c4b5fd; border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+    <div style="margin-top:1.5rem; padding:1.1rem 1.25rem; background:#fffbeb; border:1.5px solid #e5e7eb; border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
       <div style="min-width:240px; flex:1;">
-        <h5 style="font-size:0.96rem; font-weight:800; color:#2e1065; margin-bottom:0.25rem;">想要無偏見藥師幫您一對一檢查目前吃的所有保健品嗎？</h5>
+        <h5 style="font-size:0.96rem; font-weight:800; color:#111827; margin-bottom:0.25rem;">想要無偏見藥師幫您一對一檢查目前吃的所有保健品嗎？</h5>
         <p style="font-size:0.83rem; color:#4b5563; margin:0;">歡迎登記預約，我們提供不推銷特定品牌的學術研究避坑諮詢。</p>
       </div>
       <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_analysis')">
@@ -790,6 +821,8 @@ function renderWishlistView() {
       </button>
     </div>
   `;
+
+  renderNhiHealthBankPanel();
 }
 
 // ========================================================
@@ -1935,6 +1968,385 @@ function simulateExtensionIntercept() {
   showToast('已啟動 Chrome 擴充套件購物車去冗攔截模擬！');
 }
 window.simulateExtensionIntercept = simulateExtensionIntercept;
+
+// ========================================================
+// 11. 健保快易通（健康存摺）處方用藥本機解析與交互作用避坑引擎
+// ========================================================
+const NHI_INTERACTION_RULES = [
+  {
+    id: 'anticoagulant_vs_fishoil',
+    risk: 'high',
+    riskLabel: '高風險凝血衝突',
+    drugRegex: /(warfarin|coumadin|aspirin|plavix|clopidogrel|apixaban|rivaroxaban|dabigatran|抗凝血|華法林|阿斯匹靈|保栓通|b01aa|b01ac|b01af)/i,
+    suppRegex: /(魚油|藻油|omega|epa|dha|銀杏|納豆|紅麴|維生素e|維他命e|vitamin e)/i,
+    title: '抗凝血處方藥 vs. 魚油／活血類保健品（出血風險警告）',
+    getDesc: (drugs, supps) =>
+      `偵測到健保處方【${drugs.join('、')}】與您的保健品【${supps.join('、')}】存在高度凝血交互作用！高濃度 Omega-3（EPA/DHA）、銀杏或納豆皆具抗血小板凝集效果，與抗凝血西藥併用恐顯著增加皮下瘀青、腸胃道出血或內出血風險。建議立即暫停相關保健品並諮詢主治醫師。`
+  },
+  {
+    id: 'statin_vs_redyeast',
+    risk: 'high',
+    riskLabel: '嚴重成分重疊禁忌',
+    drugRegex: /(statin|atorvastatin|rosuvastatin|simvastatin|pravastatin|lipitor|crestor|降血脂|立普妥|冠脂妥|c10aa)/i,
+    suppRegex: /(紅麴|monacolin|納豆紅麴)/i,
+    title: '降血脂處方藥 (Statin) vs. 紅麴保健品（嚴禁併用）',
+    getDesc: (drugs, supps) =>
+      `偵測到健保處方【${drugs.join('、')}】與【${supps.join('、')}】成分機轉完全重疊！紅麴中的 Monacolin K 與降血脂西藥成分結構相同，合併服用等同於自行加倍藥量，極易引發肌肉痠痛、橫紋肌溶解症或肝腎指數異常，務必避免同時服用！`
+  },
+  {
+    id: 'antibiotic_thyroid_vs_minerals',
+    risk: 'moderate',
+    riskLabel: '吸收螯合失效警示',
+    drugRegex: /(tetracycline|doxycycline|minocycline|ciprofloxacin|levofloxacin|levothyroxine|eltroxin|四環黴素|抗生素|氟喹諾酮|甲狀腺素|昂特欣|j01aa|j01ma|h03aa)/i,
+    suppRegex: /(鈣|鎂|鐵|鋅|綜合維他命|綜合維生素|善存|礦物質|鈣鎂)/i,
+    title: '抗生素／甲狀腺素處方藥 vs. 鈣、鎂、鐵、鋅礦物質（需間隔 2~4 小時）',
+    getDesc: (drugs, supps) =>
+      `偵測到處方藥【${drugs.join('、')}】與含礦物質之保健品【${supps.join('、')}】！二價金屬離子（鈣、鎂、鐵、鋅）會在腸道中與藥物產生「螯合沉澱」，導致處方藥吸收率驟降 50% 以上甚至殺菌失敗。兩者務必嚴格間隔 2 至 4 小時以上服用！`
+  },
+  {
+    id: 'ppi_vs_calcium_b12',
+    risk: 'moderate',
+    riskLabel: '胃酸吸收調整建議',
+    drugRegex: /(omeprazole|esomeprazole|pantoprazole|lansoprazole|rabeprazole|nexium|胃藥|制酸劑|ppi|耐適恩|a02bc)/i,
+    suppRegex: /(鈣|碳酸鈣|b群|維生素b|維他命b|綜合維他命|鐵)/i,
+    title: '制酸胃藥 (PPI) vs. 鈣片／維生素 B12 吸收影響',
+    getDesc: (drugs, supps) =>
+      `偵測到長期胃藥處方【${drugs.join('、')}】與【${supps.join('、')}】。抑制胃酸會降低傳統「碳酸鈣」與「維生素 B12」的游離吸收率；建議補鈣優先改選不依賴胃酸分解的「海藻鈣」或「檸檬酸鈣」，並於回診時留意 B12 狀態。`
+  },
+  {
+    id: 'bp_meds_vs_calcium',
+    risk: 'moderate',
+    riskLabel: '血壓用藥時序提醒',
+    drugRegex: /(amlodipine|nifedipine|losartan|valsartan|norvasc|降血壓|血壓藥|鈣離子阻斷劑|脈優|c08ca|c09ca)/i,
+    suppRegex: /(鈣|鎂|鈣鎂|葡萄柚)/i,
+    title: '降血壓處方藥 vs. 高劑量鈣鎂／葡萄柚萃取',
+    getDesc: (drugs, supps) =>
+      `偵測到血壓處方【${drugs.join('、')}】與【${supps.join('、')}】。建議降血壓藥與高劑量鈣鎂補劑間隔至少 2 小時服用，並嚴格避開含葡萄柚萃取成分之產品，以免干擾肝臟 CYP3A4 酵素代謝導致血壓過低。`
+  },
+  {
+    id: 'metformin_b12_tip',
+    risk: 'info',
+    riskLabel: '長期用藥營養追蹤',
+    drugRegex: /(metformin|glucophage|降血糖|血糖藥|庫魯化|a10ba)/i,
+    suppRegex: null, // 只要有此藥就給提醒
+    title: '降血糖藥 (Metformin) 長期服用之維生素 B12 耗損提醒',
+    getDesc: (drugs) =>
+      `偵測到處方藥【${drugs.join('、')}】。臨床實證指出，長期服用 Metformin 可能減少腸道對維生素 B12 的吸收；建議可於定期成人健檢追蹤 B12 濃度，並與醫師討論搭配適量的活性 B 群補充。`
+  },
+  {
+    id: 'statin_coq10_tip',
+    risk: 'info',
+    riskLabel: '長期用藥營養追蹤',
+    drugRegex: /(statin|atorvastatin|rosuvastatin|simvastatin|lipitor|crestor|降血脂|立普妥|冠脂妥|c10aa)/i,
+    suppRegex: null,
+    title: '降血脂藥 (Statin) 與輔酶 Q10 耗損評估提醒',
+    getDesc: (drugs) =>
+      `偵測到降血脂處方【${drugs.join('、')}】。Statin 類藥物在抑制膽固醇合成路徑時亦會減少體內輔酶 Q10 生成；若服藥期間伴隨肌肉容易疲勞，可諮詢主治醫師評估是否適量補充輔酶 Q10。`
+  }
+];
+
+function jumpToNhiHealthBank() {
+  if (state.activeView !== 'view-wishlist') {
+    switchView('view-wishlist');
+  }
+  setTimeout(() => {
+    const el = document.getElementById('nhi-healthbank-card');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 120);
+}
+window.jumpToNhiHealthBank = jumpToNhiHealthBank;
+
+function saveNhiState() {
+  localStorage.setItem('purepick_nhi_meds', JSON.stringify(state.nhiMedications || []));
+  localStorage.setItem('purepick_nhi_source', state.nhiImportSource || '尚未匯入資料');
+}
+
+function inferAtcCode(drugText) {
+  const t = String(drugText || '');
+  if (/(warfarin|華法林|抗凝血)/i.test(t)) return 'B01AA03';
+  if (/(aspirin|阿斯匹靈|plavix|保栓通)/i.test(t)) return 'B01AC06';
+  if (/(statin|降血脂|立普妥|冠脂妥)/i.test(t)) return 'C10AA05';
+  if (/(tetracycline|doxycycline|四環黴素|抗生素)/i.test(t)) return 'J01AA07';
+  if (/(ciprofloxacin|levofloxacin|氟喹諾酮)/i.test(t)) return 'J01MA02';
+  if (/(levothyroxine|甲狀腺素|昂特欣)/i.test(t)) return 'H03AA01';
+  if (/(omeprazole|esomeprazole|胃藥|制酸劑|ppi)/i.test(t)) return 'A02BC01';
+  if (/(amlodipine|降血壓|血壓藥|脈優)/i.test(t)) return 'C08CA01';
+  if (/(metformin|降血糖|庫魯化)/i.test(t)) return 'A10BA02';
+  return 'RX-LOCAL';
+}
+
+function addPresetNhiMedication(name, atc = '') {
+  const cleanName = String(name || '').trim();
+  if (!cleanName) return;
+  const exists = state.nhiMedications.some(m => m.name === cleanName);
+  if (exists) {
+    showToast(`「${cleanName}」已在檢核清單中`);
+    return;
+  }
+  state.nhiMedications.push({
+    name: cleanName,
+    atc: atc || inferAtcCode(cleanName),
+    source: '手動勾選'
+  });
+  state.nhiImportSource = `手動選取更新（${new Date().toLocaleTimeString('zh-TW', { hour12: false })}）`;
+  saveNhiState();
+  renderWishlistView();
+  showToast(`已加入健保處方檢核：${cleanName}`);
+}
+window.addPresetNhiMedication = addPresetNhiMedication;
+
+function addManualNhiMedication() {
+  const input = document.getElementById('nhi-manual-drug-input');
+  const val = (input?.value || '').trim();
+  if (!val) {
+    showToast('請輸入處方藥品中英文名稱');
+    return;
+  }
+  addPresetNhiMedication(val, inferAtcCode(val));
+  if (input) input.value = '';
+}
+window.addManualNhiMedication = addManualNhiMedication;
+
+function removeNhiMedication(idx) {
+  if (idx >= 0 && idx < state.nhiMedications.length) {
+    const removed = state.nhiMedications.splice(idx, 1)[0];
+    if (state.nhiMedications.length === 0) {
+      state.nhiImportSource = '尚未匯入資料';
+    }
+    saveNhiState();
+    renderWishlistView();
+    showToast(`已移除處方：${removed.name}`);
+  }
+}
+window.removeNhiMedication = removeNhiMedication;
+
+function clearNhiMedications() {
+  state.nhiMedications = [];
+  state.nhiImportSource = '尚未匯入資料';
+  saveNhiState();
+  renderWishlistView();
+  showToast('已清除本機所有健保處方紀錄');
+}
+window.clearNhiMedications = clearNhiMedications;
+
+function loadSampleNhiHealthBank() {
+  state.nhiMedications = [
+    { name: 'Warfarin 5mg（抗凝血處方藥）', atc: 'B01AA03', source: '健康存摺 JSON 模擬' },
+    { name: 'Tetracycline 250mg（四環黴素抗生素）', atc: 'J01AA07', source: '健康存摺 JSON 模擬' },
+    { name: 'Atorvastatin 20mg（Statin 類降血脂藥）', atc: 'C10AA05', source: '健康存摺 JSON 模擬' }
+  ];
+  state.nhiImportSource = '模擬健保快易通健康存摺 JSON（含 3 筆西醫門診處方）';
+  saveNhiState();
+  renderWishlistView();
+  showToast('已在本機沙盒載入模擬「健保健康存摺 JSON」，並完成保健品交互作用掃描！');
+}
+window.loadSampleNhiHealthBank = loadSampleNhiHealthBank;
+
+function extractDrugsFromNhiContent(rawText) {
+  const found = [];
+  const seen = new Set();
+
+  const pushUnique = (name, atc) => {
+    const clean = String(name || '').trim();
+    if (!clean || clean.length < 2) return;
+    const key = clean.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    found.push({
+      name: clean,
+      atc: atc || inferAtcCode(clean),
+      source: '健康存摺檔案解析'
+    });
+  };
+
+  // 1. 嘗試標準 JSON 解析（支援衛福部健康存摺常見結構與一般 medications 陣列）
+  try {
+    const parsed = JSON.parse(rawText);
+    const walk = (node) => {
+      if (!node) return;
+      if (Array.isArray(node)) {
+        node.forEach(walk);
+        return;
+      }
+      if (typeof node === 'object') {
+        const drugName =
+          node.drug_name ||
+          node.drugName ||
+          node.med_name ||
+          node.name ||
+          node['藥品名稱'] ||
+          node['藥品學名'] ||
+          node['r1.1_4'] ||
+          node['r1_4'];
+        const atc = node.atc || node.atc_code || node.atcCode || node['ATC代碼'] || '';
+        if (drugName && typeof drugName === 'string') {
+          pushUnique(drugName, atc);
+        }
+        Object.values(node).forEach(walk);
+      }
+    };
+    walk(parsed);
+  } catch (e) {
+    // 非 JSON 檔案（TXT/CSV），繼續往下進行文字關鍵字擷取
+  }
+
+  // 2. 若未從 JSON 結構抓到，或為 TXT/CSV，進行藥名與 ATC 碼關鍵字掃描
+  if (found.length === 0) {
+    const knownPatterns = [
+      { regex: /(warfarin|華法林|抗凝血)/i, label: 'Warfarin（抗凝血劑）', atc: 'B01AA03' },
+      { regex: /(aspirin|阿斯匹靈|plavix|clopidogrel|保栓通)/i, label: 'Aspirin / Plavix（抗血小板藥）', atc: 'B01AC06' },
+      { regex: /(atorvastatin|rosuvastatin|simvastatin|statin|降血脂|立普妥|冠脂妥)/i, label: 'Statin 類降血脂藥', atc: 'C10AA05' },
+      { regex: /(tetracycline|doxycycline|四環黴素)/i, label: 'Tetracycline（四環黴素抗生素）', atc: 'J01AA07' },
+      { regex: /(ciprofloxacin|levofloxacin|氟喹諾酮)/i, label: 'Ciprofloxacin（氟喹諾酮抗生素）', atc: 'J01MA02' },
+      { regex: /(levothyroxine|eltroxin|甲狀腺素)/i, label: 'Levothyroxine（甲狀腺素）', atc: 'H03AA01' },
+      { regex: /(omeprazole|esomeprazole|pantoprazole|胃藥|制酸劑|ppi)/i, label: 'Omeprazole（PPI 制酸胃藥）', atc: 'A02BC01' },
+      { regex: /(amlodipine|losartan|valsartan|降血壓|脈優)/i, label: 'Amlodipine（降血壓藥）', atc: 'C08CA01' },
+      { regex: /(metformin|降血糖|庫魯化)/i, label: 'Metformin（降血糖處方藥）', atc: 'A10BA02' }
+    ];
+    knownPatterns.forEach(p => {
+      if (p.regex.test(rawText)) {
+        pushUnique(p.label, p.atc);
+      }
+    });
+  }
+
+  return found;
+}
+
+function handleNhiFileUpload(event) {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const content = String(e.target?.result || '');
+    const extracted = extractDrugsFromNhiContent(content);
+    if (extracted.length === 0) {
+      showToast('檔案讀取成功，但未偵測到常見處方藥品欄位；您可改用右側手動輸入藥名。');
+    } else {
+      const existingNames = new Set(state.nhiMedications.map(m => m.name.toLowerCase()));
+      let addedCount = 0;
+      extracted.forEach(item => {
+        if (!existingNames.has(item.name.toLowerCase())) {
+          state.nhiMedications.push(item);
+          addedCount++;
+        }
+      });
+      state.nhiImportSource = `本機匯入檔案：${file.name}（共擷取 ${extracted.length} 項處方）`;
+      saveNhiState();
+      renderWishlistView();
+      showToast(`已於本機安全解析「${file.name}」，新增 ${addedCount} 項健保處方並完成比對！`);
+    }
+    event.target.value = '';
+  };
+  reader.onerror = () => {
+    showToast('讀取檔案失敗，請確認檔案格式為 JSON / TXT / CSV');
+  };
+  reader.readAsText(file, 'utf-8');
+}
+window.handleNhiFileUpload = handleNhiFileUpload;
+
+function evaluateNhiInteractions() {
+  const meds = state.nhiMedications || [];
+  if (meds.length === 0) return [];
+
+  // 合併檢核：使用者「已購買服用中」+「有興趣清單」中的所有保健品
+  const allSuppsMap = new Map();
+  [...(state.purchased || []), ...(state.wishlist || [])].forEach(s => {
+    if (s && s.id) allSuppsMap.set(Number(s.id), s);
+  });
+  const allSupps = Array.from(allSuppsMap.values());
+
+  const alerts = [];
+
+  NHI_INTERACTION_RULES.forEach(rule => {
+    const matchedDrugs = meds.filter(m => rule.drugRegex.test(`${m.name} ${m.atc || ''}`));
+    if (matchedDrugs.length === 0) return;
+
+    if (rule.suppRegex === null) {
+      alerts.push({
+        risk: rule.risk,
+        riskLabel: rule.riskLabel,
+        title: rule.title,
+        desc: rule.getDesc(matchedDrugs.map(d => d.name), [])
+      });
+      return;
+    }
+
+    const matchedSupps = allSupps.filter(s => {
+      const text = `${s.brand || ''} ${s.name || ''} ${s.category || ''} ${s.active_summary || ''}`;
+      return rule.suppRegex.test(text);
+    });
+
+    if (matchedSupps.length > 0) {
+      alerts.push({
+        risk: rule.risk,
+        riskLabel: rule.riskLabel,
+        title: rule.title,
+        desc: rule.getDesc(
+          matchedDrugs.map(d => d.name),
+          matchedSupps.map(s => `${s.brand} ${s.name}`)
+        )
+      });
+    }
+  });
+
+  return alerts;
+}
+
+function renderNhiHealthBankPanel() {
+  const countEl = document.getElementById('nhi-meds-count');
+  const sourceEl = document.getElementById('nhi-last-import-source');
+  const listEl = document.getElementById('nhi-meds-list');
+  const resultsEl = document.getElementById('nhi-interaction-results');
+  if (!listEl || !resultsEl) return;
+
+  const meds = state.nhiMedications || [];
+  if (countEl) countEl.textContent = String(meds.length);
+  if (sourceEl) sourceEl.textContent = state.nhiImportSource || '尚未匯入資料';
+
+  if (meds.length === 0) {
+    listEl.innerHTML = `<span style="font-size:0.82rem; color:var(--text-muted);">尚未匯入任何健保西藥處方。請上傳健康存摺檔案、點選上方常見處方，或點擊右上「載入模擬健康存摺（評審 Demo）」立即體驗！</span>`;
+    resultsEl.innerHTML = '';
+    return;
+  }
+
+  listEl.innerHTML = meds.map((m, idx) => `
+    <span class="nhi-med-chip">
+      <span>${escapeHtml(m.name)}</span>
+      <span class="nhi-med-atc">${escapeHtml(m.atc || 'RX')}</span>
+      <button type="button" class="nhi-med-remove" onclick="removeNhiMedication(${idx})" title="移除此處方">&times;</button>
+    </span>
+  `).join('');
+
+  const alerts = evaluateNhiInteractions();
+  if (alerts.length === 0) {
+    resultsEl.innerHTML = `
+      <div class="nhi-alert-card risk-safe">
+        <div class="nhi-alert-head">
+          <span class="nhi-alert-title">目前未偵測到已知高風險西藥與保健品衝突</span>
+          <span class="nhi-risk-tag safe">檢核安全通過</span>
+        </div>
+        <p class="nhi-alert-desc">
+          已將您的 ${meds.length} 項健保處方與目前「已購買」及「有興趣」清單交叉比對，暫無明顯凝血或螯合禁忌。仍建議中西藥與保健食品至少間隔 1 至 2 小時服用。
+        </p>
+      </div>
+    `;
+  } else {
+    resultsEl.innerHTML = alerts.map(a => `
+      <div class="nhi-alert-card risk-${a.risk}">
+        <div class="nhi-alert-head">
+          <span class="nhi-alert-title">${escapeHtml(a.title)}</span>
+          <span class="nhi-risk-tag ${a.risk}">${escapeHtml(a.riskLabel)}</span>
+        </div>
+        <p class="nhi-alert-desc">${escapeHtml(a.desc)}</p>
+      </div>
+    `).join('');
+  }
+}
+
 
 
 

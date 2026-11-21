@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.9.8" />
+  <link rel="stylesheet" href="style.css?v=4.0.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -304,6 +304,9 @@
           <p>把考慮購買的保健品放進來，系統會自動交叉比對您「已購買正在吃」與「有興趣」的商品，抓出重複購買並幫您省下冤枉錢。</p>
         </div>
         <div class="banner-btns">
+          <button type="button" class="btn btn-primary" onclick="jumpToNhiHealthBank()">
+            匯入健保快易通（健康存摺）
+          </button>
           <button type="button" class="btn btn-outline" onclick="switchView('view-finder')">
             挑選更多商品
           </button>
@@ -335,6 +338,97 @@
           <div id="wishlist-analysis-container"></div>
         </div>
       </div>
+
+      <!-- ==================== 健保快易通（健康存摺）處方用藥匯入與交互作用避坑模組 ==================== -->
+      <div class="card nhi-healthbank-card" id="nhi-healthbank-card">
+        <div class="card-title-bar">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              <svg class="icon-svg" viewBox="0 0 24 24" style="stroke:#0d9488;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+              <h3 style="margin:0;">健保快易通（健康存摺）西藥處方匯入與交互作用避坑</h3>
+              <span class="nhi-privacy-badge">本機零上傳隱私沙盒</span>
+            </div>
+            <p class="card-sub-hint">
+              支援匯入「健保快易通 App」健康存摺 JSON/文字檔案，或手動輸入目前服用的慢性病西藥，自動交叉比對已購買與有興趣的保健品，攔截凝血衝突、藥物螯合失效等致命交互作用。
+            </p>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-sm btn-primary" onclick="loadSampleNhiHealthBank()">
+              載入模擬健康存摺（評審 Demo）
+            </button>
+            <button type="button" class="btn btn-sm btn-outline" onclick="clearNhiMedications()">
+              清除用藥紀錄
+            </button>
+          </div>
+        </div>
+
+        <div class="nhi-input-grid">
+          <!-- 方式一：上傳健保快易通健康存摺檔案 -->
+          <div class="nhi-input-box">
+            <div class="nhi-box-label">
+              <span class="nhi-step-num">1</span>
+              <strong>上傳「健保快易通 App」健康存摺匯出檔</strong>
+            </div>
+            <p class="nhi-box-desc">
+              路徑：開啟「全民健保行動快易通」App → 健康存摺 → 個人紀錄 → 匯出就醫與用藥紀錄（支援 <code>.json</code> / <code>.txt</code> / <code>.csv</code>）。檔案僅於本機瀏覽器解析，絕不上傳伺服器。
+            </p>
+            <label class="nhi-upload-dropzone" for="nhi-file-input">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24" style="stroke:#0d9488;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="nhi-upload-title">點擊選擇健康存摺匯出檔案（JSON / TXT / CSV）</span>
+              <span class="nhi-upload-sub">支援自動辨識健保藥品英文學名、中文藥名與 ATC 藥物分類碼</span>
+              <input type="file" id="nhi-file-input" accept=".json,.txt,.csv" onchange="handleNhiFileUpload(event)" style="display:none;" />
+            </label>
+          </div>
+
+          <!-- 方式二：手動輸入處方藥或快速點選常見西藥 -->
+          <div class="nhi-input-box">
+            <div class="nhi-box-label">
+              <span class="nhi-step-num">2</span>
+              <strong>手動輸入處方藥名／快速勾選常見慢性病用藥</strong>
+            </div>
+            <p class="nhi-box-desc">
+              若尚未從手機匯出檔案，可直接輸入藥袋上的中英文藥名，或點選下方常見處方藥類別進行即時交互作用檢核：
+            </p>
+            <div class="nhi-manual-row">
+              <input
+                type="text"
+                id="nhi-manual-drug-input"
+                class="form-input"
+                placeholder="例如：Warfarin、阿斯匹靈、降血脂藥、四環黴素、胃藥..."
+                onkeydown="if(event.key==='Enter'){ event.preventDefault(); addManualNhiMedication(); }"
+              />
+              <button type="button" class="btn btn-teal btn-sm" onclick="addManualNhiMedication()" style="white-space:nowrap;">
+                加入檢核
+              </button>
+            </div>
+            <div class="nhi-preset-pills">
+              <button type="button" class="nhi-preset-pill" onclick="addPresetNhiMedication('Warfarin / 阿斯匹靈（抗凝血劑）', 'B01AA03')">＋ 抗凝血藥 (Warfarin)</button>
+              <button type="button" class="nhi-preset-pill" onclick="addPresetNhiMedication('Atorvastatin（Statin 類降血脂藥）', 'C10AA05')">＋ 降血脂藥 (Statin)</button>
+              <button type="button" class="nhi-preset-pill" onclick="addPresetNhiMedication('Tetracycline（四環黴素抗生素）', 'J01AA07')">＋ 四環黴素抗生素</button>
+              <button type="button" class="nhi-preset-pill" onclick="addPresetNhiMedication('Levothyroxine（甲狀腺素）', 'H03AA01')">＋ 甲狀腺素</button>
+              <button type="button" class="nhi-preset-pill" onclick="addPresetNhiMedication('Omeprazole（PPI 制酸胃藥）', 'A02BC01')">＋ 制酸胃藥 (PPI)</button>
+              <button type="button" class="nhi-preset-pill" onclick="addPresetNhiMedication('Amlodipine（降血壓鈣離子阻斷劑）', 'C08CA01')">＋ 降血壓藥</button>
+              <button type="button" class="nhi-preset-pill" onclick="addPresetNhiMedication('Metformin（降血糖處方藥）', 'A10BA02')">＋ 降血糖藥 (Metformin)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 已匯入之處方用藥標籤列 -->
+        <div class="nhi-imported-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+            <strong style="font-size:0.88rem; color:var(--text-dark);">目前已匯入之健保西藥處方（共 <span id="nhi-meds-count">0</span> 項）</strong>
+            <span style="font-size:0.75rem; color:var(--text-muted);" id="nhi-last-import-source">尚未匯入資料</span>
+          </div>
+          <div id="nhi-meds-list" class="nhi-meds-list"></div>
+        </div>
+
+        <!-- 健保西藥 vs 保健品交互作用檢核報告 -->
+        <div id="nhi-interaction-results" class="nhi-interaction-results"></div>
+
+        <div class="nhi-legal-note">
+          <strong>隱私與醫療合規聲明：</strong>本模組為政大創創專案 Phase 1「健康存摺本機解析器」展示模型，所有處方資料僅留存於本機瀏覽器 <code>localStorage</code>，絕不傳輸至外部伺服器；比對結果僅供教學展示與用藥避坑參考，實際停藥或調藥請務必諮詢主治醫師或藥師。
+        </div>
+      </div>
     </section>
 
     <!-- =========================================================================
@@ -345,6 +439,11 @@
         <div>
           <h1>已購買保健櫃與服用狀態日曆</h1>
           <p>像記錄生理期日曆一樣，每天勾選吃過的保健品並記錄精神、消化與睡眠感受，追蹤保健品吃了一個月後是否真的有感。</p>
+        </div>
+        <div class="banner-btns">
+          <button type="button" class="btn btn-outline" onclick="jumpToNhiHealthBank()">
+            健保快易通用藥交互作用檢核
+          </button>
         </div>
       </div>
 
@@ -952,6 +1051,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.9.8"></script>
+  <script src="app.js?v=4.0.0"></script>
 </body>
 </html>

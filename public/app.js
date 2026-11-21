@@ -793,8 +793,6 @@ function renderWishlistView() {
       </button>
     </div>
   `;
-
-  renderAnalysisPurchasedSection();
 }
 
 // ========================================================
@@ -1492,10 +1490,18 @@ function renderAnalysisPurchasedSection() {
 
 function renderPurchasedCabinet() {
   const grid = document.getElementById('purchased-cabinet-grid');
+  const countEl = document.getElementById('purchased-cabinet-count');
+  if (countEl) {
+    countEl.textContent = `${state.purchased.length} 款服用中`;
+  }
   if (!grid) return;
 
   if (state.purchased.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:#64748b;">目前尚無已購買服用的保健品。</div>`;
+    grid.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:#64748b; background:#f8fafc; border-radius:10px;">
+        目前尚無已購買服用的保健品。您可以在上方貼上商品名稱、點擊「＋ 手動新增」，或在比價卡片點選「已在外部購買（加入日曆）」。
+      </div>
+    `;
     return;
   }
 
@@ -1998,7 +2004,7 @@ async function importSharedProductByName(productText, sourceChannel = '手機分
       renderCatalog();
       renderWishlistView();
       renderCalendarView();
-      switchView('view-wishlist');
+      switchView('view-calendar');
       showToast(json.message || '已成功加入「告知醫生目前使用的保健品」清單！');
     } else {
       showToast(json.message || '未偵測到保健食品名稱，系統已自動排除非保健品');
@@ -2124,8 +2130,9 @@ async function shareDoctorList() {
   const userName = state.currentUser?.displayName || '本人';
   const todayStr = formatDateStr(new Date());
   const lines = [
-    `【告知醫生目前使用的保健品清單】`,
-    `服用者：${userName}｜整理日期：${todayStr}`,
+    `【告知醫生目前使用的保健品清單（看診與親屬備查）】`,
+    `整理對象：${userName}｜日期：${todayStr}`,
+    `備註：供看診醫師與藥師評估用藥交互作用；亦可透過 LINE 傳送給家人或陪病親屬，同步掌握目前服用的保健品與劑量。`,
     `--------------------------------`
   ];
 
@@ -2137,17 +2144,17 @@ async function shareDoctorList() {
   });
 
   lines.push(`--------------------------------`);
-  lines.push(`（由 好選保健 PurePick 整理，供看診醫師與藥師評估用藥安全）`);
+  lines.push(`（由 好選保健 PurePick 整理，供看診醫師評估用藥安全及親屬照護備查）`);
 
   const fullText = lines.join('\n');
 
   if (navigator.share) {
     try {
       await navigator.share({
-        title: '告知醫生目前使用的保健品清單',
+        title: '告知醫生目前使用的保健品清單（看診與親屬備查）',
         text: fullText
       });
-      showToast('已開啟手機分享選單！');
+      showToast('已開啟手機分享選單，可直接傳送至 LINE 給家人或親屬！');
       return;
     } catch (e) {
       if (e.name === 'AbortError') return;
@@ -2156,7 +2163,7 @@ async function shareDoctorList() {
 
   try {
     await navigator.clipboard.writeText(fullText);
-    showToast('已將「告知醫生目前使用的保健品」完整清單複製！可直接貼到 LINE 傳給家人或自己備查。');
+    showToast('已將「告知醫生目前使用的保健品」清單複製！可直接貼到 LINE 傳給家人、親屬或看診備查。');
   } catch (e) {
     showToast('複製失敗，請使用全螢幕大字看診卡直接出示給醫生看');
   }

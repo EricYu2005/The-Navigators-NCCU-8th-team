@@ -299,76 +299,22 @@
     </section>
 
     <!-- =========================================================================
-         功能二：【管理 A：看診清單與重複購買分析】
+         功能二：【管理 A：考慮購買清單與重複去冗分析】
          ========================================================================= -->
     <section id="view-wishlist" class="view-section">
       <div class="section-banner">
         <div>
-          <h1>告知醫生目前使用的保健品 ＆ 重複購買分析</h1>
-          <p>看診或領藥時可一鍵打開「全螢幕大字看診卡」拿給醫生看，系統也會自動比對您「目前正在吃」與「想買」的商品，抓出重複花費。</p>
+          <h1>考慮購買清單比對 ＆ 重複去冗分析</h1>
+          <p>比對您想買的各品牌保健品，自動分析成分是否重複過量，幫您精算省下不必要的重複花費；已購買的保健品可至「已購管理與日曆」查看與管理。</p>
         </div>
         <div class="banner-btns">
-          <button type="button" class="btn btn-primary" onclick="openDoctorFullscreenModal()">
-            出示給醫生看（大字看診卡）
+          <button type="button" class="btn btn-primary" onclick="switchView('view-calendar')">
+            查看已購保健品與日曆
           </button>
           <button type="button" class="btn btn-outline" onclick="switchView('view-finder')">
             挑選更多商品
           </button>
         </div>
-      </div>
-
-      <!-- 突出核心功能：告知醫生目前使用的保健品（已購買服用中清單） -->
-      <div class="card doctor-show-card" id="doctor-show-card">
-        <div class="card-title-bar doctor-card-header">
-          <div>
-            <div class="doctor-title-row">
-              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-              <h3>告知醫生目前使用的保健品</h3>
-              <span class="pill-count" id="analysis-purchased-count">0 款服用中</span>
-            </div>
-            <p class="card-sub-hint">
-              看病、領慢性病藥或去藥局諮詢時，可點選「全螢幕大字看診卡」直接拿給醫生或藥師看，避免保健品與西藥互相影響；清單也會同步到日曆打卡並作為下方重複購買的比對基準。
-            </p>
-          </div>
-          <div class="doctor-action-btns">
-            <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
-              <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
-              <span>全螢幕大字看診卡</span>
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="shareDoctorList()">
-              <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              <span>分享清單到手機 / LINE</span>
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="openAddSupplementModal('purchased')">
-              <span>＋ 手動新增</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 手機購物分享／貼上商品名稱快速加入列 -->
-        <div class="mobile-quick-import-bar">
-          <div class="quick-import-label">
-            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            <span>從手機購物網站分享或貼上商品名稱快速加入（自動排除零食，只記錄保健品）：</span>
-          </div>
-          <div class="quick-import-controls">
-            <input
-              type="text"
-              id="quick-import-input"
-              class="form-input"
-              placeholder="貼上商品名稱，例如：大研生醫高濃度魚油、威德益生菌..."
-              onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleQuickImportSubmit(); }"
-            />
-            <button type="button" class="btn btn-teal btn-sm" onclick="handleQuickImportSubmit()">
-              加入目前使用清單
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="openWebAppModal()">
-              手機版 App 分享教學
-            </button>
-          </div>
-        </div>
-
-        <div id="analysis-purchased-grid" class="purchased-cabinet-grid"></div>
       </div>
 
       <!-- 頂部省錢與費用摘要指標 -->
@@ -399,14 +345,84 @@
     </section>
 
     <!-- =========================================================================
-         功能三：【管理 B：已購買與服用日曆】月經日曆式打卡與身體日誌
+         功能三：【管理 B：已購買商品管理與服用日誌】月經日曆式打卡與身體日誌
          ========================================================================= -->
     <section id="view-calendar" class="view-section">
       <div class="section-banner">
         <div>
-          <h1>已購買保健櫃與服用狀態日曆</h1>
-          <p>像記錄生理期日曆一樣，每天勾選吃過的保健品並記錄精神、消化與睡眠感受，追蹤保健品吃了一個月後是否真的有感。</p>
+          <h1>已購買商品管理（告知醫生保健品）與服用日誌</h1>
+          <p>管理目前家中正在服用的保健品，看診或領藥時可一鍵打開「全螢幕大字看診卡」給醫生看，或分享清單到 LINE 讓家人與親屬同步掌握家中服用清單與用藥安全。</p>
         </div>
+        <div class="banner-btns">
+          <button type="button" class="btn btn-primary" onclick="openDoctorFullscreenModal()">
+            出示給醫生看（大字看診卡）
+          </button>
+          <button type="button" class="btn btn-outline" onclick="shareDoctorList()">
+            分享清單至 LINE（顧及親屬）
+          </button>
+        </div>
+      </div>
+
+      <!-- 突出核心功能：告知醫生目前使用的保健品（已購買商品管理專區） -->
+      <div class="card doctor-show-card" id="doctor-show-card">
+        <div class="card-title-bar doctor-card-header">
+          <div>
+            <div class="doctor-title-row">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              <h3>告知醫生目前使用的保健品（已購管理）</h3>
+              <span class="pill-count" id="purchased-cabinet-count">0 款服用中</span>
+            </div>
+            <p class="card-sub-hint">
+              看病、領慢性病藥或去藥局諮詢時，可點選「全螢幕大字看診卡」直接拿給醫生或藥師看，避免保健品與西藥互相影響；亦可一鍵「分享清單至 LINE」，方便長輩看診出示、或讓子女/親屬陪病時同步掌握長輩服用的保健品。
+            </p>
+          </div>
+          <div class="doctor-action-btns">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+              <span>全螢幕大字看診卡</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="shareDoctorList()">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <span>分享清單至 LINE（顧及親屬）</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="openAddSupplementModal('purchased')">
+              <span>＋ 手動新增</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 手機購物分享／貼上商品名稱快速加入列 -->
+        <div class="mobile-quick-import-bar">
+          <div class="quick-import-label">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            <span>從手機購物網站分享或貼上商品名稱快速加入（自動排除零食，只記錄保健品）：</span>
+          </div>
+          <div class="quick-import-controls">
+            <input
+              type="text"
+              id="quick-import-input"
+              class="form-input"
+              placeholder="貼上商品名稱，例如：大研生醫高濃度魚油、威德益生菌..."
+              onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleQuickImportSubmit(); }"
+            />
+            <button type="button" class="btn btn-teal btn-sm" onclick="handleQuickImportSubmit()">
+              加入目前使用清單
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="openWebAppModal()">
+              手機版 App 分享教學
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="simulateMobileShareImport()">
+              模擬手機分享匯入
+            </button>
+          </div>
+        </div>
+
+        <div class="cabinet-channels-hint">
+          <strong>三種加入方式：</strong>
+          1. 點擊「＋ 手動新增」輸入手邊保健品 ｜ 2. 在「尋找」或「分析」卡片點擊「已在外部購買（加入日曆）」 ｜ 3. 將本平台加到手機主畫面後，從購物網站按「分享」或貼上商品名稱快速加入（自動排除零食，只記錄保健食品）。
+        </div>
+
+        <div id="purchased-cabinet-grid" class="purchased-cabinet-grid"></div>
       </div>
 
       <!-- 日曆頂部統計指標 -->
@@ -593,30 +609,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 下方：目前已購買正在服用的商品管理櫃 -->
-      <div class="card purchased-cabinet-card">
-        <div class="card-title-bar">
-          <div>
-            <h3>告知醫生目前使用的保健品（每日服用櫃）</h3>
-            <p class="card-sub-hint">這裡的商品會出現在上方的每日服用日曆中，看診時可一鍵打開大字看診卡給醫生看</p>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
-              全螢幕大字看診卡
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="openAddSupplementModal('purchased')">
-              ＋ 手動新增
-            </button>
-            <span class="pill-count" id="purchased-cabinet-count">0 款</span>
-          </div>
-        </div>
-        <div class="cabinet-channels-hint">
-          <strong>三種加入方式：</strong>
-          1. 點擊「＋ 手動新增」輸入手邊保健品 ｜ 2. 在「尋找」或「分析」卡片點擊「已在外部購買（加入日曆）」 ｜ 3. 將本平台加到手機主畫面後，從購物網站按「分享」或貼上商品名稱快速加入（自動排除零食，只記錄保健食品）。
-        </div>
-        <div id="purchased-cabinet-grid" class="purchased-cabinet-grid"></div>
       </div>
     </section>
 

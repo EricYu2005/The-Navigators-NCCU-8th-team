@@ -21,20 +21,20 @@ const PYTHON_SCRIPT_PATH = path.resolve(__dirname, 'scripts', 'supplement_analyz
 
 // 台灣衛福部 DRIs 與上限攝取量 (作為 JS 雙重保障)
 const NUTRIENT_STANDARDS = {
-  omega3: { name: 'Omega-3 (EPA+DHA)', unit: 'mg', recommended: 1000, min_effective: 600, ul: 3000 },
-  lutein: { name: '葉黃素', unit: 'mg', recommended: 10, min_effective: 6, ul: 30 },
-  zeaxanthin: { name: '玉米黃素', unit: 'mg', recommended: 2, min_effective: 1.2, ul: 10 },
-  probiotics: { name: '益生菌活菌數', unit: '億CFU', recommended: 200, min_effective: 100, ul: 1000 },
-  vitamin_b: { name: '綜合維生素B群', unit: '%DRIs', recommended: 100, min_effective: 80, ul: 1500 },
-  calcium: { name: '鈣', unit: 'mg', recommended: 600, min_effective: 300, ul: 2500 },
-  magnesium: { name: '鎂', unit: 'mg', recommended: 200, min_effective: 100, ul: 700 },
-  vitamin_d: { name: '維生素D3', unit: 'IU', recommended: 800, min_effective: 400, ul: 2000 },
-  vitamin_c: { name: '維生素C', unit: 'mg', recommended: 100, min_effective: 100, ul: 2000 },
-  zinc: { name: '鋅', unit: 'mg', recommended: 15, min_effective: 10, ul: 35 },
-  iron: { name: '鐵', unit: 'mg', recommended: 15, min_effective: 10, ul: 45 },
-  collagen: { name: '膠原蛋白胜肽', unit: 'mg', recommended: 5000, min_effective: 3000, ul: 15000 },
-  gaba: { name: 'GABA / 舒眠萃取', unit: 'mg', recommended: 100, min_effective: 50, ul: 500 },
-  uc2: { name: '非變性二型膠原(UC-II)', unit: 'mg', recommended: 40, min_effective: 40, ul: 120 }
+  omega3: { name: '魚油有效成分 (Omega-3)', unit: '毫克', recommended: 1000, min_effective: 600, ul: 3000 },
+  lutein: { name: '葉黃素', unit: '毫克', recommended: 10, min_effective: 6, ul: 30 },
+  zeaxanthin: { name: '玉米黃素', unit: '毫克', recommended: 2, min_effective: 1.2, ul: 10 },
+  probiotics: { name: '益生菌好菌數', unit: '億好菌', recommended: 200, min_effective: 100, ul: 1000 },
+  vitamin_b: { name: '綜合維生素B群', unit: '% 每日建議量', recommended: 100, min_effective: 80, ul: 1500 },
+  calcium: { name: '鈣', unit: '毫克', recommended: 600, min_effective: 300, ul: 2500 },
+  magnesium: { name: '鎂', unit: '毫克', recommended: 200, min_effective: 100, ul: 700 },
+  vitamin_d: { name: '維生素D3', unit: '單位(IU)', recommended: 800, min_effective: 400, ul: 2000 },
+  vitamin_c: { name: '維生素C', unit: '毫克', recommended: 100, min_effective: 100, ul: 2000 },
+  zinc: { name: '鋅', unit: '毫克', recommended: 15, min_effective: 10, ul: 35 },
+  iron: { name: '鐵', unit: '毫克', recommended: 15, min_effective: 10, ul: 45 },
+  collagen: { name: '膠原蛋白', unit: '毫克', recommended: 5000, min_effective: 3000, ul: 15000 },
+  gaba: { name: '幫助入睡成分 (GABA)', unit: '毫克', recommended: 100, min_effective: 50, ul: 500 },
+  uc2: { name: '關節靈活保養膠原', unit: '毫克', recommended: 40, min_effective: 40, ul: 120 }
 };
 
 /**
@@ -272,12 +272,12 @@ function runJsFallbackAnalyzer(payload) {
   const [minB, maxB] = budgetLimits[budgetTier] || [1200, 2000];
 
   const rules = [
-    { category: '葉黃素', key: 'eye', label: '晶亮護眼', kws: ['眼', '螢幕', '電腦', '手機', '乾澀', '酸'], advice: '建議選擇游離型葉黃素搭配玉米黃素 10:2 黃金比例，每日 6~10mg 即可穩定累積。' },
-    { category: '魚油', key: 'cardio', label: '外食循環與思緒', kws: ['外食', '魚', '油', '循環', '血脂', '思緒', '專注'], advice: '建議挑選 Omega-3 濃度達 80% 以上的 rTG 型魚油，避免買到低濃度雜油。' },
-    { category: 'B群', key: 'energy', label: '精神體力與代謝', kws: ['累', '熬夜', '疲勞', '精神', '加班', '體力', '嘴破'], advice: '建議挑選緩釋型或活性型 B 群，維持整天能量代謝。' },
-    { category: '益生菌', key: 'gut', label: '消化道順暢', kws: ['便秘', '排便', '脹氣', '消化', '腸胃', '過敏', '換季'], advice: '認明菌株編號、無添加砂糖與瀉藥成分、活菌數 100~300 億 CFU 即可。' },
-    { category: '鈣鎂D', key: 'bone', label: '骨骼行動與舒眠', kws: ['睡', '失眠', '淺眠', '抽筋', '骨', '關節', '長輩'], advice: '海藻鈣搭配鎂與維生素 D3 於睡前補充，兼顧補鈣與夜間神經放鬆。' },
-    { category: '膠原蛋白', key: 'beauty', label: '氣色澎潤保養', kws: ['皮膚', '氣色', '膠原', '美顏'], advice: '選擇小分子胜肽且無糖配方，並搭配日常維生素 C 攝取。' }
+    { category: '葉黃素', key: 'eye', label: '晶亮護眼', kws: ['眼', '螢幕', '電腦', '手機', '乾澀', '酸'], advice: '建議選擇好吸收的游離型葉黃素搭配玉米黃素 10:2 比例，每日 6~10 毫克即可穩定補充。' },
+    { category: '魚油', key: 'cardio', label: '外食循環與思緒', kws: ['外食', '魚', '油', '循環', '血脂', '思緒', '專注'], advice: '建議挑選有效成分濃度達 80% 以上的高吸收型魚油，避免買到低濃度一般油脂。' },
+    { category: 'B群', key: 'energy', label: '精神體力與代謝', kws: ['累', '熬夜', '疲勞', '精神', '加班', '體力', '嘴破'], advice: '建議挑選長效慢慢釋放的 B 群，維持整天精神與體力。' },
+    { category: '益生菌', key: 'gut', label: '消化道順暢', kws: ['便秘', '排便', '脹氣', '消化', '腸胃', '過敏', '換季'], advice: '選擇公開好菌種類、無添加砂糖與輕瀉成分、好菌數 100~300 億即可。' },
+    { category: '鈣鎂D', key: 'bone', label: '骨骼行動與舒眠', kws: ['睡', '失眠', '淺眠', '抽筋', '骨', '關節', '長輩'], advice: '海藻鈣搭配鎂與維生素 D3 於睡前補充，兼顧補鈣與夜間放鬆好眠。' },
+    { category: '膠原蛋白', key: 'beauty', label: '氣色澎潤保養', kws: ['皮膚', '氣色', '膠原', '美顏'], advice: '選擇小分子好吸收且無糖配方，並搭配日常維生素 C 攝取。' }
   ];
 
   const matchedCategories = [];

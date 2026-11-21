@@ -1,4 +1,4 @@
-const CACHE_NAME = 'purepick-pwa-v18';
+const CACHE_NAME = 'purepick-webapp-v20';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -10,25 +10,23 @@ const STATIC_ASSETS = [
   '/icons/icon.svg'
 ];
 
-// 1. 安裝 Service Worker 並快取核心 App Shell 靜態資源
+// 1. 安裝 Service Worker 並快取核心靜態資源
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[CareNav SW] Pre-caching offline app shell');
       return cache.addAll(STATIC_ASSETS);
     })
   );
 });
 
-// 2. 啟用並強制清除舊版本快取
+// 2. 啟用並清除舊版快取
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((name) => {
           if (name !== CACHE_NAME) {
-            console.log('[CareNav SW] Clearing old cache:', name);
             return caches.delete(name);
           }
         })
@@ -37,18 +35,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. 攔截請求：網路優先 (Network First)，保證線上隨時取得 Render 最新版本，離線才回退快取
+// 3. 網路優先 (Network First)，確保手機隨時取得最新資料，離線時回退快取
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // API 請求強制網路優先
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
         return new Response(
           JSON.stringify({
             success: false,
-            message: '目前處於離線狀態，請檢查網路連線。'
+            message: '目前處於離線狀態，請檢查手機網路連線。'
           }),
           { headers: { 'Content-Type': 'application/json' } }
         );
@@ -57,7 +54,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 靜態核心檔案與網頁：網路優先 (Network First)
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
@@ -70,8 +66,7 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => {
-        // 離線時回退至本地快取
-        return caches.match(event.request);
+        return caches.match(event.request) || caches.match('/index.html');
       })
   );
 });

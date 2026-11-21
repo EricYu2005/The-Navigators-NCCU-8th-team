@@ -1,15 +1,15 @@
 {
-  "name": "好選保健 PurePick - 跨品牌保健食品比較與服用日曆",
+  "name": "好選保健 PurePick - 保健品比價、重複檢查與看診清單",
   "short_name": "好選保健",
-  "description": "跨品牌保健食品成分比較、重疊去冗省錢評估與月曆式服用追蹤平台",
+  "description": "幫您比對保健食品每日花費、抓出重複購買，並整理「告知醫生目前使用的保健品」看診清單",
   "start_url": "/",
   "id": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f8fafc",
-  "theme_color": "#0284c7",
-  "categories": ["medical", "health", "lifestyle"],
+  "background_color": "#fcfbf7",
+  "theme_color": "#7c3aed",
+  "categories": ["health", "lifestyle"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -28,5 +28,15 @@
       "sizes": "any",
       "type": "image/svg+xml"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "share_title",
+      "text": "share_text",
+      "url": "share_url"
+    }
+  }
 }

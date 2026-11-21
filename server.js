@@ -546,56 +546,70 @@ app.post('/api/leads', async (req, res) => {
 });
 
 // ========================================================
-// 8.1 擴充套件專用：從 momo 購物網等電商一鍵同步已購保健品至日曆櫃
+// 8.1 手機 Web App 分享與文字貼上快速匯入保健品（自動過濾非保健品）
 // ========================================================
-app.post('/api/purchased/sync-from-extension', async (req, res) => {
+app.post('/api/purchased/quick-import', async (req, res) => {
   try {
     const { brand, name, category, price, active_summary, recommended_timing, source_channel } = req.body;
-    if (!name || !name.trim()) {
-      return res.status(400).json({ success: false, message: '商品名稱不能為空' });
+    const rawName = (name || '').trim();
+    if (!rawName) {
+      return res.status(400).json({ success: false, message: '請輸入或分享保健品名稱' });
     }
 
-    // 嚴格過濾非保健食品 (避免洋芋片、生活用品誤入)
+    // 嚴格過濾非保健食品 (避免洋芋片、零食、生活用品誤入)
     const SUPPLEMENT_REGEX = /(?:魚油|藻油|Omega|EPA|DHA|葉黃素|玉米黃素|晶亮|金盞花|蝦紅素|花青素|B群|維生素B|維他命B|維生素|維他命|益生菌|乳酸菌|酵素|納豆|紅麴|薑黃|瑪卡|芝麻素|鈣|檸檬酸鈣|海藻鈣|鎂|鋅|鐵|膠原蛋白|玻尿酸|UC-II|葡萄糖胺|軟骨素|發泡錠)/i;
-    if (!SUPPLEMENT_REGEX.test(name)) {
-      return res.status(400).json({ success: false, message: '非保健食品，系統已自動略過（不記錄洋芋片等非營養品）' });
+    if (!SUPPLEMENT_REGEX.test(rawName)) {
+      return res.status(400).json({
+        success: false,
+        message: '未偵測到保健食品關鍵字（系統僅收錄保健品，已自動排除零食與一般日用品）'
+      });
     }
 
     // 檢查現有商品庫是否已有相似商品
-    let supp = await dbQuery.get('SELECT * FROM supplements WHERE name LIKE ? OR (brand = ? AND category = ?)', [
-      `%${name.trim().slice(0, 8)}%`,
-      brand || 'momo嚴選',
-      category || '綜合保養'
-    ]);
+    let supp = await dbQuery.get(
+      'SELECT * FROM supplements WHERE name LIKE ? OR brand LIKE ? ORDER BY value_score DESC LIMIT 1',
+      [`%${rawName.slice(0, 6)}%`, `%${rawName.slice(0, 4)}%`]
+    );
 
-    let supplementId;
-    if (supp) {
-      supplementId = supp.id;
-    } else {
-      const cat = category || (name.includes('魚油') ? '魚油' : (name.includes('葉黃素') ? '葉黃素' : (name.includes('益生菌') ? '益生菌' : (name.includes('B') ? 'B群' : '綜合保養'))));
+    // 若直接用關鍵字對應品類商品
+    if (!supp) {
+      const catGuess = rawName.includes('魚油') || rawName.includes('藻油') ? '魚油'
+        : (rawName.includes('葉黃素') || rawName.includes('金盞花') ? '葉黃素'
+        : (rawName.includes('益生菌') || rawName.includes('乳酸菌') ? '益生菌'
+        : (rawName.includes('鈣') || rawName.includes('鎂') ? '鈣鎂D'
+        : (rawName.includes('膠原') ? '膠原蛋白' : 'B群'))));
+
+      const cleanBrand = brand || (rawName.includes('大研') ? '大研生醫'
+        : (rawName.includes('好市多') || rawName.includes('科克蘭') ? '科克蘭 Kirkland'
+        : (rawName.includes('善存') ? '善存 Centrum'
+        : (rawName.includes('DHC') ? 'DHC'
+        : (rawName.includes('威德') ? '威德 WEIDER' : '市售通路品牌')))));
+
       const p = parseInt(price, 10) || 890;
-      const timing = recommended_timing || (cat === '魚油' || cat === '葉黃素' ? '隨餐/飯後' : (cat === 'B群' ? '早晨/日間' : '睡前'));
+      const timing = recommended_timing || (catGuess === '魚油' || catGuess === '葉黃素' ? '隨餐/飯後' : (catGuess === 'B群' ? '早上飯後' : '睡前'));
       const newSupp = await dbQuery.run(`
         INSERT INTO supplements (
           brand, name, category, price, total_units, daily_units, days_supply, daily_cost, monthly_cost,
           dosage_form, absorption_form, active_summary, nutrients_json, additives_note, value_score,
           pros, cons, recommended_timing, is_vegan, source_channel
-        ) VALUES (?, ?, ?, ?, 60, 2, 30, ?, ?, '軟膠囊', '專利標準型', ?, '{}', '純淨配方', 88, '從電商購物車即時同步匯入', '日常基礎打底', ?, 0, ?)
+        ) VALUES (?, ?, ?, ?, 60, 2, 30, ?, ?, '膠囊/錠劑', '一般標準型', ?, '{}', '一般配方', 86, '由手機分享或快速貼上匯入', '建議依照包裝指示每日規律服用', ?, 0, ?)
       `, [
-        brand || 'momo嚴選',
-        name.trim(),
-        cat,
+        cleanBrand,
+        rawName,
+        catGuess,
         p,
         Math.round(p / 30),
         p,
-        active_summary || `${cat} 有效成分添加`,
+        active_summary || `${catGuess} 主要營養成分`,
         timing,
-        source_channel || 'momo購物網'
+        source_channel || '手機分享匯入'
       ]);
-      supplementId = newSupp.id;
+      supp = await dbQuery.get('SELECT * FROM supplements WHERE id = ?', [newSupp.id]);
     }
 
-    // 寫入 user_supplements purchased 清單
+    const supplementId = supp.id;
+
+    // 寫入 user_supplements purchased 清單（告知醫生目前使用的保健品）
     const existing = await dbQuery.get(
       'SELECT id FROM user_supplements WHERE supplement_id = ? AND status = ?',
       [supplementId, 'purchased']
@@ -612,13 +626,15 @@ app.post('/api/purchased/sync-from-extension', async (req, res) => {
     }
 
     const { wishlist, purchased } = await getUserLists();
+    const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
+
     res.json({
       success: true,
-      message: `已成功將「${name.trim()}」同步至您的 PurePick 服用日曆櫃！`,
-      data: { purchasedCount: purchased.length, supplementId }
+      message: `已將「${supp.brand}｜${supp.name}」加入「告知醫生目前使用的保健品」清單！`,
+      data: { wishlist, purchased, wishlistAnalysis, supplementId }
     });
   } catch (error) {
-    console.error('擴充套件同步已購商品失敗:', error);
+    console.error('快速匯入已購商品失敗:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -644,16 +660,6 @@ app.delete('/api/leads/:id', async (req, res) => {
     res.json({ success: true, message: '已刪除此筆名單' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// 提供 Chrome 擴充套件壓縮檔一鍵下載
-app.get('/download/extension', (req, res) => {
-  const zipPath = path.join(__dirname, 'public', 'purepick-extension.zip');
-  if (fs.existsSync(zipPath)) {
-    res.download(zipPath, 'purepick-extension.zip');
-  } else {
-    res.status(404).json({ success: false, message: '擴充套件檔案尚未打包' });
   }
 });
 

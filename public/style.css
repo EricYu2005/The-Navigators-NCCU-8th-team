@@ -2265,7 +2265,7 @@ body {
   stroke: currentColor;
 }
 
-/* ==================== 頂部 Chrome 擴充套件按鈕 ==================== */
+/* ==================== 頂部工具按鈕 ==================== */
 .btn-top-ext {
   display: inline-flex;
   align-items: center;
@@ -2292,7 +2292,7 @@ body {
   stroke: currentColor;
 }
 
-/* ==================== Chrome 擴充套件彈窗樣式 ==================== */
+/* ==================== 手機版 App 彈窗樣式 ==================== */
 .ext-modal-hero {
   background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
   border: 1.5px solid #ddd6fe;
@@ -2786,6 +2786,355 @@ body {
   line-height: 1.45;
   margin-bottom: 0.75rem;
 }
+
+/* ========================================================
+   手機版 Web App 按鈕與「告知醫生目前使用的保健品」看診專區
+   ======================================================== */
+.btn-top-webapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.72rem;
+  background: #f5f3ff;
+  border: 1.5px solid #c4b5fd;
+  border-radius: var(--radius-sm);
+  color: #6d28d9;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-top-webapp:hover {
+  background: #6d28d9;
+  color: #ffffff;
+  border-color: #6d28d9;
+}
+
+.btn-top-webapp .icon-svg-sm {
+  stroke: currentColor;
+}
+
+.doctor-show-card {
+  border: 2px solid #0d9488;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08);
+  margin-bottom: 1.35rem;
+}
+
+.doctor-card-header {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.doctor-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.doctor-title-row h3 {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #111827;
+}
+
+.doctor-action-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mobile-quick-import-bar {
+  background: #f0fdfa;
+  border: 1.5px solid #99f6e4;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.quick-import-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #115e59;
+}
+
+.quick-import-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.quick-import-controls .form-input {
+  flex: 1;
+  min-width: 210px;
+}
+
+.doctor-inline-tip {
+  margin-top: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  background: #fffbeb;
+  border-left: 3px solid #d97706;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.8rem;
+  color: #92400e;
+  font-weight: 600;
+}
+
+/* ==================== 全螢幕大字看診卡 Modal ==================== */
+.doctor-fullscreen-dialog {
+  max-width: 760px;
+  width: 96%;
+}
+
+.doctor-modal-header {
+  background: #f0fdfa;
+  border-bottom: 1.5px solid #99f6e4;
+}
+
+.doctor-patient-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #111827;
+  margin-bottom: 0.85rem;
+}
+
+.doctor-general-alert {
+  padding: 0.85rem 1rem;
+  background: #fffbeb;
+  border: 1.5px solid #fcd34d;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  color: #78350f;
+  line-height: 1.55;
+  margin-bottom: 1rem;
+}
+
+.doctor-show-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.doctor-show-row {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.doctor-show-index {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0d9488;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.doctor-show-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.doctor-show-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
+.doctor-show-cat {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  background: #ccfbf1;
+  color: #115e59;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.doctor-show-timing {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.doctor-show-name {
+  font-size: 1.18rem;
+  font-weight: 900;
+  color: #111827;
+  line-height: 1.35;
+  margin-bottom: 0.3rem;
+}
+
+.doctor-show-ing {
+  font-size: 0.96rem;
+  color: #1f2937;
+  line-height: 1.5;
+  margin-bottom: 0.35rem;
+}
+
+.doctor-show-note {
+  font-size: 0.88rem;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+/* ==================== iOS 加入主畫面底部引導橫條 ==================== */
+.ios-install-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 78px;
+  z-index: 1500;
+  background: #ffffff;
+  border: 1.5px solid #7c3aed;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.16);
+  padding: 0.85rem 1rem;
+}
+
+.ios-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ios-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ios-text {
+  flex: 1;
+  font-size: 0.82rem;
+  color: #1f2937;
+  line-height: 1.45;
+}
+
+.ios-text strong {
+  color: #111827;
+}
+
+.ios-text p {
+  margin: 0.15rem 0 0 0;
+  color: #4b5563;
+}
+
+.ios-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.35rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+/* ==================== 手機版 UI 適配與觸控優化 ==================== */
+@media (max-width: 640px) {
+  .header-inner {
+    padding: 0 0.7rem;
+    gap: 0.4rem;
+  }
+
+  .brand-name {
+    font-size: 0.92rem;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .btn-top-webapp,
+  .btn-top-lead,
+  .btn-line-auth {
+    padding: 0.34rem 0.55rem;
+    font-size: 0.74rem;
+  }
+
+  .page-container {
+    padding: 0.85rem 0.75rem 2rem 0.75rem;
+  }
+
+  .card {
+    padding: 1.05rem 0.95rem;
+  }
+
+  .doctor-action-btns {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .doctor-action-btns .btn {
+    flex: 1;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  .quick-import-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .quick-import-controls .form-input,
+  .quick-import-controls .btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .doctor-show-row {
+    padding: 0.85rem;
+    gap: 0.65rem;
+  }
+
+  .doctor-show-name {
+    font-size: 1.06rem;
+  }
+
+  .doctor-show-ing {
+    font-size: 0.9rem;
+  }
+}
+
 
 
 

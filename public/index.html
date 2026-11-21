@@ -2,17 +2,21 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>好選保健 PurePick｜跨品牌保健食品比較、去冗評估與服用日曆</title>
-  <meta name="description" content="跨品牌保健食品成分與每日真實花費比較、重疊去冗分析、以及日曆式服用與身體狀態追蹤平台。" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <title>好選保健 PurePick｜保健品比價、重複檢查與看診清單</title>
+  <meta name="description" content="幫您跨品牌比對保健食品每日花費、抓出重複購買，並整理「告知醫生目前使用的保健品」看診清單與服用日曆。" />
   <meta name="theme-color" content="#fcfbf7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="好選保健" />
 
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=3.9.8" />
+  <link rel="stylesheet" href="style.css?v=4.1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -38,17 +42,17 @@
 
       <!-- 右側輕量帳號與工具按鈕 (無任何 Emoji，高可視度灰色線條圖示) -->
       <div class="header-actions">
-        <button type="button" class="btn-top-ext" onclick="openExtensionModal()" title="安裝 Chrome 擴充套件 (購物車去冗神器)">
-          <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
-          <span>安裝擴充套件</span>
+        <button type="button" class="btn-top-webapp" onclick="openWebAppModal()" title="加到手機主畫面，像一般 App 一樣開啟並支援分享">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>手機版 App</span>
         </button>
 
-        <button type="button" class="btn-top-lead" onclick="openLeadModal('header_nav')" title="索取專屬避坑報告">
+        <button type="button" class="btn-top-lead" onclick="openLeadModal('header_nav')" title="索取個人化評估報告">
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           <span>索取報告</span>
         </button>
 
-        <button type="button" class="btn-icon-top" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()" title="安裝至桌面" aria-label="安裝至桌面">
+        <button type="button" class="btn-icon-top" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()" title="安裝至手機桌面" aria-label="安裝至手機桌面">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
         <button type="button" class="btn-icon-top" id="btn-toggle-demo" onclick="toggleDemoData()" title="清空範例 / 恢復預設" aria-label="清空範例 / 恢復預設">
@@ -295,19 +299,76 @@
     </section>
 
     <!-- =========================================================================
-         功能二：【管理 A：有興趣清單】重疊去冗分析與效益把關
+         功能二：【管理 A：看診清單與重複購買分析】
          ========================================================================= -->
     <section id="view-wishlist" class="view-section">
       <div class="section-banner">
         <div>
-          <h1>有興趣的商品清單與去冗分析</h1>
-          <p>把考慮購買的保健品放進來，系統會自動交叉比對您「已購買正在吃」與「有興趣」的商品，抓出重複購買並幫您省下冤枉錢。</p>
+          <h1>告知醫生目前使用的保健品 ＆ 重複購買分析</h1>
+          <p>看診或領藥時可一鍵打開「全螢幕大字看診卡」拿給醫生看，系統也會自動比對您「目前正在吃」與「想買」的商品，抓出重複花費。</p>
         </div>
         <div class="banner-btns">
+          <button type="button" class="btn btn-primary" onclick="openDoctorFullscreenModal()">
+            出示給醫生看（大字看診卡）
+          </button>
           <button type="button" class="btn btn-outline" onclick="switchView('view-finder')">
             挑選更多商品
           </button>
         </div>
+      </div>
+
+      <!-- 突出核心功能：告知醫生目前使用的保健品（已購買服用中清單） -->
+      <div class="card doctor-show-card" id="doctor-show-card">
+        <div class="card-title-bar doctor-card-header">
+          <div>
+            <div class="doctor-title-row">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              <h3>告知醫生目前使用的保健品</h3>
+              <span class="pill-count" id="analysis-purchased-count">0 款服用中</span>
+            </div>
+            <p class="card-sub-hint">
+              看病、領慢性病藥或去藥局諮詢時，可點選「全螢幕大字看診卡」直接拿給醫生或藥師看，避免保健品與西藥互相影響；清單也會同步到日曆打卡並作為下方重複購買的比對基準。
+            </p>
+          </div>
+          <div class="doctor-action-btns">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+              <span>全螢幕大字看診卡</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="shareDoctorList()">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <span>分享清單到手機 / LINE</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="openAddSupplementModal('purchased')">
+              <span>＋ 手動新增</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 手機購物分享／貼上商品名稱快速加入列 -->
+        <div class="mobile-quick-import-bar">
+          <div class="quick-import-label">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            <span>從手機購物網站分享或貼上商品名稱快速加入（自動排除零食，只記錄保健品）：</span>
+          </div>
+          <div class="quick-import-controls">
+            <input
+              type="text"
+              id="quick-import-input"
+              class="form-input"
+              placeholder="貼上商品名稱，例如：大研生醫高濃度魚油、威德益生菌..."
+              onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleQuickImportSubmit(); }"
+            />
+            <button type="button" class="btn btn-teal btn-sm" onclick="handleQuickImportSubmit()">
+              加入目前使用清單
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="openWebAppModal()">
+              手機版 App 分享教學
+            </button>
+          </div>
+        </div>
+
+        <div id="analysis-purchased-grid" class="purchased-cabinet-grid"></div>
       </div>
 
       <!-- 頂部省錢與費用摘要指標 -->
@@ -326,9 +387,9 @@
         <!-- 右欄：嚴格重疊去冗與劑量安全分析報告 -->
         <div class="card analysis-report-card">
           <div class="card-title-bar">
-            <h3>跨商品重疊去冗與劑量安全報告</h3>
+            <h3>重複購買檢查與安全劑量報告</h3>
             <button type="button" class="btn btn-sm btn-outline" onclick="refreshWishlistAnalysis()">
-              重新精算
+              重新計算
             </button>
           </div>
 
@@ -538,22 +599,22 @@
       <div class="card purchased-cabinet-card">
         <div class="card-title-bar">
           <div>
-            <h3>我目前已購買服用的保健品清單</h3>
-            <p class="card-sub-hint">這裡的商品會自動出現在上方的每日服用日曆中，並作為「有興趣清單」的去冗比對基準</p>
+            <h3>告知醫生目前使用的保健品（每日服用櫃）</h3>
+            <p class="card-sub-hint">這裡的商品會出現在上方的每日服用日曆中，看診時可一鍵打開大字看診卡給醫生看</p>
           </div>
           <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="openAddSupplementModal('purchased')">
-              ＋ 手動新增外部已購
+            <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
+              全螢幕大字看診卡
             </button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="openExtensionModal()">
-              從 momo 購物車同步
+            <button type="button" class="btn btn-outline btn-sm" onclick="openAddSupplementModal('purchased')">
+              ＋ 手動新增
             </button>
             <span class="pill-count" id="purchased-cabinet-count">0 款</span>
           </div>
         </div>
         <div class="cabinet-channels-hint">
-          <strong>支援三大已購商品匯入管道：</strong>
-          1. 點擊右上「＋ 手動新增外部已購」自訂產品 ｜ 2. 在「尋找」或「分析」卡片點擊「已在外部購買（加入日曆）」 ｜ 3. 使用 Chrome 擴充套件於 momo 購物網結帳車一鍵同步（自動排除洋芋片等非保健品）。
+          <strong>三種加入方式：</strong>
+          1. 點擊「＋ 手動新增」輸入手邊保健品 ｜ 2. 在「尋找」或「分析」卡片點擊「已在外部購買（加入日曆）」 ｜ 3. 將本平台加到手機主畫面後，從購物網站按「分享」或貼上商品名稱快速加入（自動排除零食，只記錄保健食品）。
         </div>
         <div id="purchased-cabinet-grid" class="purchased-cabinet-grid"></div>
       </div>
@@ -566,7 +627,7 @@
           本網頁僅供政治大學創創入門課程使用，非正式平台。
         </p>
         <p class="legal-statement-desc">
-          本平台（好選保健 PurePick）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示與概念驗證（PoC）模型，非屬我國《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之正式醫療診斷軟體或藥事諮詢機構。網頁所載之各品牌保健食品價格、成分含量換算、重疊去冗建議與服用日曆紀錄，均僅供課堂教學演練與小組專題報告展示用途，不具備任何臨床醫療診斷、處方指示或疾病治療效力。若真實生活中有身體不適、慢性疾病服藥交互作用疑問或醫療需求，請務必諮詢合格執業醫師、藥師或營養師。
+          本平台（好選保健 PurePick）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示模型，非屬我國《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之正式醫療診斷軟體或藥事諮詢機構。網頁所載之各品牌保健食品價格、成分含量換算、重複購買檢查與服用日曆紀錄，均僅供課堂教學演練與小組專題報告展示用途，不具備任何臨床醫療診斷、處方指示或疾病治療效力。若真實生活中有身體不適、慢性疾病服藥疑問或醫療需求，請務必諮詢合格執業醫師、藥師或營養師。
         </p>
         <div class="legal-footer-meta">
           <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
@@ -644,7 +705,7 @@
             <div class="form-group">
               <label>保健品類別 *</label>
               <select id="new-supp-category" class="form-select">
-                <option value="魚油">魚油 (Omega-3)</option>
+                <option value="魚油">魚油</option>
                 <option value="葉黃素">葉黃素</option>
                 <option value="益生菌">益生菌</option>
                 <option value="B群">維生素 B 群</option>
@@ -679,14 +740,14 @@
 
           <div class="form-row-2">
             <div class="form-group">
-              <label>核心有效成分與含量說明</label>
-              <input type="text" id="new-supp-summary" class="form-input" placeholder="例如：Omega-3 1000mg (rTG型 85%)" />
+              <label>主要營養成分說明</label>
+              <input type="text" id="new-supp-summary" class="form-input" placeholder="例如：魚油有效成分 1000毫克 (濃度 85%)" />
             </div>
             <div class="form-group">
               <label>新增後加入哪個清單？</label>
               <select id="new-supp-target-list" class="form-select">
-                <option value="wishlist">加入「有興趣清單」做去冗分析</option>
-                <option value="purchased">加入「已購買清單」開始日曆打卡</option>
+                <option value="purchased">加入「告知醫生目前使用的保健品」</option>
+                <option value="wishlist">加入「有興趣清單」做重複檢查</option>
                 <option value="catalog_only">僅加入比價資料庫</option>
               </select>
             </div>
@@ -717,7 +778,7 @@
             <div class="plan-price">NT$ 0 <span>/ 永久免費</span></div>
             <ul class="plan-features">
               <li>跨品牌保健品每日真實花費比價</li>
-              <li>互動式需求表單與預算方案推薦</li>
+              <li>「告知醫生目前使用的保健品」看診卡與分享</li>
               <li>基礎有興趣清單管理（最多 3 款比對）</li>
               <li>基礎每日服用確認打卡（有吃打勾）</li>
             </ul>
@@ -727,22 +788,22 @@
             <div class="plan-badge badge-pro">精明消費者訂閱版 (Pro)</div>
             <div class="plan-price">NT$ 99 <span>/ 月（年繳 NT$ 790）</span></div>
             <ul class="plan-features">
-              <li><strong>無上限跨品牌成分重疊與去冗省錢精算</strong></li>
-              <li><strong>已購買 vs. 有興趣商品交叉比對（避免重複買）</strong></li>
-              <li><strong>每日有效成分安全上限 (UL) 監控與警示</strong></li>
-              <li><strong>身體狀態動態日誌（精神/排便/睡眠眼部體感記錄）</strong></li>
-              <li><strong>生病重感冒停藥備忘與每週動態健康反饋推薦</strong></li>
-              <li><strong>服用時段衝突檢驗與專屬避坑分析書</strong></li>
+              <li><strong>無上限跨品牌成分重複檢查與省錢試算</strong></li>
+              <li><strong>目前使用中 vs. 想買商品交叉比對（避免重複買）</strong></li>
+              <li><strong>每日安全劑量把關（避免單一營養素吃過量）</strong></li>
+              <li><strong>身體狀態日誌（精神/排便/睡眠與眼睛感受記錄）</strong></li>
+              <li><strong>生病重感冒停藥備忘與每週健康總結推薦</strong></li>
+              <li><strong>服用時段錯開提醒與專屬評估報告</strong></li>
             </ul>
 
-            <!-- MVP 概念驗證說明框（純說明，非按鈕） -->
+            <!-- 課程專題驗證說明框 -->
             <div class="mvp-notice-card">
               <div class="mvp-notice-title">
                 <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <span>MVP 概念驗證說明（不收取真實費用）</span>
+                <span>政大創創課程研究說明（不收取真實費用）</span>
               </div>
               <p class="mvp-notice-text">
-                本平台為政大創創入門專題驗證模型，現階段<strong>不收取任何真實費用</strong>。我們透過「留名單與使用體驗回饋機制」驗證消費者對去冗精算與動態管理的真實付費意願。只需完成簡短回饋登記，即可免費解鎖 Pro 權限（原價 NT$ 99 / 月）！
+                本平台為政大創創入門專題研究模型，現階段<strong>不收取任何真實費用</strong>。我們透過「使用體驗回饋問卷」了解消費者對重複購買檢查與日常管理的需求。只需完成簡短回饋登記，即可免費開通 Pro 權限（原價 NT$ 99 / 月）！
               </p>
             </div>
 
@@ -757,7 +818,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 3：潛在客戶留名單與使用回饋 (Lead Capture / 反饋解鎖 Pro - LINE 實名專屬) ==================== -->
+  <!-- ==================== MODAL 3：潛在客戶留名單與使用回饋 (LINE 實名專屬) ==================== -->
   <div id="lead-capture-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -768,7 +829,7 @@
         <button type="button" class="modal-close" onclick="closeLeadModal()">&times;</button>
       </div>
 
-      <!-- 未登入 LINE：實名驗證防灌水門檻 (Gate) -->
+      <!-- 未登入 LINE：實名驗證防灌水門檻 -->
       <div id="lead-auth-gate" style="display:none; padding:1.5rem 1.25rem; text-align:center;">
         <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.25rem 0.75rem; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:999px; color:#065f46; font-size:0.78rem; font-weight:800; margin-bottom:0.75rem;">
           <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#059669;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -776,7 +837,7 @@
         </div>
         <h4 style="font-size:1.1rem; color:#1e1b4b; margin-bottom:0.55rem; font-weight:800;">請先以 LINE 帳號登入</h4>
         <p style="font-size:0.86rem; color:#475569; line-height:1.55; max-width:440px; margin:0 auto 1.35rem auto;">
-          為確保創業 MVP 數據具備學術嚴謹度，<strong>杜絕組員自我灌水或匿名重複洗榜</strong>，本平台回饋問卷與 Pro 資格開通<strong>僅限真實 LINE 實名登入會員專屬</strong>。登入後即可留下真實回饋並即刻開通 Pro 權限！
+          為確保課程研究數據真實可靠，<strong>杜絕重複填寫或假名單</strong>，本平台回饋問卷與 Pro 資格開通<strong>僅限 LINE 實名登入會員專屬</strong>。登入後即可填寫回饋並立即開通 Pro 權限！
         </p>
         <div style="display:flex; flex-direction:column; gap:0.6rem; max-width:320px; margin:0 auto;">
           <button type="button" class="btn btn-primary btn-block" style="background:#06c755; border-color:#06c755; display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; font-weight:800; padding:0.75rem 1rem;" onclick="startLineLogin()">
@@ -793,7 +854,6 @@
       <form id="lead-capture-form" onsubmit="handleLeadSubmit(event)" style="display:none;">
         <input type="hidden" id="lead-source" value="general" />
         <div class="modal-body">
-          <!-- LINE 實名驗證標章橫條 -->
           <div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:1px solid #bbf7d0; padding:0.55rem 0.85rem; border-radius:8px; margin-bottom:1rem; flex-wrap:wrap; gap:0.35rem;">
             <div style="display:flex; align-items:center; gap:0.45rem;">
               <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#16a34a;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
@@ -805,21 +865,21 @@
           </div>
 
           <p style="margin-bottom: 1rem; color: #5b21b6; font-size: 0.86rem; line-height: 1.45;">
-            由政大創創第八組建立的中立研究模型，<strong>不推銷特定品牌、完全站在消費者立場</strong>。留下您的稱呼與信箱並為使用流程評分，系統將立即為您免費開通 Pro 完整去冗精算與身體動態日誌（原價 NT$ 99 / 月）！
+            由政大創創第八組建立的中立研究模型，<strong>不推銷特定品牌、完全站在消費者立場</strong>。留下您的稱呼與信箱並為使用流程評分，系統將立即為您免費開通 Pro 完整重複檢查與身體狀態日誌（原價 NT$ 99 / 月）！
           </p>
 
           <div class="form-row-2">
             <div class="form-group">
               <label>您的稱呼或姓名 *</label>
-              <input type="text" id="lead-name" class="form-input" placeholder="例如：陳同學、王小姐、Alex" required />
+              <input type="text" id="lead-name" class="form-input" placeholder="例如：陳先生、王小姐" required />
             </div>
             <div class="form-group">
               <label>年齡 *</label>
               <select id="lead-age" class="form-select">
                 <option value="18歲以下">18 歲以下</option>
-                <option value="18~24歲" selected>18 ~ 24 歲</option>
+                <option value="18~24歲">18 ~ 24 歲</option>
                 <option value="25~34歲">25 ~ 34 歲</option>
-                <option value="35~49歲">35 ~ 49 歲</option>
+                <option value="35~49歲" selected>35 ~ 49 歲</option>
                 <option value="50~64歲">50 ~ 64 歲</option>
                 <option value="65歲以上">65 歲以上</option>
               </select>
@@ -828,7 +888,7 @@
 
           <div class="form-group">
             <label>電子信箱 (Email) *</label>
-            <input type="email" id="lead-email" class="form-input" placeholder="例如：student@nccu.edu.tw" required />
+            <input type="email" id="lead-email" class="form-input" placeholder="例如：yourname@gmail.com" required />
           </div>
 
           <div class="form-group">
@@ -848,11 +908,11 @@
 
           <div class="form-group">
             <label>您對平台的建議或目前想諮詢的保健問題（選填）</label>
-            <textarea id="lead-note" class="form-textarea" rows="2" placeholder="例如：尋找流程很清晰、想知道手上這款魚油跟葉黃素該何時吃..."></textarea>
+            <textarea id="lead-note" class="form-textarea" rows="2" placeholder="例如：看診清單很實用、想知道手上這款魚油跟葉黃素該何時吃..."></textarea>
           </div>
 
           <div style="font-size:0.78rem; color:#6b21a8; background:#f5f0ff; border:1px solid #ddd6fe; padding:0.5rem 0.75rem; border-radius:8px; margin-top:0.65rem;">
-            <strong>即時開通：</strong>送出問卷後，系統將立即為您解鎖 Pro 去冗精算、安全上限 (UL) 監控、身體動態日誌與週度健康反饋！
+            <strong>即時開通：</strong>送出問卷後，系統將立即為您解鎖 Pro 重複成分檢查、每日安全劑量把關、身體狀態日誌與每週健康總結！
           </div>
         </div>
         <div class="modal-footer">
@@ -862,96 +922,131 @@
       </form>
     </div>
   </div>
-    </div>
-  </div>
 
-  <!-- ==================== Chrome 擴充套件安裝與模擬彈窗 ==================== -->
-  <div id="extension-install-modal" class="modal-backdrop" style="display:none;">
+  <!-- ==================== MODAL 4：手機版 App 加到桌面與一鍵分享教學彈窗 ==================== -->
+  <div id="webapp-install-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog modal-dialog-lg">
       <div class="modal-header">
         <div style="display:flex; align-items:center; gap:0.5rem;">
-          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
-          <h3 style="margin:0;">安裝 PurePick Chrome 擴充套件</h3>
+          <svg class="icon-svg" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <h3 style="margin:0;">將好選保健加到手機主畫面 ＆ 購物分享教學</h3>
         </div>
-        <button type="button" class="modal-close" onclick="closeExtensionModal()">&times;</button>
+        <button type="button" class="modal-close" onclick="closeWebAppModal()">&times;</button>
       </div>
 
       <div class="modal-body">
         <div class="ext-modal-hero">
-          <div class="badge-store-status">
-            <span class="status-dot-amber"></span>
-            <span>Chrome 線上應用程式商店審核中 (預計 3-5 工作天)</span>
-          </div>
-          <h4>電商結帳前主動攔截：幫您抓出成分重複與劑量超標！</h4>
+          <h4>免去商店下載！加到手機桌面後，隨時打卡、看診出示、還能從購物網站直接分享商品進來</h4>
           <p>
-            在 <strong>momo 購物網、蝦皮商城、Costco 線上購物</strong> 挑選保健品時，PurePick 擴充套件會在結帳前自動掃描購物車，一秒抓出重複成分與國人膳食安全上限 (UL) 違規，即時試算每月可省下的浪費金額！
+            針對習慣用手機買保健品與去診所看診的使用者，將好選保健加到手機主畫面後，打開就像一般手機 App 一樣全螢幕顯示，並支援手機「分享」功能！
           </p>
+          <div style="margin-top:0.85rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" onclick="triggerPwaInstall()">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>立即加到手機主畫面</span>
+            </button>
+            <button type="button" class="btn btn-outline" onclick="shareAppUrlToFriends()">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <span>把平台分享給親友 / LINE</span>
+            </button>
+          </div>
         </div>
 
         <div class="ext-steps-container">
-          <h5 style="font-size:0.95rem; font-weight:800; color:#1e1b4b; margin-bottom:0.75rem;">審核通過前，如何使用開發者模式手動載入？</h5>
+          <h5 style="font-size:0.95rem; font-weight:800; color:#1e1b4b; margin-bottom:0.75rem;">手機加到主畫面與分享匯入三步驟：</h5>
 
           <div class="ext-step-item">
             <span class="ext-step-idx">1</span>
             <div class="ext-step-content">
-              <strong>下載擴充套件壓縮檔</strong>
-              <p>點擊下方按鈕下載擴充套件包，並將其解壓縮至電腦任意資料夾（例如「桌面」或「下載」）。</p>
-              <a href="/download/extension" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:0.35rem; margin-top:0.35rem; text-decoration:none;">
-                <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>下載擴充套件壓縮包 (purepick-extension.zip)</span>
-              </a>
+              <strong>Apple iPhone (Safari) 或 Android 手機加到主畫面</strong>
+              <p>
+                • <strong>iPhone 用戶</strong>：點擊 Safari 下方的「分享」圖示，往下滑點選<strong>「加入主畫面」</strong>。<br />
+                • <strong>Android 用戶</strong>：點擊上方「立即加到手機主畫面」按鈕，或點瀏覽器右上選單選擇<strong>「安裝應用程式 / 加到主畫面」</strong>。
+              </p>
             </div>
           </div>
 
           <div class="ext-step-item">
             <span class="ext-step-idx">2</span>
             <div class="ext-step-content">
-              <strong>前往 Chrome 擴充功能管理頁</strong>
-              <p>在 Google Chrome 網址列輸入並前往：<code class="ext-code-inline">chrome://extensions</code></p>
+              <strong>在 momo 或購物網站看到保健品，直接按「分享」匯入</strong>
+              <p>
+                加到手機桌面後，在購物網站看到買過的保健品，點擊手機的<strong>「分享」</strong>並選取<strong>「好選保健」</strong>（或複製商品名稱貼到分析頁輸入框），系統就會自動加入清單，並自動排除洋芋片等非保健食品！
+              </p>
             </div>
           </div>
 
           <div class="ext-step-item">
             <span class="ext-step-idx">3</span>
             <div class="ext-step-content">
-              <strong>開啟右上角「開發者模式」開關</strong>
-              <p>在頁面右上角找到「開發者模式 (Developer mode)」切換鈕並開啟。</p>
-            </div>
-          </div>
-
-          <div class="ext-step-item">
-            <span class="ext-step-idx">4</span>
-            <div class="ext-step-content">
-              <strong>點選「載入未打包項目」並選擇該資料夾</strong>
-              <p>點擊頁面左上角「載入未打包項目 (Load unpacked)」，選取剛才解壓縮的資料夾（或本專案之 <code>extension</code> 資料夾），即安裝完成！</p>
+              <strong>看診或去藥局時，一鍵打開「全螢幕大字看診卡」拿給醫生看</strong>
+              <p>
+                在「分析」頁面點選「告知醫生目前使用的保健品」的<strong>全螢幕大字看診卡</strong>，即可讓醫生與藥師清楚看到您正在吃的保健品成分與劑量，也能一鍵傳送到 LINE！
+              </p>
             </div>
           </div>
         </div>
 
         <div class="ext-demo-box">
           <div style="flex:1;">
-            <strong>現場 Demo 專用：免裝擴充套件直接體驗攔截效果</strong>
-            <p style="font-size:0.8rem; color:#475569; margin:2px 0 0 0;">若您目前在非 Chrome 瀏覽器或展示時間受限，可點擊右側按鈕直接在目前畫面模擬擴充套件懸浮截擊效果！</p>
+            <strong>現場體驗：模擬從手機購物網站將商品「分享」進來</strong>
+            <p style="font-size:0.8rem; color:#475569; margin:2px 0 0 0;">點擊右側按鈕，即可直接體驗從手機購物網站把一款新買的保健品分享匯入「告知醫生目前使用的保健品」清單！</p>
           </div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="simulateExtensionIntercept()" style="white-space:nowrap; border-color:#7c3aed; color:#7c3aed; font-weight:700;">
-            模擬擴充套件攔截 (Live Demo)
+          <button type="button" class="btn btn-outline btn-sm" onclick="simulateMobileShareImport()" style="white-space:nowrap; border-color:#7c3aed; color:#7c3aed; font-weight:700;">
+            模擬手機分享匯入
           </button>
-        </div>
-
-        <div style="font-size:0.75rem; color:#94a3b8; text-align:center; margin-top:0.85rem;">
-          國立政治大學 創新創業入門 第八組團隊專案 • 本網頁僅供政大創創入門課程使用，非正式平台
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" onclick="closeExtensionModal()">關閉</button>
+        <button type="button" class="btn btn-outline" onclick="closeWebAppModal()">關閉</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5：全螢幕大字看診卡（告知醫生目前使用的保健品） ==================== -->
+  <div id="doctor-fullscreen-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-dialog modal-dialog-lg doctor-fullscreen-dialog">
+      <div class="modal-header doctor-modal-header">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          <div>
+            <h3 style="margin:0; font-size:1.2rem;">告知醫生目前使用的保健品（看診出示卡）</h3>
+            <span style="font-size:0.8rem; color:#475569;">請直接將此畫面出示給看診醫師或社區藥局藥師檢視</span>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeDoctorFullscreenModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="doctor-fullscreen-body">
+        <!-- 由 app.js 動態渲染大字看診清單 -->
+      </div>
+      <div class="modal-footer" style="justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+        <button type="button" class="btn btn-primary" onclick="shareDoctorList()">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>分享或傳送這份清單到 LINE</span>
+        </button>
+        <button type="button" class="btn btn-outline" onclick="closeDoctorFullscreenModal()">關閉看診卡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS Safari 加入主畫面引導提示條 (灰色線條圖示，無 Emoji) -->
+  <div id="ios-pwa-banner" class="ios-install-banner" style="display:none;">
+    <div class="ios-banner-content">
+      <div class="ios-icon-box">
+        <svg class="icon-svg-lg" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      </div>
+      <div class="ios-text">
+        <strong>將「好選保健」加到手機主畫面</strong>
+        <p>點選下方「分享」圖示 <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>，再點選<strong>「加入主畫面」</strong>，看診出示與每日打卡更方便！</p>
+      </div>
+      <button type="button" class="ios-close-btn" onclick="dismissIosBanner()" aria-label="關閉">&times;</button>
     </div>
   </div>
 
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=3.9.8"></script>
+  <script src="app.js?v=4.1.0"></script>
 </body>
 </html>

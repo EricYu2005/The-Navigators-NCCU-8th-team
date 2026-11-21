@@ -14,20 +14,20 @@ import re
 
 # 台灣衛福部國人膳食營養素參考攝取量 (DRIs) 與國際臨床保健有效建議量 / 每日上限 (UL)
 NUTRIENT_STANDARDS = {
-    "omega3": {"name": "Omega-3 (EPA+DHA)", "unit": "mg", "recommended": 1000, "min_effective": 600, "ul": 3000},
-    "lutein": {"name": "葉黃素", "unit": "mg", "recommended": 10, "min_effective": 6, "ul": 30},
-    "zeaxanthin": {"name": "玉米黃素", "unit": "mg", "recommended": 2, "min_effective": 1.2, "ul": 10},
-    "probiotics": {"name": "益生菌活菌數", "unit": "億CFU", "recommended": 200, "min_effective": 100, "ul": 1000},
-    "vitamin_b": {"name": "綜合維生素B群", "unit": "%DRIs", "recommended": 100, "min_effective": 80, "ul": 1500},
-    "calcium": {"name": "鈣", "unit": "mg", "recommended": 600, "min_effective": 300, "ul": 2500},
-    "magnesium": {"name": "鎂", "unit": "mg", "recommended": 200, "min_effective": 100, "ul": 700},
-    "vitamin_d": {"name": "維生素D3", "unit": "IU", "recommended": 800, "min_effective": 400, "ul": 2000},
-    "vitamin_c": {"name": "維生素C", "unit": "mg", "recommended": 100, "min_effective": 100, "ul": 2000},
-    "zinc": {"name": "鋅", "unit": "mg", "recommended": 15, "min_effective": 10, "ul": 35},
-    "iron": {"name": "鐵", "unit": "mg", "recommended": 15, "min_effective": 10, "ul": 45},
-    "collagen": {"name": "膠原蛋白胜肽", "unit": "mg", "recommended": 5000, "min_effective": 3000, "ul": 15000},
-    "gaba": {"name": "GABA / 舒眠萃取", "unit": "mg", "recommended": 100, "min_effective": 50, "ul": 500},
-    "uc2": {"name": "非變性二型膠原蛋白(UC-II)", "unit": "mg", "recommended": 40, "min_effective": 40, "ul": 120}
+    "omega3": {"name": "魚油有效成分 (Omega-3)", "unit": "毫克", "recommended": 1000, "min_effective": 600, "ul": 3000},
+    "lutein": {"name": "葉黃素", "unit": "毫克", "recommended": 10, "min_effective": 6, "ul": 30},
+    "zeaxanthin": {"name": "玉米黃素", "unit": "毫克", "recommended": 2, "min_effective": 1.2, "ul": 10},
+    "probiotics": {"name": "益生菌好菌數", "unit": "億好菌", "recommended": 200, "min_effective": 100, "ul": 1000},
+    "vitamin_b": {"name": "綜合維生素B群", "unit": "% 每日建議量", "recommended": 100, "min_effective": 80, "ul": 1500},
+    "calcium": {"name": "鈣", "unit": "毫克", "recommended": 600, "min_effective": 300, "ul": 2500},
+    "magnesium": {"name": "鎂", "unit": "毫克", "recommended": 200, "min_effective": 100, "ul": 700},
+    "vitamin_d": {"name": "維生素D3", "unit": "單位(IU)", "recommended": 800, "min_effective": 400, "ul": 2000},
+    "vitamin_c": {"name": "維生素C", "unit": "毫克", "recommended": 100, "min_effective": 100, "ul": 2000},
+    "zinc": {"name": "鋅", "unit": "毫克", "recommended": 15, "min_effective": 10, "ul": 35},
+    "iron": {"name": "鐵", "unit": "毫克", "recommended": 15, "min_effective": 10, "ul": 45},
+    "collagen": {"name": "膠原蛋白", "unit": "毫克", "recommended": 5000, "min_effective": 3000, "ul": 15000},
+    "gaba": {"name": "幫助入睡成分 (GABA)", "unit": "毫克", "recommended": 100, "min_effective": 50, "ul": 500},
+    "uc2": {"name": "關節靈活保養膠原", "unit": "毫克", "recommended": 40, "min_effective": 40, "ul": 120}
 }
 
 # 自由輸入關鍵字與生活困擾對應表
@@ -37,42 +37,42 @@ KEYWORD_RULES = [
         "goal_key": "eye",
         "label": "晶亮護眼",
         "keywords": ["眼睛", "眼乾", "乾澀", "螢幕", "電腦", "手機", "追劇", "模糊", "畏光", "疲勞", "酸澀", "近視", "隱形眼鏡", "工程師", "考生", "看書", "飛蚊", "藍光"],
-        "advice": "建議選擇「游離型葉黃素」搭配玉米黃素（10:2 比例），每日 6~10mg 即可穩定累積，無須追求 30mg 超高劑量以免增加負擔；若伴隨嚴重乾澀，可搭配高濃度魚油或花青素、蝦紅素。"
+        "advice": "建議選擇好吸收的「游離型葉黃素」搭配玉米黃素（10:2 比例），每日 6~10 毫克即可穩定補充，無須追求 30 毫克超高劑量以免增加身體負擔；若伴隨嚴重乾澀，可搭配高濃度魚油或花青素、蝦紅素。"
     },
     {
         "category": "魚油",
         "goal_key": "cardio",
         "label": "外食循環與思緒清晰",
         "keywords": ["外食", "少吃魚", "油膩", "血脂", "循環", "記憶", "思緒", "專注", "發炎", "三高", "心血管", "膽固醇", "乾眼", "油炸", "便當", "代謝"],
-        "advice": "挑選魚油關鍵在於「Omega-3 (EPA+DHA) 實際濃度需達 80% 以上」且為「rTG 吸收型態」。低濃度（30~50%）魚油看似單盒便宜，但每天要吞 3~4 顆且吃進多餘雜油，換算每毫克有效成分反而更貴。"
+        "advice": "挑選魚油關鍵在於「有效成分實際濃度需達 80% 以上」且為好吸收型態。低濃度（30~50%）魚油看似單盒便宜，但每天要吞 3~4 大顆且吃進多餘一般油脂，換算下來反而更貴。"
     },
     {
         "category": "B群",
         "goal_key": "energy",
         "label": "精神體力與熬夜代謝",
         "keywords": ["熬夜", "疲勞", "很累", "沒精神", "想睡", "加班", "體力", "應酬", "喝酒", "壓力", "嘴破", "口角炎", "上班族", "早起", "倦怠", "提神"],
-        "advice": "經常熬夜或外食者，建議優先挑選「緩釋型」或「活性型（如 TTFD）」B群，可維持整天穩定代謝，不會吃完兩小時就隨尿液排光。男性可看是否含鋅，女性可看是否含鐵。"
+        "advice": "經常熬夜或外食者，建議優先挑選「長效慢慢釋放型」B群，可維持整天穩定精神，不會吃完兩小時就隨尿液排光。男性可看是否含鋅，女性可看是否含鐵。"
     },
     {
         "category": "益生菌",
         "goal_key": "gut",
         "label": "消化道順暢與調整體質",
         "keywords": ["便秘", "排便", "脹氣", "消化", "拉肚子", "腹瀉", "腸胃", "過敏", "換季", "打噴嚏", "鼻子", "嗯嗯", "肚子", "外食少菜", "青菜", "蔬果"],
-        "advice": "挑選益生菌請認明「明確菌株編號」、「保證出廠或效期活菌數（100~300億 CFU 即可）」以及「無添加砂糖、果汁粉、人工香料與瀉藥成分（如番瀉葉、氧化鎂充數）」。"
+        "advice": "挑選益生菌請認明「明確標示好菌種類」、「保證好菌數（100~300 億即可）」以及「無添加砂糖、果汁粉、人工香料與輕瀉成分（如番瀉葉、氧化鎂充數）」。"
     },
     {
         "category": "鈣鎂D",
         "goal_key": "bone",
         "label": "骨骼行動力與深層入睡",
         "keywords": ["睡不好", "失眠", "淺眠", "多夢", "難入睡", "半夜醒", "抽筋", "骨頭", "關節", "膝蓋", "咔咔", "長輩", "少喝牛奶", "缺鈣", "焦慮", "緊繃", "咖啡"],
-        "advice": "鈣與鎂同時補充（加上維生素 D3 與 K2）不僅能補骨，睡前補充「鎂」更能幫助神經肌肉放鬆、提升睡眠深度。請優先選吸收率高且不脹氣的「海藻鈣」或「檸檬酸鈣」，避開廉價碳酸鈣。"
+        "advice": "鈣與鎂同時補充（加上維生素 D3）不僅能補骨，睡前補充「鎂」更能幫助放鬆好睡。請優先選好吸收且不脹氣的「海藻鈣」或「檸檬酸鈣」，避開容易脹氣的碳酸鈣。"
     },
     {
         "category": "膠原蛋白",
         "goal_key": "beauty",
         "label": "氣色澎潤與基底保養",
         "keywords": ["皮膚", "氣色", "乾燥", "膠原蛋白", "美顏", "暗沉", "細紋", "彈力", "美白", "保養", "愛美"],
-        "advice": "膠原蛋白需選擇「小分子二肽/三肽（分子量 < 3000 Da）」且無添加過多糖分香料，並搭配「維生素 C」才能在體內真正合成膠原。"
+        "advice": "膠原蛋白需選擇「小分子好吸收配方」且無添加過多糖分香料，並搭配「維生素 C」才能在體內真正幫助合成。"
     }
 ]
 

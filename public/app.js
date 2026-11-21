@@ -45,8 +45,10 @@ function showToast(message) {
 // 1. 初始化與資料載入
 // ========================================================
 document.addEventListener('DOMContentLoaded', async () => {
+  checkIosPwaPrompt();
   await initUserAuth();
   await loadBootstrapData();
+  await handleIncomingPwaShare();
 });
 
 async function loadBootstrapData() {
@@ -86,6 +88,7 @@ function updateNavBadges() {
   setTxt('m-purchased-count', pCount);
   setTxt('wishlist-panel-count', `${wCount} 款`);
   setTxt('purchased-cabinet-count', `${pCount} 款`);
+  setTxt('analysis-purchased-count', `${pCount} 款服用中`);
 
   const demoBtn = document.getElementById('btn-toggle-demo');
   if (demoBtn) {
@@ -109,8 +112,8 @@ function switchView(viewId) {
 
   const viewTitles = {
     'view-finder': '尋找適合您的保健方案',
-    'view-wishlist': '有興趣清單 ＆ 重疊去冗分析',
-    'view-calendar': '已購買保健櫃 ＆ 服用狀態日曆'
+    'view-wishlist': '告知醫生目前使用的保健品 ＆ 重複檢查',
+    'view-calendar': '每日服用打卡 ＆ 身體狀態日曆'
   };
   const labelEl = document.getElementById('top-current-view-label');
   if (labelEl && viewTitles[viewId]) {
@@ -698,21 +701,21 @@ function renderWishlistView() {
     <div class="pro-gate-card">
       <div class="pro-gate-header">
         <span class="pro-badge">PRO 專屬功能</span>
-        <h4>解鎖「無上限成分重疊精算」與「成分超標 (UL) 安全警示」</h4>
+        <h4>解鎖「無上限重複成分檢查」與「每日安全劑量把關」</h4>
       </div>
-      <p>免費版僅支援最多 2 款基礎成分比對。想要一次比對多款保健品、精算每年省下數千元冤枉錢嗎？</p>
+      <p>免費版僅支援最多 2 款基礎成分比對。想要一次比對多款保健品、省下每年數千元重複購買的冤枉錢嗎？</p>
       <div class="mvp-gate-note">
         <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span><strong>創創專題 MVP 說明</strong>：本專案為概念驗證階段，<strong>不收取任何真實費用</strong>。留下聯絡資訊登記名單，即可立刻免費開通 Pro 完整去冗分析！</span>
+        <span><strong>政大創創專題研究說明</strong>：本專案目前為學術研究階段，<strong>不收取任何真實費用</strong>。填寫簡短回饋問卷，即可立刻免費開通 Pro 完整檢查功能！</span>
       </div>
       <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_pro_gate')">
-        立即免費登記留名單（開通 Pro 去冗精算）
+        立即免費填寫回饋（開通 Pro 完整檢查）
       </button>
     </div>
   ` : `
     <div class="pro-unlocked-banner">
       <span class="pro-unlocked-badge">PRO 方案已開通</span>
-      <span>您已享有完整的跨品項去冗精算、有效成分安全上限 (UL) 監控與服用時段衝突檢驗！</span>
+      <span>您已享有完整的跨品項重複購買檢查、每日安全劑量把關與服用時段錯開提醒！</span>
     </div>
   `;
 
@@ -720,14 +723,14 @@ function renderWishlistView() {
   const dosageAndTimingSection = state.isPro ? `
     <div class="dosage-table-wrap">
       <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-        2. 合併每日有效成分總量檢核（對照每日建議攝取量與安全上限）
+        2. 合併每日營養素總量檢查（對照每日建議量與安全上限）
       </h4>
       ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
     </div>
     ${timingHtml ? `
       <div style="margin-top:1.25rem;">
         <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-          3. 服用時段與吸收衝突提醒
+          3. 服用時段與互相影響提醒
         </h4>
         ${timingHtml}
       </div>
@@ -737,28 +740,28 @@ function renderWishlistView() {
       <div class="pro-blur-content">
         <div class="dosage-table-wrap">
           <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-            2. 合併每日有效成分總量檢核（對照每日建議攝取量與安全上限）
+            2. 合併每日營養素總量檢查（對照每日建議量與安全上限）
           </h4>
           ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
         </div>
         ${timingHtml ? `
           <div style="margin-top:1.25rem;">
             <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-              3. 服用時段與吸收衝突提醒
+              3. 服用時段與互相影響提醒
             </h4>
             ${timingHtml}
           </div>
         ` : ''}
       </div>
       <div class="pro-lock-overlay-btn-box">
-        <div style="font-size:0.95rem; font-weight:800; color:#4c1d95; margin-bottom:0.25rem;">
-          解鎖完整成分安全上限 (UL) 監控與時序衝突檢驗
+        <div style="font-size:0.95rem; font-weight:800; color:#111827; margin-bottom:0.25rem;">
+          解鎖完整每日安全劑量把關與服用時段提醒
         </div>
-        <p style="font-size:0.8rem; color:#6b7280; max-width:360px; margin-bottom:0.5rem;">
-          避免鈣鐵同時吃吸收折損、或高劑量成分超標。MVP 期間登記留名單即可免費開通！
+        <p style="font-size:0.8rem; color:#4b5563; max-width:360px; margin-bottom:0.5rem;">
+          避免鈣鐵同時吃互相影響吸收、或單一營養素吃過量。填寫簡短回饋即可免費開通！
         </p>
         <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('dosage_lock')">
-          登記留名單免費開通 Pro 權限
+          填寫回饋免費開通 Pro 權限
         </button>
       </div>
     </div>
@@ -773,23 +776,25 @@ function renderWishlistView() {
     </div>
 
     <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-      1. 跨商品重疊去冗建議（有興趣清單 vs. 已購買服用中）
+      1. 跨商品重複購買檢查（有興趣清單 vs. 目前使用中）
     </h4>
     ${alertsHtml}
 
     ${dosageAndTimingSection}
 
     <!-- 藥師審查預約名單卡片 -->
-    <div style="margin-top:1.5rem; padding:1.1rem 1.25rem; background:#fffbeb; border:1.5px solid #c4b5fd; border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+    <div style="margin-top:1.5rem; padding:1.1rem 1.25rem; background:#fffbeb; border:1.5px solid #e5e7eb; border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
       <div style="min-width:240px; flex:1;">
-        <h5 style="font-size:0.96rem; font-weight:800; color:#2e1065; margin-bottom:0.25rem;">想要無偏見藥師幫您一對一檢查目前吃的所有保健品嗎？</h5>
-        <p style="font-size:0.83rem; color:#4b5563; margin:0;">歡迎登記預約，我們提供不推銷特定品牌的學術研究避坑諮詢。</p>
+        <h5 style="font-size:0.96rem; font-weight:800; color:#111827; margin-bottom:0.25rem;">想要無偏見藥師幫您一對一檢查目前吃的所有保健品嗎？</h5>
+        <p style="font-size:0.83rem; color:#4b5563; margin:0;">歡迎登記預約，我們提供不推銷特定品牌的學術研究諮詢。</p>
       </div>
       <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_analysis')">
         預約免費名單登記
       </button>
     </div>
   `;
+
+  renderAnalysisPurchasedSection();
 }
 
 // ========================================================
@@ -890,8 +895,8 @@ function renderWeeklySummary() {
           <span>本週配方進化建議：同品類 1-to-1 替換升級（改善眼睛乾澀）</span>
         </div>
         <p class="weekly-upgrade-desc">
-          診斷分析：您本週眼睛乾酸頻繁。${hasEye ? '您目前服用的葉黃素多為基礎單方或低劑量，缺乏抗酸澀輔因子。' : '您目前 Portfolio 中尚未配置專門的晶亮護眼品項。'}
-          比起盲目多買一瓶，我們建議您在下月補貨時替換升級為：<strong>大研生醫 視易適葉黃素 (游離型 10mg + 智利酒果花青素 + 蝦紅素)</strong>。
+          診斷分析：您本週眼睛乾酸頻繁。${hasEye ? '您目前服用的葉黃素多為基礎單方或低劑量，缺乏舒緩酸澀的輔助營養素。' : '您目前的保健品清單中尚未包含專門的護眼品項。'}
+          比起盲目多買一瓶，我們建議您在下月補貨時替換升級為：<strong>悠活原力 金盞花萃取葉黃素 + 蝦紅素（好吸收游離型葉黃素 20毫克 + 蝦紅素）</strong>。
         </p>
         <div class="weekly-upgrade-footer">
           <span class="weekly-price-impact">每日花費僅微調 +NT$ 6 元｜有效吸收率提升 80%</span>
@@ -1287,7 +1292,7 @@ function renderDailyTrackerPanel() {
     if (isSick) {
       feedbackCard.style.display = 'block';
       fbTitle.textContent = '感冒康復期之動態打底建議';
-      fbDesc.textContent = '偵測到今日記錄「重感冒/生病休養」。休養期間請多喝水休息；康復後建議前往尋找頁面重新比對高生物利用度維生素 C 與優質維生素 D3 方案以打底保護力！';
+      fbDesc.textContent = '偵測到今日記錄「重感冒/生病休養」。休養期間請多喝水休息；康復後建議前往尋找頁面重新比對好吸收的維生素 C 與維生素 D3 方案以提升保護力！';
       window.__activeFeedbackGoal__ = '全方位綜合';
       window.__activeFeedbackText__ = '近期有重感冒休養紀錄，想尋求康復後能鞏固防護力、好吸收且不與常備品重複的溫和打底方案。';
     } else if (log.sleepEyeStatus === '眼睛乾酸') {
@@ -1422,6 +1427,69 @@ async function persistCalendarLog(log, silent = false) {
   }
 }
 
+function getPlainDoctorReminder(item) {
+  const txt = `${item.category || ''} ${item.name || ''} ${item.active_summary || ''}`;
+  if (/(魚油|藻油|Omega|EPA|DHA)/i.test(txt)) {
+    return '看診提醒：若有吃心血管或抗凝血西藥、或近期要拔牙與手術，請主動告訴醫生正在吃魚油';
+  }
+  if (/(紅麴|納豆)/i.test(txt)) {
+    return '看診提醒：若有吃降血脂西藥，請主動給醫生看，避免重複服用';
+  }
+  if (/(鈣|鎂|鐵|鋅)/i.test(txt)) {
+    return '看診提醒：若有吃抗生素、胃藥或甲狀腺西藥，建議與此保健品錯開 2 小時以上';
+  }
+  if (/(益生菌|乳酸菌)/i.test(txt)) {
+    return '看診提醒：若有吃感冒抗生素西藥，建議與益生菌錯開 2 小時服用';
+  }
+  if (/(B群|維生素|維他命)/i.test(txt)) {
+    return '看診提醒：看病或領藥時可出示給醫生確認日常補充劑量';
+  }
+  return '看診提醒：看病或去藥局時可出示此清單給醫生與藥師參考';
+}
+
+function renderPurchasedCardsHtml() {
+  return state.purchased.map(item => {
+    const doctorNote = getPlainDoctorReminder(item);
+    return `
+      <div class="managed-item-card doctor-item-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+          <div>
+            <span class="supp-cat-badge">${escapeHtml(item.category)}</span>
+            <span class="timing-tag" style="margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${escapeHtml(item.intake_time || item.recommended_timing || '隨餐/飯後')}</span>
+            <h4 style="font-size:1rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</h4>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">移除</button>
+        </div>
+        <div style="font-size:0.84rem; color:#374151; margin-top:0.45rem; line-height:1.5;">
+          <div><strong>主要成分：</strong>${escapeHtml(item.active_summary)}</div>
+          <div><strong>每日吃法：</strong>每天 ${item.daily_units || 1} 份（${escapeHtml(item.dosage_form || '膠囊/錠劑')}）｜每日花費約 NT$ ${Math.round(item.daily_cost || 0)}</div>
+          <div class="doctor-inline-tip">${escapeHtml(doctorNote)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAnalysisPurchasedSection() {
+  const grid = document.getElementById('analysis-purchased-grid');
+  const countEl = document.getElementById('analysis-purchased-count');
+  if (countEl) {
+    countEl.textContent = `${state.purchased.length} 款服用中`;
+  }
+  if (!grid) return;
+
+  if (state.purchased.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:1.35rem; color:#4b5563; background:#f8fafc; border-radius:10px;">
+        目前尚未加入正在吃的保健品。您可以在上方貼上商品名稱、點擊「＋ 手動新增」，或在比價卡片點選「已在外部購買（加入日曆）」。
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = renderPurchasedCardsHtml();
+}
+
 function renderPurchasedCabinet() {
   const grid = document.getElementById('purchased-cabinet-grid');
   if (!grid) return;
@@ -1431,28 +1499,13 @@ function renderPurchasedCabinet() {
     return;
   }
 
-  grid.innerHTML = state.purchased.map(item => `
-    <div class="managed-item-card">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-        <div>
-          <span class="supp-cat-badge">${item.category}</span>
-          <span class="timing-tag" style="margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${item.intake_time || item.recommended_timing}</span>
-          <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${item.brand}｜${item.name}</h4>
-        </div>
-        <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">移除</button>
-      </div>
-      <div style="font-size:0.8rem; color:#475569; margin-top:0.45rem;">
-        <div>有效成分：${item.active_summary}</div>
-        <div style="margin-top:0.2rem;">每日花費：<strong>NT$ ${Math.round(item.daily_cost)} / 日</strong>（預計尚可服用約 ${item.remaining_days || item.days_supply || 30} 天）</div>
-      </div>
-    </div>
-  `).join('');
+  grid.innerHTML = renderPurchasedCardsHtml();
 }
 
 // ========================================================
 // 6. 新增市售保健品 Modal、訂閱方案 Modal 與範例清空切換
 // ========================================================
-function openAddSupplementModal(defaultList = 'wishlist') {
+function openAddSupplementModal(defaultList = 'purchased') {
   const modal = document.getElementById('add-supplement-modal');
   const selectEl = document.getElementById('new-supp-target-list');
   if (selectEl && defaultList) {
@@ -1478,7 +1531,7 @@ async function handleAddSupplementSubmit(e) {
   const total_units = document.getElementById('new-supp-total')?.value || 60;
   const daily_units = document.getElementById('new-supp-daily')?.value || 2;
   const active_summary = document.getElementById('new-supp-summary')?.value || '';
-  const add_to_status = document.getElementById('new-supp-target-list')?.value || 'wishlist';
+  const add_to_status = document.getElementById('new-supp-target-list')?.value || 'purchased';
 
   try {
     const res = await fetch('/api/supplements', {
@@ -1503,10 +1556,8 @@ async function handleAddSupplementSubmit(e) {
       document.getElementById('add-supplement-form')?.reset();
       await loadBootstrapData();
       showToast(`已新增【${brand} ${name}】並完成每日花費與成分建檔！`);
-      if (add_to_status === 'wishlist') {
+      if (add_to_status === 'wishlist' || add_to_status === 'purchased') {
         switchView('view-wishlist');
-      } else if (add_to_status === 'purchased') {
-        switchView('view-calendar');
       }
     }
   } catch (err) {
@@ -1522,10 +1573,10 @@ function openSubscriptionModal() {
     if (state.isPro) {
       actionArea.innerHTML = `
         <div style="padding:0.6rem 0.85rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; color:#065f46; font-size:0.85rem; font-weight:700; text-align:center;">
-          您已透過留名單免費開通 Pro 權限
+          您已透過體驗回饋免費開通 Pro 權限
         </div>
         <button type="button" class="btn btn-sm btn-outline btn-block" onclick="toggleProStatusForDemo()">
-          切換回免費版（展示 MVP 門檻）
+          切換回免費版（展示未開通狀態）
         </button>
       `;
     } else {
@@ -1556,7 +1607,7 @@ function toggleProStatusForDemo() {
     renderCalendarView();
   }
   closeSubscriptionModal();
-  showToast(state.isPro ? '已切換為 Pro 方案（展示全功能解鎖狀態）' : '已切換為 免費版（展示 MVP 留名單門檻）');
+  showToast(state.isPro ? '已切換為 Pro 方案（展示全功能解鎖狀態）' : '已切換為 免費版（展示回饋開通門檻）');
 }
 window.toggleProStatusForDemo = toggleProStatusForDemo;
 
@@ -1689,6 +1740,13 @@ window.addEventListener('beforeinstallprompt', (e) => {
   if (btn) btn.style.display = 'inline-flex';
 });
 
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'none';
+  deferredPwaPrompt = null;
+  showToast('已成功將「好選保健」加到您的手機主畫面！');
+});
+
 async function triggerPwaInstall() {
   if (deferredPwaPrompt) {
     deferredPwaPrompt.prompt();
@@ -1696,11 +1754,32 @@ async function triggerPwaInstall() {
     if (choice.outcome === 'accepted') {
       const btn = document.getElementById('pwa-install-btn');
       if (btn) btn.style.display = 'none';
+      closeWebAppModal();
     }
     deferredPwaPrompt = null;
+  } else {
+    showToast('請點選手機瀏覽器選單中的「分享 → 加入主畫面」或網址列右側的「安裝」圖示即可加到桌面！');
   }
 }
 window.triggerPwaInstall = triggerPwaInstall;
+
+function checkIosPwaPrompt() {
+  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  const isDismissed = localStorage.getItem('purepick_ios_banner_dismissed');
+  if (isIos && !isStandalone && !isDismissed) {
+    const banner = document.getElementById('ios-pwa-banner');
+    if (banner) banner.style.display = 'block';
+  }
+}
+window.checkIosPwaPrompt = checkIosPwaPrompt;
+
+function dismissIosBanner() {
+  const banner = document.getElementById('ios-pwa-banner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('purepick_ios_banner_dismissed', '1');
+}
+window.dismissIosBanner = dismissIosBanner;
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -1746,7 +1825,6 @@ function openLeadModal(source = 'general') {
   const formContent = document.getElementById('lead-capture-form');
   const verifiedLineName = document.getElementById('lead-verified-line-name');
 
-  // 嚴格評審實名認證門檻：未登入 LINE 則顯示登入引導，已登入則開放填表
   if (!state.currentUser) {
     if (authGate) authGate.style.display = 'block';
     if (formContent) formContent.style.display = 'none';
@@ -1764,16 +1842,14 @@ function openLeadModal(source = 'general') {
     }
   }
 
-  // 預設將流程評分設為 5 分（非常流暢）
   setLeadScore(5);
-
   modal.style.display = 'flex';
 }
 window.openLeadModal = openLeadModal;
 
 function loginWithDemoLineUser() {
   const demoUser = {
-    displayName: '政大學生（實名受測者）',
+    displayName: '政大受測者（LINE 實名）',
     userId: 'line_user_nccu_' + Math.random().toString(36).substring(2, 8),
     pictureUrl: ''
   };
@@ -1796,7 +1872,7 @@ async function handleLeadSubmit(event) {
   event.preventDefault();
 
   if (!state.currentUser || !state.currentUser.userId) {
-    showToast('為維護評審數據真實性，請先登入 LINE 帳號後再送出');
+    showToast('為維護數據真實性，請先登入 LINE 帳號後再送出');
     openLeadModal(document.getElementById('lead-source')?.value || 'general');
     return;
   }
@@ -1836,7 +1912,7 @@ async function handleLeadSubmit(event) {
       state.isPro = true;
       localStorage.setItem('purepick_pro', 'true');
       closeLeadModal();
-      showToast('【登記成功】感謝您的寶貴回饋！已為您免費開通 Pro 完整去冗精算、身體動態日誌與週度複盤！');
+      showToast('【登記成功】感謝您的寶貴回饋！已為您免費開通 Pro 完整重複檢查、身體狀態日誌與每週總結！');
       if (state.activeView === 'view-wishlist') {
         renderWishlistView();
       } else if (state.activeView === 'view-calendar') {
@@ -1860,81 +1936,233 @@ async function handleLeadSubmit(event) {
 window.handleLeadSubmit = handleLeadSubmit;
 
 // ========================================================
-// 10. Chrome 擴充套件彈窗與攔截模擬 (Chrome Extension Modal & Live Demo)
+// 10. 手機版 Web App 教學、Web Share Target 接收與看診大字卡
 // ========================================================
-function openExtensionModal() {
-  const modal = document.getElementById('extension-install-modal');
+function openWebAppModal() {
+  const modal = document.getElementById('webapp-install-modal');
   if (modal) modal.style.display = 'flex';
 }
-window.openExtensionModal = openExtensionModal;
+window.openWebAppModal = openWebAppModal;
 
-function closeExtensionModal() {
-  const modal = document.getElementById('extension-install-modal');
+function closeWebAppModal() {
+  const modal = document.getElementById('webapp-install-modal');
   if (modal) modal.style.display = 'none';
 }
-window.closeExtensionModal = closeExtensionModal;
+window.closeWebAppModal = closeWebAppModal;
 
-function simulateExtensionIntercept() {
-  closeExtensionModal();
-
-  // 移除現有的模擬卡片
-  const existing = document.getElementById('purepick-ext-banner');
-  if (existing) existing.remove();
-
-  const banner = document.createElement('div');
-  banner.id = 'purepick-ext-banner';
-  banner.className = 'simulated-ext-floating-card';
-
-  banner.innerHTML = `
-    <div style="background:linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%); color:#ffffff; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
-      <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;">
-        <svg style="width:16px; height:16px; stroke:#ffffff; stroke-width:2.2; fill:none; stroke-linecap:round; stroke-linejoin:round;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>PurePick 購物車攔截偵測 (電商實境模擬)</span>
-      </div>
-      <button type="button" onclick="document.getElementById('purepick-ext-banner').remove()" style="background:transparent; border:none; color:#ffffff; font-size:18px; cursor:pointer;">&times;</button>
-    </div>
-
-    <div style="padding:14px 16px;">
-      <div style="display:inline-flex; align-items:center; gap:6px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; margin-bottom:8px;">
-        <svg style="width:13px; height:13px; stroke:currentColor; stroke-width:2.2; fill:none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span>電商購物車成分重複警示</span>
-      </div>
-
-      <p style="font-size:12.5px; color:#334155; margin:0 0 8px 0; line-height:1.5;">
-        偵測到電商結帳清單包含：<strong>白蘭氏深海魚油 + 善存綜合維他命</strong>。<br />
-        兩者皆含有高劑量<strong>「維生素 E」</strong>！
-      </p>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:10px;">
-        <div>
-          <div style="font-size:10.5px; color:#64748b;">累積攝取量</div>
-          <div style="font-size:13px; font-weight:800; color:#dc2626;">42 mg (超標 300%)</div>
-        </div>
-        <div>
-          <div style="font-size:10.5px; color:#64748b;">去冗預估省下</div>
-          <div style="font-size:13px; font-weight:800; color:#16a34a;">NT$ 1,280 / 月</div>
-        </div>
-      </div>
-
-      <p style="font-size:11.5px; color:#475569; background:#faf5ff; border-left:3px solid #7c3aed; padding:6px 8px; margin:0 0 10px 0; border-radius:0 4px 4px 0;">
-        多數深海魚油已額外添加維生素 E 抗氧化，若合併綜合維他命將造成重複浪費與代謝負擔。建議二選一即可！
-      </p>
-    </div>
-
-    <div style="display:flex; gap:8px; padding:0 16px 14px 16px;">
-      <button type="button" class="btn btn-primary btn-sm" style="flex:1;" onclick="switchView('view-wishlist'); document.getElementById('purepick-ext-banner').remove();">
-        查看去冗分析清單
-      </button>
-      <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('purepick-ext-banner').remove()">
-        關閉提醒
-      </button>
-    </div>
-  `;
-
-  document.body.appendChild(banner);
-  showToast('已啟動 Chrome 擴充套件購物車去冗攔截模擬！');
+async function shareAppUrlToFriends() {
+  const shareData = {
+    title: '好選保健 PurePick｜保健品比價與看診清單',
+    text: '幫您跨品牌比對保健食品每日花費、抓出重複購買，還能整理「告知醫生目前使用的保健品」看診清單！',
+    url: window.location.origin
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+    showToast('已複製平台連結，可直接貼到 LINE 分享給親友！');
+  } catch (e) {
+    showToast('請複製上方網址分享給親友');
+  }
 }
-window.simulateExtensionIntercept = simulateExtensionIntercept;
+window.shareAppUrlToFriends = shareAppUrlToFriends;
+
+async function importSharedProductByName(productText, sourceChannel = '手機分享匯入') {
+  const cleanText = String(productText || '').trim();
+  if (!cleanText) {
+    showToast('請輸入或貼上保健食品名稱');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/purchased/quick-import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: cleanText,
+        source_channel: sourceChannel
+      })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.wishlist = json.data.wishlist || state.wishlist;
+      state.purchased = json.data.purchased || state.purchased;
+      state.wishlistAnalysis = json.data.wishlistAnalysis || state.wishlistAnalysis;
+      updateNavBadges();
+      renderCatalog();
+      renderWishlistView();
+      renderCalendarView();
+      switchView('view-wishlist');
+      showToast(json.message || '已成功加入「告知醫生目前使用的保健品」清單！');
+    } else {
+      showToast(json.message || '未偵測到保健食品名稱，系統已自動排除非保健品');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('匯入失敗，請稍後再試');
+  }
+}
+
+async function handleQuickImportSubmit() {
+  const input = document.getElementById('quick-import-input');
+  const val = (input?.value || '').trim();
+  if (!val) {
+    showToast('請先貼上或輸入保健食品名稱（例如：大研生醫魚油）');
+    return;
+  }
+  await importSharedProductByName(val, '手機貼上快速加入');
+  if (input) input.value = '';
+}
+window.handleQuickImportSubmit = handleQuickImportSubmit;
+
+async function handleIncomingPwaShare() {
+  const params = new URLSearchParams(window.location.search);
+  const sharedTitle = params.get('share_title') || '';
+  const sharedText = params.get('share_text') || '';
+  const sharedUrl = params.get('share_url') || '';
+  const combined = `${sharedTitle} ${sharedText}`.trim();
+
+  if (combined || sharedUrl) {
+    window.history.replaceState({}, document.title, '/');
+    if (combined) {
+      await importSharedProductByName(combined, '手機購物分享匯入');
+    } else {
+      switchView('view-wishlist');
+      showToast('已接收分享連結，請在輸入框確認保健品名稱後加入清單');
+    }
+  }
+}
+
+async function simulateMobileShareImport() {
+  closeWebAppModal();
+  const sampleItems = [
+    '大研生醫 德國頂級高濃度魚油 (84%)',
+    '悠活原力 金盞花萃取葉黃素 + 蝦紅素',
+    '威德 健康益生菌 (顆粒粉包)'
+  ];
+  const currentNames = new Set((state.purchased || []).map(p => p.name));
+  const pick = sampleItems.find(x => !Array.from(currentNames).some(n => x.includes(n.slice(0, 4)))) || sampleItems[0];
+  await importSharedProductByName(pick, '手機購物網站分享');
+}
+window.simulateMobileShareImport = simulateMobileShareImport;
+
+function openDoctorFullscreenModal() {
+  const modal = document.getElementById('doctor-fullscreen-modal');
+  const body = document.getElementById('doctor-fullscreen-body');
+  if (!modal || !body) return;
+
+  const userName = state.currentUser?.displayName || '本人';
+  const todayStr = formatDateStr(new Date());
+
+  if (!state.purchased || state.purchased.length === 0) {
+    body.innerHTML = `
+      <div style="text-align:center; padding:2rem 1rem; color:#4b5563;">
+        <p style="font-size:1.05rem; margin-bottom:1rem;">目前尚未加入任何正在服用的保健品。</p>
+        <button type="button" class="btn btn-primary" onclick="closeDoctorFullscreenModal(); openAddSupplementModal('purchased');">
+          ＋ 立即新增手邊正在吃的保健品
+        </button>
+      </div>
+    `;
+  } else {
+    const itemsHtml = state.purchased.map((item, idx) => {
+      const doctorNote = getPlainDoctorReminder(item);
+      return `
+        <div class="doctor-show-row">
+          <div class="doctor-show-index">${idx + 1}</div>
+          <div class="doctor-show-main">
+            <div class="doctor-show-top">
+              <span class="doctor-show-cat">${escapeHtml(item.category)}</span>
+              <span class="doctor-show-timing">服用時段：${escapeHtml(item.intake_time || item.recommended_timing || '隨餐/飯後')}｜每日 ${item.daily_units || 1} 份</span>
+            </div>
+            <div class="doctor-show-name">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</div>
+            <div class="doctor-show-ing"><strong>主要成分與含量：</strong>${escapeHtml(item.active_summary)}</div>
+            <div class="doctor-show-note">${escapeHtml(doctorNote)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="doctor-patient-bar">
+        <div><strong>服用者：</strong>${escapeHtml(userName)}（共 ${state.purchased.length} 款日常保健品）</div>
+        <div><strong>整理日期：</strong>${todayStr}</div>
+      </div>
+
+      <div class="doctor-general-alert">
+        <strong>致看診醫師與藥師：</strong>
+        以下為本人目前日常固定食用的保健食品與每日攝取量。若今日開立慢性病處方、抗凝血藥、降血脂藥或抗生素，懇請協助確認是否需要暫停或錯開時間服用。
+      </div>
+
+      <div class="doctor-show-list">
+        ${itemsHtml}
+      </div>
+    `;
+  }
+
+  modal.style.display = 'flex';
+}
+window.openDoctorFullscreenModal = openDoctorFullscreenModal;
+
+function closeDoctorFullscreenModal() {
+  const modal = document.getElementById('doctor-fullscreen-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeDoctorFullscreenModal = closeDoctorFullscreenModal;
+
+async function shareDoctorList() {
+  if (!state.purchased || state.purchased.length === 0) {
+    showToast('目前清單內尚無保健品，請先新增正在吃的保健品');
+    return;
+  }
+
+  const userName = state.currentUser?.displayName || '本人';
+  const todayStr = formatDateStr(new Date());
+  const lines = [
+    `【告知醫生目前使用的保健品清單】`,
+    `服用者：${userName}｜整理日期：${todayStr}`,
+    `--------------------------------`
+  ];
+
+  state.purchased.forEach((item, idx) => {
+    lines.push(`${idx + 1}. 【${item.category}】${item.brand} - ${item.name}`);
+    lines.push(`   • 每日用量：每天 ${item.daily_units || 1} 份（${item.intake_time || item.recommended_timing || '隨餐/飯後'}）`);
+    lines.push(`   • 主要成分：${item.active_summary}`);
+    lines.push(`   • ${getPlainDoctorReminder(item)}`);
+  });
+
+  lines.push(`--------------------------------`);
+  lines.push(`（由 好選保健 PurePick 整理，供看診醫師與藥師評估用藥安全）`);
+
+  const fullText = lines.join('\n');
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: '告知醫生目前使用的保健品清單',
+        text: fullText
+      });
+      showToast('已開啟手機分享選單！');
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(fullText);
+    showToast('已將「告知醫生目前使用的保健品」完整清單複製！可直接貼到 LINE 傳給家人或自己備查。');
+  } catch (e) {
+    showToast('複製失敗，請使用全螢幕大字看診卡直接出示給醫生看');
+  }
+}
+window.shareDoctorList = shareDoctorList;
+
 
 
 

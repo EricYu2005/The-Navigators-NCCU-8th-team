@@ -292,26 +292,13 @@ app.post('/api/user-supplements', async (req, res) => {
 
 app.delete('/api/user-supplements/:supplementId', async (req, res) => {
   try {
-    const rawId = req.params.supplementId;
+    const supplementId = parseInt(req.params.supplementId);
     const status = req.query.status || 'wishlist';
 
-    if (rawId === 'all') {
-      if (status === 'all') {
-        await dbQuery.run('DELETE FROM user_supplements');
-      } else {
-        await dbQuery.run('DELETE FROM user_supplements WHERE status = ?', [status]);
-      }
-    } else {
-      const supplementId = parseInt(rawId, 10);
-      if (status === 'all') {
-        await dbQuery.run('DELETE FROM user_supplements WHERE supplement_id = ?', [supplementId]);
-      } else {
-        await dbQuery.run(
-          'DELETE FROM user_supplements WHERE supplement_id = ? AND status = ?',
-          [supplementId, status]
-        );
-      }
-    }
+    await dbQuery.run(
+      'DELETE FROM user_supplements WHERE supplement_id = ? AND status = ?',
+      [supplementId, status]
+    );
 
     const { wishlist, purchased } = await getUserLists();
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
@@ -319,31 +306,6 @@ app.delete('/api/user-supplements/:supplementId', async (req, res) => {
     res.json({
       success: true,
       data: { wishlist, purchased, wishlistAnalysis }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-app.delete('/api/supplements/:id', async (req, res) => {
-  try {
-    const suppId = parseInt(req.params.id, 10);
-    await dbQuery.run('DELETE FROM user_supplements WHERE supplement_id = ?', [suppId]);
-    if (suppId > 24) {
-      await dbQuery.run('DELETE FROM supplements WHERE id = ?', [suppId]);
-    }
-    const rawSupplements = await dbQuery.all('SELECT * FROM supplements ORDER BY category ASC, value_score DESC');
-    const supplements = rawSupplements.map(s => {
-      let nutrients = {};
-      try { nutrients = JSON.parse(s.nutrients_json || '{}'); } catch (e) {}
-      return { ...s, nutrients };
-    });
-    const { wishlist, purchased } = await getUserLists();
-    const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
-
-    res.json({
-      success: true,
-      data: { supplements, wishlist, purchased, wishlistAnalysis }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

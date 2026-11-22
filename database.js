@@ -641,7 +641,7 @@ function initDatabase() {
       )
     `);
 
-    // 4. 服用日曆與身體狀態日誌表 (像月經日曆一樣記錄每日打卡與身體反饋)
+    // 4. 服用日曆與身體狀態日誌表（依 line_user_id 嚴格隔離：'' 代表未登入示範帳號）
     db.run(`
       CREATE TABLE IF NOT EXISTS calendar_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -653,6 +653,23 @@ function initDatabase() {
         note TEXT DEFAULT '',
         updated_by TEXT DEFAULT '示範使用者',
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_calendar_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        line_user_id TEXT NOT NULL DEFAULT '',
+        date_str TEXT NOT NULL,
+        taken_ids_json TEXT DEFAULT '[]',
+        energy_level TEXT DEFAULT '',
+        digestion_status TEXT DEFAULT '',
+        sleep_eye_status TEXT DEFAULT '',
+        note TEXT DEFAULT '',
+        is_sick_mode INTEGER DEFAULT 0,
+        updated_by TEXT DEFAULT '示範使用者',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(line_user_id, date_str)
       )
     `);
 
@@ -700,53 +717,45 @@ function seedSupplementCatalog() {
         updateStmt.run([s.name, s.dosage_form, s.absorption_form, s.active_summary, s.additives_note, s.pros, s.cons, s.id]);
       }
       updateStmt.finalize();
+
+      // 若 user_calendar_logs 尚無示範日誌，從既有 calendar_logs 補齊或建立示範資料
+      db.get("SELECT COUNT(*) as count FROM user_calendar_logs WHERE line_user_id = ''", [], (e2, r2) => {
+        if (!e2 && (!r2 || r2.count === 0)) {
+          db.run(`
+            INSERT OR IGNORE INTO user_calendar_logs (
+              line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, updated_by
+            )
+            SELECT '', date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, updated_by
+            FROM calendar_logs
+          `);
+        }
+      });
     }
   });
 }
 
-function injectDefaultData(callback) {
+function injectDemoRowsOnly(callback) {
   db.serialize(() => {
-    db.run('DELETE FROM supplements');
-    db.run('DELETE FROM user_supplements');
-    db.run('DELETE FROM calendar_logs');
+    // 僅重置未登入示範帳號資料，絕對不影響已登入 LINE 會員的個人資料
+    db.run("DELETE FROM user_supplements WHERE line_user_id IS NULL OR line_user_id = ''");
+    db.run("DELETE FROM user_calendar_logs WHERE line_user_id = ''");
 
-    const stmt = db.prepare(`
-      INSERT INTO supplements (
-        id, brand, name, category, price, total_units, daily_units, days_supply,
-        daily_cost, monthly_cost, dosage_form, absorption_form, active_summary,
-        nutrients_json, additives_note, value_score, pros, cons,
-        recommended_timing, is_vegan, source_channel
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    for (const s of INITIAL_SUPPLEMENTS) {
-      stmt.run([
-        s.id, s.brand, s.name, s.category, s.price, s.total_units, s.daily_units, s.days_supply,
-        s.daily_cost, s.monthly_cost, s.dosage_form, s.absorption_form, s.active_summary,
-        s.nutrients_json, s.additives_note, s.value_score, s.pros, s.cons,
-        s.recommended_timing, s.is_vegan, s.source_channel
-      ]);
-    }
-    stmt.finalize();
-
-    // 預設注入「有興趣清單 (wishlist)」：故意包含重疊品項以展示「不需要買 A 因為已經有 B」的嚴格分析
     const defaultWishlist = [
-      { supplement_id: 2, status: 'wishlist', intake_time: '隨餐/飯後' }, // 營養師輕食 1000魚油 (與已購買的大研魚油重疊！)
-      { supplement_id: 6, status: 'wishlist', intake_time: '隨餐/飯後' }, // 悠活原力 游離型葉黃素
-      { supplement_id: 7, status: 'wishlist', intake_time: '隨餐/飯後' }, // 白蘭氏 葉黃素精華飲 (與悠活原力葉黃素重疊，且溢價高！)
-      { supplement_id: 18, status: 'wishlist', intake_time: '睡前' }     // 達摩本草 海洋鎂+海藻鈣
+      { supplement_id: 2, status: 'wishlist', intake_time: '隨餐/飯後' },
+      { supplement_id: 6, status: 'wishlist', intake_time: '隨餐/飯後' },
+      { supplement_id: 7, status: 'wishlist', intake_time: '隨餐/飯後' },
+      { supplement_id: 18, status: 'wishlist', intake_time: '睡前' }
     ];
 
-    // 預設注入「已購買清單 (purchased)」：目前正在吃、顯示於服用日曆的 3 款保健品
     const defaultPurchased = [
-      { supplement_id: 1, status: 'purchased', intake_time: '隨餐/飯後', remaining_days: 22 }, // 大研生醫 德國頂級魚油
-      { supplement_id: 10, status: 'purchased', intake_time: '早上空腹', remaining_days: 18 }, // 營養師輕食 300億益生菌
-      { supplement_id: 16, status: 'purchased', intake_time: '隨餐/飯後', remaining_days: 45 }  // BHK's 緩釋B群+鐵
+      { supplement_id: 1, status: 'purchased', intake_time: '隨餐/飯後', remaining_days: 22 },
+      { supplement_id: 10, status: 'purchased', intake_time: '早上空腹', remaining_days: 18 },
+      { supplement_id: 16, status: 'purchased', intake_time: '隨餐/飯後', remaining_days: 45 }
     ];
 
     const uStmt = db.prepare(`
-      INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name)
-      VALUES (?, ?, ?, date('now', '-10 days'), ?, '官方示範帳號')
+      INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
+      VALUES (?, ?, ?, date('now', '-10 days'), ?, '官方示範帳號', '')
     `);
 
     for (const w of defaultWishlist) {
@@ -757,7 +766,6 @@ function injectDefaultData(callback) {
     }
     uStmt.finalize();
 
-    // 注入當月近 10 天的日曆打卡與身體狀態記錄，讓月曆一打開就像真實使用中的經期/健康日曆
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -775,9 +783,9 @@ function injectDefaultData(callback) {
     ];
 
     const cStmt = db.prepare(`
-      INSERT OR REPLACE INTO calendar_logs (
-        date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, '官方示範帳號')
+      INSERT OR REPLACE INTO user_calendar_logs (
+        line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by
+      ) VALUES ('', ?, ?, ?, ?, ?, ?, 0, '官方示範帳號')
     `);
 
     for (const item of sampleNotes) {
@@ -800,21 +808,55 @@ function injectDefaultData(callback) {
   });
 }
 
-function clearUserPersonalData() {
+function injectDefaultData(callback) {
+  db.serialize(() => {
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO supplements (
+        id, brand, name, category, price, total_units, daily_units, days_supply,
+        daily_cost, monthly_cost, dosage_form, absorption_form, active_summary,
+        nutrients_json, additives_note, value_score, pros, cons,
+        recommended_timing, is_vegan, source_channel
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const s of INITIAL_SUPPLEMENTS) {
+      stmt.run([
+        s.id, s.brand, s.name, s.category, s.price, s.total_units, s.daily_units, s.days_supply,
+        s.daily_cost, s.monthly_cost, s.dosage_form, s.absorption_form, s.active_summary,
+        s.nutrients_json, s.additives_note, s.value_score, s.pros, s.cons,
+        s.recommended_timing, s.is_vegan, s.source_channel
+      ]);
+    }
+    stmt.finalize(() => {
+      injectDemoRowsOnly(callback);
+    });
+  });
+}
+
+function clearUserPersonalData(lineUserId = '') {
+  const uid = (lineUserId || '').trim();
   return new Promise((resolve, reject) => {
     db.serialize(() => {
-      db.run('DELETE FROM user_supplements');
-      db.run('DELETE FROM calendar_logs', (err) => {
-        if (err) return reject(err);
-        resolve(true);
-      });
+      if (uid) {
+        db.run('DELETE FROM user_supplements WHERE line_user_id = ?', [uid]);
+        db.run('DELETE FROM user_calendar_logs WHERE line_user_id = ?', [uid], (err) => {
+          if (err) return reject(err);
+          resolve(true);
+        });
+      } else {
+        db.run("DELETE FROM user_supplements WHERE line_user_id IS NULL OR line_user_id = ''");
+        db.run("DELETE FROM user_calendar_logs WHERE line_user_id = ''", (err) => {
+          if (err) return reject(err);
+          resolve(true);
+        });
+      }
     });
   });
 }
 
 function restoreDemoData() {
   return new Promise((resolve, reject) => {
-    injectDefaultData((err) => {
+    injectDemoRowsOnly((err) => {
       if (err) return reject(err);
       resolve(true);
     });

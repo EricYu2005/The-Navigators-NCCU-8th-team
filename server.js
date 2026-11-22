@@ -15,12 +15,30 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
+function normalizeLineUserId(raw) {
+  return String(raw || '').trim();
+}
+
 /**
- * 輔助函式：取得目前的「有興趣清單 (wishlist)」與「已購買清單 (purchased)」完整商品資料
+ * 輔助函式：取得指定使用者的「有興趣清單 (wishlist)」與「已購買清單 (purchased)」完整商品資料
+ * - lineUserId 有值：僅讀取該 LINE 實名使用者的個人資料，絕不混入官方示範帳號
+ * - lineUserId 為空：讀取未登入的官方示範資料
  */
-async function getUserLists() {
+async function getUserLists(lineUserId = '') {
+  const uid = normalizeLineUserId(lineUserId);
+  const whereClause = uid
+    ? 'WHERE us.line_user_id = ?'
+    : "WHERE (us.line_user_id IS NULL OR us.line_user_id = '')";
+  const params = uid ? [uid] : [];
+
   const rows = await dbQuery.all(`
     SELECT
       us.id as record_id,
@@ -34,8 +52,9 @@ async function getUserLists() {
       s.*
     FROM user_supplements us
     JOIN supplements s ON us.supplement_id = s.id
+    ${whereClause}
     ORDER BY us.id DESC
-  `);
+  `, params);
 
   const wishlist = [];
   const purchased = [];
@@ -59,11 +78,36 @@ async function getUserLists() {
   return { wishlist, purchased };
 }
 
+async function getUserCalendarLogs(lineUserId = '') {
+  const uid = normalizeLineUserId(lineUserId);
+  const rawLogs = await dbQuery.all(
+    'SELECT * FROM user_calendar_logs WHERE line_user_id = ? ORDER BY date_str ASC',
+    [uid]
+  );
+  const calendarLogs = {};
+  for (const log of rawLogs) {
+    let takenIds = [];
+    try { takenIds = JSON.parse(log.taken_ids_json || '[]'); } catch (e) {}
+    calendarLogs[log.date_str] = {
+      dateStr: log.date_str,
+      takenIds,
+      energyLevel: log.energy_level || '',
+      digestionStatus: log.digestion_status || '',
+      sleepEyeStatus: log.sleep_eye_status || '',
+      note: log.note || '',
+      isSickMode: !!log.is_sick_mode,
+      updatedBy: log.updated_by || ''
+    };
+  }
+  return calendarLogs;
+}
+
 // ========================================================
 // 1. 平台初始資料載入 (Bootstrap)
 // ========================================================
 app.get('/api/bootstrap', async (req, res) => {
   try {
+    const lineUserId = normalizeLineUserId(req.query.lineUserId);
     const rawSupplements = await dbQuery.all('SELECT * FROM supplements ORDER BY category ASC, value_score DESC');
     const supplements = rawSupplements.map(s => {
       let nutrients = {};
@@ -71,23 +115,8 @@ app.get('/api/bootstrap', async (req, res) => {
       return { ...s, nutrients };
     });
 
-    const { wishlist, purchased } = await getUserLists();
-    const rawLogs = await dbQuery.all('SELECT * FROM calendar_logs ORDER BY date_str ASC');
-    const calendarLogs = {};
-    for (const log of rawLogs) {
-      let takenIds = [];
-      try { takenIds = JSON.parse(log.taken_ids_json || '[]'); } catch (e) {}
-      calendarLogs[log.date_str] = {
-        dateStr: log.date_str,
-        takenIds,
-        energyLevel: log.energy_level || '',
-        digestionStatus: log.digestion_status || '',
-        sleepEyeStatus: log.sleep_eye_status || '',
-        note: log.note || '',
-        updatedBy: log.updated_by || ''
-      };
-    }
-
+    const { wishlist, purchased } = await getUserLists(lineUserId);
+    const calendarLogs = await getUserCalendarLogs(lineUserId);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
 
     res.json({
@@ -155,7 +184,8 @@ app.post('/api/supplements', async (req, res) => {
       additives_note,
       recommended_timing,
       add_to_status,
-      user_name
+      user_name,
+      line_user_id
     } = req.body;
 
     if (!brand || !name) {
@@ -214,17 +244,19 @@ app.post('/api/supplements', async (req, res) => {
     ]);
 
     const newSuppId = result.id;
+    const uid = normalizeLineUserId(line_user_id);
 
     if (add_to_status === 'wishlist' || add_to_status === 'purchased') {
       await dbQuery.run(`
-        INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name)
-        VALUES (?, ?, ?, date('now'), ?, ?)
+        INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
+        VALUES (?, ?, ?, date('now'), ?, ?, ?)
       `, [
         newSuppId,
         add_to_status,
         recommended_timing || '隨餐/飯後',
         daysSupply,
-        user_name || '消費者'
+        user_name || '消費者',
+        uid
       ]);
     }
 
@@ -245,23 +277,29 @@ app.post('/api/user-supplements', async (req, res) => {
       return res.status(400).json({ success: false, message: '參數不完整' });
     }
 
+    const uid = normalizeLineUserId(lineUserId);
     const supp = await dbQuery.get('SELECT * FROM supplements WHERE id = ?', [supplementId]);
     if (!supp) {
       return res.status(404).json({ success: false, message: '找不到該商品' });
     }
 
-    // 若是從「有興趣清單」轉為「已購買」，先從 wishlist 移除
+    const userWhere = uid
+      ? 'line_user_id = ?'
+      : "(line_user_id IS NULL OR line_user_id = '')";
+    const userParams = uid ? [uid] : [];
+
+    // 若是從「有興趣清單」轉為「已購買」，先從該使用者的 wishlist 移除
     if (moveFromWishlist && status === 'purchased') {
       await dbQuery.run(
-        'DELETE FROM user_supplements WHERE supplement_id = ? AND status = ?',
-        [supplementId, 'wishlist']
+        `DELETE FROM user_supplements WHERE supplement_id = ? AND status = ? AND ${userWhere}`,
+        [supplementId, 'wishlist', ...userParams]
       );
     }
 
-    // 檢查是否已存在於相同 status
+    // 檢查該使用者是否已存在於相同 status
     const existing = await dbQuery.get(
-      'SELECT id FROM user_supplements WHERE supplement_id = ? AND status = ?',
-      [supplementId, status]
+      `SELECT id FROM user_supplements WHERE supplement_id = ? AND status = ? AND ${userWhere}`,
+      [supplementId, status, ...userParams]
     );
 
     if (!existing) {
@@ -274,11 +312,11 @@ app.post('/api/user-supplements', async (req, res) => {
         intakeTime || supp.recommended_timing || '隨餐/飯後',
         supp.days_supply || 30,
         userName || '消費者',
-        lineUserId || null
+        uid
       ]);
     }
 
-    const { wishlist, purchased } = await getUserLists();
+    const { wishlist, purchased } = await getUserLists(uid);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
 
     res.json({
@@ -292,15 +330,23 @@ app.post('/api/user-supplements', async (req, res) => {
 
 app.delete('/api/user-supplements/:supplementId', async (req, res) => {
   try {
-    const supplementId = parseInt(req.params.supplementId);
+    const supplementId = parseInt(req.params.supplementId, 10);
     const status = req.query.status || 'wishlist';
+    const uid = normalizeLineUserId(req.query.lineUserId);
 
-    await dbQuery.run(
-      'DELETE FROM user_supplements WHERE supplement_id = ? AND status = ?',
-      [supplementId, status]
-    );
+    if (uid) {
+      await dbQuery.run(
+        'DELETE FROM user_supplements WHERE supplement_id = ? AND status = ? AND line_user_id = ?',
+        [supplementId, status, uid]
+      );
+    } else {
+      await dbQuery.run(
+        "DELETE FROM user_supplements WHERE supplement_id = ? AND status = ? AND (line_user_id IS NULL OR line_user_id = '')",
+        [supplementId, status]
+      );
+    }
 
-    const { wishlist, purchased } = await getUserLists();
+    const { wishlist, purchased } = await getUserLists(uid);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
 
     res.json({
@@ -312,10 +358,131 @@ app.delete('/api/user-supplements/:supplementId', async (req, res) => {
   }
 });
 
+// 同步已登入使用者的清單與日曆狀態（避免雲端伺服器重啟後遺失或恢復舊資料）
+app.post('/api/user-state/sync', async (req, res) => {
+  try {
+    const { lineUserId, userName, wishlistIds, purchasedIds, customSupplements, calendarLogs } = req.body;
+    const uid = normalizeLineUserId(lineUserId);
+    if (!uid) {
+      return res.status(400).json({ success: false, message: '缺少 LINE 使用者識別碼' });
+    }
+
+    const idMap = {};
+    if (Array.isArray(customSupplements)) {
+      for (const cs of customSupplements) {
+        if (!cs || !cs.brand || !cs.name) continue;
+        const existingSupp = await dbQuery.get(
+          'SELECT id FROM supplements WHERE brand = ? AND name = ? LIMIT 1',
+          [cs.brand, cs.name]
+        );
+        if (existingSupp) {
+          idMap[cs.id] = existingSupp.id;
+        } else {
+          const inserted = await dbQuery.run(`
+            INSERT INTO supplements (
+              brand, name, category, price, total_units, daily_units, days_supply,
+              daily_cost, monthly_cost, dosage_form, absorption_form, active_summary,
+              nutrients_json, additives_note, value_score, pros, cons, recommended_timing, source_channel
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '消費者新增')
+          `, [
+            cs.brand,
+            cs.name,
+            cs.category || '綜合保養',
+            cs.price || 800,
+            cs.total_units || 60,
+            cs.daily_units || 2,
+            cs.days_supply || 30,
+            cs.daily_cost || 27,
+            cs.monthly_cost || 800,
+            cs.dosage_form || '膠囊/錠劑',
+            cs.absorption_form || '一般標準型',
+            cs.active_summary || '日常配方',
+            typeof cs.nutrients_json === 'string' ? cs.nutrients_json : JSON.stringify(cs.nutrients || {}),
+            cs.additives_note || '消費者自訂登錄商品',
+            cs.value_score || 84,
+            cs.pros || '',
+            cs.cons || '',
+            cs.recommended_timing || '隨餐/飯後'
+          ]);
+          idMap[cs.id] = inserted.id;
+        }
+      }
+    }
+
+    await dbQuery.run('DELETE FROM user_supplements WHERE line_user_id = ?', [uid]);
+
+    const resolveId = (rawId) => Number(idMap[rawId] || rawId);
+    const wIds = Array.isArray(wishlistIds) ? [...new Set(wishlistIds.map(resolveId).filter(Boolean))] : [];
+    const pIds = Array.isArray(purchasedIds) ? [...new Set(purchasedIds.map(resolveId).filter(Boolean))] : [];
+
+    for (const sid of wIds) {
+      const supp = await dbQuery.get('SELECT id, recommended_timing, days_supply FROM supplements WHERE id = ?', [sid]);
+      if (supp) {
+        await dbQuery.run(`
+          INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
+          VALUES (?, 'wishlist', ?, date('now'), ?, ?, ?)
+        `, [sid, supp.recommended_timing || '隨餐/飯後', supp.days_supply || 30, userName || '消費者', uid]);
+      }
+    }
+
+    for (const sid of pIds) {
+      const supp = await dbQuery.get('SELECT id, recommended_timing, days_supply FROM supplements WHERE id = ?', [sid]);
+      if (supp) {
+        await dbQuery.run(`
+          INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
+          VALUES (?, 'purchased', ?, date('now'), ?, ?, ?)
+        `, [sid, supp.recommended_timing || '隨餐/飯後', supp.days_supply || 30, userName || '消費者', uid]);
+      }
+    }
+
+    if (calendarLogs && typeof calendarLogs === 'object') {
+      await dbQuery.run('DELETE FROM user_calendar_logs WHERE line_user_id = ?', [uid]);
+      for (const [dateStr, log] of Object.entries(calendarLogs)) {
+        if (!dateStr || !log) continue;
+        const cleanTaken = Array.isArray(log.takenIds) ? log.takenIds.map(resolveId).filter(Boolean) : [];
+        await dbQuery.run(`
+          INSERT OR REPLACE INTO user_calendar_logs (
+            line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `, [
+          uid,
+          dateStr,
+          JSON.stringify(cleanTaken),
+          log.energyLevel || '',
+          log.digestionStatus || '',
+          log.sleepEyeStatus || '',
+          log.note || '',
+          log.isSickMode ? 1 : 0,
+          userName || '消費者'
+        ]);
+      }
+    }
+
+    const rawSupplements = await dbQuery.all('SELECT * FROM supplements ORDER BY category ASC, value_score DESC');
+    const supplements = rawSupplements.map(s => {
+      let nutrients = {};
+      try { nutrients = JSON.parse(s.nutrients_json || '{}'); } catch (e) {}
+      return { ...s, nutrients };
+    });
+    const { wishlist, purchased } = await getUserLists(uid);
+    const syncedLogs = await getUserCalendarLogs(uid);
+    const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
+
+    res.json({
+      success: true,
+      data: { supplements, wishlist, purchased, calendarLogs: syncedLogs, wishlistAnalysis }
+    });
+  } catch (error) {
+    console.error('同步使用者狀態失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // 重新觸發「有興趣清單」深度去冗分析
 app.get('/api/wishlist/analyze', async (req, res) => {
   try {
-    const { wishlist, purchased } = await getUserLists();
+    const uid = normalizeLineUserId(req.query.lineUserId);
+    const { wishlist, purchased } = await getUserLists(uid);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
     res.json({ success: true, data: wishlistAnalysis });
   } catch (error) {
@@ -328,31 +495,35 @@ app.get('/api/wishlist/analyze', async (req, res) => {
 // ========================================================
 app.post('/api/calendar/log', async (req, res) => {
   try {
-    const { dateStr, takenIds, energyLevel, digestionStatus, sleepEyeStatus, note, updatedBy } = req.body;
+    const { dateStr, takenIds, energyLevel, digestionStatus, sleepEyeStatus, note, isSickMode, updatedBy, lineUserId } = req.body;
     if (!dateStr) {
       return res.status(400).json({ success: false, message: '缺少日期參數' });
     }
 
+    const uid = normalizeLineUserId(lineUserId);
     const cleanTaken = Array.isArray(takenIds) ? takenIds.map(x => Number(x)) : [];
 
     await dbQuery.run(`
-      INSERT INTO calendar_logs (date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, updated_by, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(date_str) DO UPDATE SET
+      INSERT INTO user_calendar_logs (line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(line_user_id, date_str) DO UPDATE SET
         taken_ids_json = excluded.taken_ids_json,
         energy_level = excluded.energy_level,
         digestion_status = excluded.digestion_status,
         sleep_eye_status = excluded.sleep_eye_status,
         note = excluded.note,
+        is_sick_mode = excluded.is_sick_mode,
         updated_by = excluded.updated_by,
         updated_at = CURRENT_TIMESTAMP
     `, [
+      uid,
       dateStr,
       JSON.stringify(cleanTaken),
       energyLevel || '',
       digestionStatus || '',
       sleepEyeStatus || '',
       note || '',
+      isSickMode ? 1 : 0,
       updatedBy || '消費者'
     ]);
 
@@ -365,6 +536,7 @@ app.post('/api/calendar/log', async (req, res) => {
         digestionStatus: digestionStatus || '',
         sleepEyeStatus: sleepEyeStatus || '',
         note: note || '',
+        isSickMode: !!isSickMode,
         updatedBy: updatedBy || '消費者'
       }
     });
@@ -374,12 +546,13 @@ app.post('/api/calendar/log', async (req, res) => {
 });
 
 // ========================================================
-// 6. 示範資料清空與還原 (方便組員登入打自己的保健品或恢復預設報告案例)
+// 6. 示範資料清空與還原 (僅操作對應使用者或示範帳號，不互相覆蓋)
 // ========================================================
 app.post('/api/demo/clear', async (req, res) => {
   try {
-    await clearUserPersonalData();
-    const { wishlist, purchased } = await getUserLists();
+    const uid = normalizeLineUserId(req.body?.lineUserId);
+    await clearUserPersonalData(uid);
+    const { wishlist, purchased } = await getUserLists(uid);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
     res.json({
       success: true,
@@ -550,7 +723,8 @@ app.post('/api/leads', async (req, res) => {
 // ========================================================
 app.post('/api/purchased/quick-import', async (req, res) => {
   try {
-    const { brand, name, category, price, active_summary, recommended_timing, source_channel } = req.body;
+    const { brand, name, category, price, active_summary, recommended_timing, source_channel, lineUserId, userName } = req.body;
+    const uid = normalizeLineUserId(lineUserId);
     const rawName = (name || '').trim();
     if (!rawName) {
       return res.status(400).json({ success: false, message: '請輸入或分享保健品名稱' });
@@ -609,23 +783,29 @@ app.post('/api/purchased/quick-import', async (req, res) => {
 
     const supplementId = supp.id;
 
-    // 寫入 user_supplements purchased 清單（告知醫生目前使用的保健品）
+    const userWhere = uid
+      ? 'line_user_id = ?'
+      : "(line_user_id IS NULL OR line_user_id = '')";
+    const userParams = uid ? [uid] : [];
+
     const existing = await dbQuery.get(
-      'SELECT id FROM user_supplements WHERE supplement_id = ? AND status = ?',
-      [supplementId, 'purchased']
+      `SELECT id FROM user_supplements WHERE supplement_id = ? AND status = ? AND ${userWhere}`,
+      [supplementId, 'purchased', ...userParams]
     );
 
     if (!existing) {
       await dbQuery.run(`
-        INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name)
-        VALUES (?, 'purchased', ?, date('now'), 30, '消費者')
+        INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
+        VALUES (?, 'purchased', ?, date('now'), 30, ?, ?)
       `, [
         supplementId,
-        recommended_timing || (supp ? supp.recommended_timing : '隨餐/飯後')
+        recommended_timing || (supp ? supp.recommended_timing : '隨餐/飯後'),
+        userName || '消費者',
+        uid
       ]);
     }
 
-    const { wishlist, purchased } = await getUserLists();
+    const { wishlist, purchased } = await getUserLists(uid);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
 
     res.json({

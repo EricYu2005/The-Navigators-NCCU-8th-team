@@ -41,6 +41,45 @@ function showToast(message) {
   }, 3200);
 }
 
+function getActiveLineUserId() {
+  return (state.currentUser && state.currentUser.userId) ? String(state.currentUser.userId).trim() : '';
+}
+
+function getUserStateStorageKey() {
+  const uid = getActiveLineUserId();
+  return uid ? `purepick_user_state_v2_${uid}` : null;
+}
+
+function saveLoggedInUserStateToLocal() {
+  const key = getUserStateStorageKey();
+  if (!key) return;
+  try {
+    const customSupplements = (state.supplements || []).filter(s => Number(s.id) > 24 || s.source_channel === '消費者新增');
+    const payload = {
+      wishlistIds: (state.wishlist || []).map(x => Number(x.id)),
+      purchasedIds: (state.purchased || []).map(x => Number(x.id)),
+      customSupplements,
+      calendarLogs: state.calendarLogs || {},
+      updatedAt: Date.now()
+    };
+    localStorage.setItem(key, JSON.stringify(payload));
+  } catch (e) {
+    console.error('儲存本機使用者狀態失敗:', e);
+  }
+}
+
+function readLoggedInUserStateFromLocal() {
+  const key = getUserStateStorageKey();
+  if (!key) return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
 // ========================================================
 // 1. 初始化與資料載入
 // ========================================================
@@ -51,17 +90,60 @@ document.addEventListener('DOMContentLoaded', async () => {
   await handleIncomingPwaShare();
 });
 
-async function loadBootstrapData() {
+async function loadBootstrapData(skipLocalSync = false) {
   try {
-    const res = await fetch('/api/bootstrap');
+    const uid = getActiveLineUserId();
+    const qs = new URLSearchParams();
+    if (uid) qs.set('lineUserId', uid);
+    qs.set('_t', String(Date.now()));
+
+    const res = await fetch(`/api/bootstrap?${qs.toString()}`, { cache: 'no-store' });
     const json = await res.json();
     if (json.success && json.data) {
-      state.supplements = json.data.supplements || [];
-      state.wishlist = json.data.wishlist || [];
-      state.purchased = json.data.purchased || [];
-      state.calendarLogs = json.data.calendarLogs || {};
-      state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      let data = json.data;
+
+      // 已登入會員：若本機已有最新操作紀錄（包含剛刪除過的清單），自動與伺服器同步，避免伺服器重啟或快取導致已刪除商品再次出現
+      if (uid && !skipLocalSync) {
+        const localState = readLoggedInUserStateFromLocal();
+        if (localState) {
+          const srvW = (data.wishlist || []).map(x => Number(x.id)).sort((a, b) => a - b).join(',');
+          const srvP = (data.purchased || []).map(x => Number(x.id)).sort((a, b) => a - b).join(',');
+          const locW = (localState.wishlistIds || []).map(Number).sort((a, b) => a - b).join(',');
+          const locP = (localState.purchasedIds || []).map(Number).sort((a, b) => a - b).join(',');
+          const srvLogKeys = Object.keys(data.calendarLogs || {}).length;
+          const locLogKeys = Object.keys(localState.calendarLogs || {}).length;
+
+          if (srvW !== locW || srvP !== locP || (srvLogKeys === 0 && locLogKeys > 0)) {
+            const syncRes = await fetch('/api/user-state/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                lineUserId: uid,
+                userName: state.currentUser?.displayName || '消費者',
+                wishlistIds: localState.wishlistIds || [],
+                purchasedIds: localState.purchasedIds || [],
+                customSupplements: localState.customSupplements || [],
+                calendarLogs: localState.calendarLogs || {}
+              })
+            });
+            const syncJson = await syncRes.json();
+            if (syncJson.success && syncJson.data) {
+              data = syncJson.data;
+            }
+          }
+        }
+      }
+
+      state.supplements = data.supplements || [];
+      state.wishlist = data.wishlist || [];
+      state.purchased = data.purchased || [];
+      state.calendarLogs = data.calendarLogs || {};
+      state.wishlistAnalysis = data.wishlistAnalysis || null;
       state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
+
+      if (uid) {
+        saveLoggedInUserStateToLocal();
+      }
 
       updateNavBadges();
       renderCatalog();
@@ -436,7 +518,7 @@ window.toggleUserListItem = toggleUserListItem;
 async function addToUserList(supplementId, status, silent = false) {
   try {
     const userName = state.currentUser?.displayName || '消費者';
-    const lineUserId = state.currentUser?.userId || null;
+    const lineUserId = getActiveLineUserId();
     const res = await fetch('/api/user-supplements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -448,6 +530,7 @@ async function addToUserList(supplementId, status, silent = false) {
       state.purchased = json.data.purchased || [];
       state.wishlistAnalysis = json.data.wishlistAnalysis || null;
       state.isDemoCleared = false;
+      saveLoggedInUserStateToLocal();
       updateNavBadges();
       renderCatalog();
       if (state.finderResult) renderFinderResult(state.finderResult);
@@ -467,14 +550,19 @@ window.addToUserList = addToUserList;
 
 async function removeFromUserList(supplementId, status) {
   try {
-    const res = await fetch(`/api/user-supplements/${supplementId}?status=${status}`, {
-      method: 'DELETE'
+    const uid = getActiveLineUserId();
+    const qs = new URLSearchParams({ status });
+    if (uid) qs.set('lineUserId', uid);
+    const res = await fetch(`/api/user-supplements/${supplementId}?${qs.toString()}`, {
+      method: 'DELETE',
+      cache: 'no-store'
     });
     const json = await res.json();
     if (json.success && json.data) {
       state.wishlist = json.data.wishlist || [];
       state.purchased = json.data.purchased || [];
       state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      saveLoggedInUserStateToLocal();
       updateNavBadges();
       renderCatalog();
       if (state.finderResult) renderFinderResult(state.finderResult);
@@ -491,6 +579,7 @@ window.removeFromUserList = removeFromUserList;
 async function moveWishlistToPurchased(supplementId) {
   try {
     const userName = state.currentUser?.displayName || '消費者';
+    const lineUserId = getActiveLineUserId();
     const res = await fetch('/api/user-supplements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -498,7 +587,8 @@ async function moveWishlistToPurchased(supplementId) {
         supplementId,
         status: 'purchased',
         moveFromWishlist: true,
-        userName
+        userName,
+        lineUserId
       })
     });
     const json = await res.json();
@@ -506,6 +596,7 @@ async function moveWishlistToPurchased(supplementId) {
       state.wishlist = json.data.wishlist || [];
       state.purchased = json.data.purchased || [];
       state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      saveLoggedInUserStateToLocal();
       updateNavBadges();
       renderCatalog();
       renderWishlistView();
@@ -520,7 +611,11 @@ window.moveWishlistToPurchased = moveWishlistToPurchased;
 
 async function refreshWishlistAnalysis() {
   try {
-    const res = await fetch('/api/wishlist/analyze');
+    const uid = getActiveLineUserId();
+    const qs = new URLSearchParams();
+    if (uid) qs.set('lineUserId', uid);
+    qs.set('_t', String(Date.now()));
+    const res = await fetch(`/api/wishlist/analyze?${qs.toString()}`, { cache: 'no-store' });
     const json = await res.json();
     if (json.success && json.data) {
       state.wishlistAnalysis = json.data;
@@ -1378,14 +1473,16 @@ window.saveDailyCalendarLog = saveDailyCalendarLog;
 async function persistCalendarLog(log, silent = false) {
   try {
     const updatedBy = state.currentUser?.displayName || '消費者';
+    const lineUserId = getActiveLineUserId();
     const res = await fetch('/api/calendar/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...log, updatedBy })
+      body: JSON.stringify({ ...log, updatedBy, lineUserId })
     });
     const json = await res.json();
     if (json.success && json.data) {
       state.calendarLogs[log.dateStr] = json.data;
+      saveLoggedInUserStateToLocal();
       renderCalendarGrid();
       renderDailyTrackerPanel();
       renderCalendarKpis();
@@ -1506,17 +1603,20 @@ async function handleAddSupplementSubmit(e) {
         daily_units,
         active_summary,
         add_to_status,
-        user_name: state.currentUser?.displayName || '消費者'
+        user_name: state.currentUser?.displayName || '消費者',
+        line_user_id: getActiveLineUserId()
       })
     });
     const json = await res.json();
     if (json.success) {
       closeAddSupplementModal();
       document.getElementById('add-supplement-form')?.reset();
-      await loadBootstrapData();
+      await loadBootstrapData(true);
       showToast(`已新增【${brand} ${name}】並完成每日花費與成分建檔！`);
-      if (add_to_status === 'wishlist' || add_to_status === 'purchased') {
+      if (add_to_status === 'wishlist') {
         switchView('view-wishlist');
+      } else if (add_to_status === 'purchased') {
+        switchView('view-calendar');
       }
     }
   } catch (err) {
@@ -1572,15 +1672,20 @@ window.toggleProStatusForDemo = toggleProStatusForDemo;
 
 async function toggleDemoData() {
   try {
+    const uid = getActiveLineUserId();
     if (!state.isDemoCleared) {
-      await fetch('/api/demo/clear', { method: 'POST' });
+      await fetch('/api/demo/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lineUserId: uid })
+      });
       state.isDemoCleared = true;
-      await loadBootstrapData();
+      await loadBootstrapData(true);
       showToast('已清空範例清單與日曆，可自由新增保健品。');
     } else {
       await fetch('/api/demo/restore', { method: 'POST' });
       state.isDemoCleared = false;
-      await loadBootstrapData();
+      await loadBootstrapData(true);
       showToast('已恢復預設範例清單與日曆紀錄！');
     }
   } catch (err) {
@@ -1604,15 +1709,9 @@ async function initUserAuth() {
     localStorage.setItem('purepick_user', JSON.stringify(user));
     window.history.replaceState({}, document.title, '/');
 
-    // 登入後立即清空示範資料，讓用戶能填寫自己的數據
-    try {
-      await fetch('/api/demo/clear', { method: 'POST' });
-      state.isDemoCleared = true;
-    } catch (e) {
-      console.error(e);
-    }
+    // 各 LINE 會員資料已與示範帳號嚴格隔離，登入後直接載入該會員自己的獨立資料
     renderAuthUI();
-    showToast(`歡迎回來，${user.displayName}！已為您清空示範資料，您可以開始填寫自己的保健數據。`);
+    showToast(`歡迎回來，${user.displayName}！已切換至您的個人獨立空間。`);
     return;
   } else if (params.get('auth_error')) {
     const err = params.get('auth_error');
@@ -1806,7 +1905,7 @@ function openLeadModal(source = 'general') {
 }
 window.openLeadModal = openLeadModal;
 
-function loginWithDemoLineUser() {
+async function loginWithDemoLineUser() {
   const demoUser = {
     displayName: '政大受測者（LINE 實名）',
     userId: 'line_user_nccu_' + Math.random().toString(36).substring(2, 8),
@@ -1815,6 +1914,7 @@ function loginWithDemoLineUser() {
   state.currentUser = demoUser;
   localStorage.setItem('purepick_user', JSON.stringify(demoUser));
   renderAuthUI();
+  await loadBootstrapData();
   showToast('已成功以【LINE 官方實名認證】會員登入！');
   const source = document.getElementById('lead-source')?.value || 'general';
   openLeadModal(source);
@@ -1954,7 +2054,9 @@ async function importSharedProductByName(productText, sourceChannel = '手機分
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: cleanText,
-        source_channel: sourceChannel
+        source_channel: sourceChannel,
+        lineUserId: getActiveLineUserId(),
+        userName: state.currentUser?.displayName || '消費者'
       })
     });
     const json = await res.json();
@@ -1962,6 +2064,7 @@ async function importSharedProductByName(productText, sourceChannel = '手機分
       state.wishlist = json.data.wishlist || state.wishlist;
       state.purchased = json.data.purchased || state.purchased;
       state.wishlistAnalysis = json.data.wishlistAnalysis || state.wishlistAnalysis;
+      saveLoggedInUserStateToLocal();
       updateNavBadges();
       renderCatalog();
       renderWishlistView();

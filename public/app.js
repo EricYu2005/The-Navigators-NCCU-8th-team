@@ -23,20 +23,29 @@ const state = {
 };
 
 function isUserEntitledToPro() {
-  if (state.hasProEntitlement) return true;
-  if (state.userLead) return true;
   const uid = getActiveLineUserId();
-  if (uid && localStorage.getItem(`purepick_entitled_${uid}`) === 'true') return true;
-  if (localStorage.getItem('purepick_pro_entitled') === 'true') return true;
+  // 嚴格檢驗：未登入 LINE 實名帳號者，絕不可能具備實名 Pro 資格
+  if (!uid) return false;
+  // 伺服器端資料庫確認：該 LINE 帳號在 leads 表中已有登記紀錄
+  if (state.userLead && state.userLead.id) return true;
+  // 或前端已同步確認該 LINE 帳號的實名資格
+  if (state.hasProEntitlement && localStorage.getItem(`purepick_entitled_${uid}`) === 'true') return true;
+  if (localStorage.getItem(`purepick_entitled_${uid}`) === 'true') return true;
   return false;
 }
 window.isUserEntitledToPro = isUserEntitledToPro;
 
 function restoreProStatus() {
+  // 嚴格防呆門檻：未填寫過表單者，絕對禁止一鍵切換至 Pro 版
+  if (!isUserEntitledToPro()) {
+    showToast('您尚未填寫過使用回饋，請先登入 LINE 並完成表單登記以開通 Pro 權限');
+    openLeadModal('restore_guard');
+    return;
+  }
+
   state.isPro = true;
   state.hasProEntitlement = true;
   localStorage.setItem('purepick_pro', 'true');
-  localStorage.setItem('purepick_pro_entitled', 'true');
   const uid = getActiveLineUserId();
   if (uid) {
     localStorage.setItem(`purepick_pro_${uid}`, 'true');
@@ -176,32 +185,43 @@ async function loadBootstrapData(skipLocalSync = false) {
       state.wishlistAnalysis = data.wishlistAnalysis || null;
       state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
 
-      // 依伺服器資料庫確認 Pro 資格（若該 LINE 帳號在 leads 或 users 具備 Pro 資格，記錄資格）
+      // 依伺服器資料庫確認 Pro 資格（嚴格驗證：未填過表單者絕對不可開通 Pro）
       if (uid) {
         if (data.hasProEntitlement !== undefined) {
           state.hasProEntitlement = !!data.hasProEntitlement;
           if (state.hasProEntitlement) {
             localStorage.setItem(`purepick_entitled_${uid}`, 'true');
-            localStorage.setItem('purepick_pro_entitled', 'true');
+          } else {
+            localStorage.removeItem(`purepick_entitled_${uid}`);
           }
         }
         state.userLead = data.userLead || null;
 
-        // 若使用者在展示期間手動切換為免費版，保留手動展示狀態；否則依資料庫資格自動開通 Pro
-        const manualDemo = localStorage.getItem(`purepick_demo_mode_${uid}`);
-        if (manualDemo === 'free') {
+        // 若資料庫確認此 LINE 帳號未填寫過名單，強制鎖定為非 Pro，絕不允許切換
+        if (!data.hasProEntitlement) {
           state.isPro = false;
-        } else if (data.isPro !== undefined) {
-          state.isPro = !!data.isPro;
-          localStorage.setItem(`purepick_pro_${uid}`, state.isPro ? 'true' : 'false');
-          localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
-        } else if (localStorage.getItem(`purepick_pro_${uid}`) === 'true') {
-          state.isPro = true;
-          localStorage.setItem('purepick_pro', 'true');
+          state.hasProEntitlement = false;
+          localStorage.removeItem(`purepick_entitled_${uid}`);
+          localStorage.setItem(`purepick_pro_${uid}`, 'false');
+          localStorage.setItem('purepick_pro', 'false');
+        } else {
+          // 已具有資料庫資格者：若手動切換為免費展示模式，維持展示；否則為 Pro
+          const manualDemo = localStorage.getItem(`purepick_demo_mode_${uid}`);
+          if (manualDemo === 'free') {
+            state.isPro = false;
+          } else {
+            state.isPro = true;
+            localStorage.setItem(`purepick_pro_${uid}`, 'true');
+            localStorage.setItem('purepick_pro', 'true');
+          }
         }
       } else {
-        state.isPro = localStorage.getItem('purepick_pro') === 'true';
-        state.hasProEntitlement = localStorage.getItem('purepick_pro_entitled') === 'true';
+        // 未登入情境：嚴格禁止 Pro 資格
+        state.isPro = false;
+        state.hasProEntitlement = false;
+        state.userLead = null;
+        localStorage.setItem('purepick_pro', 'false');
+        localStorage.removeItem('purepick_pro_entitled');
       }
 
       if (uid) {
@@ -1757,6 +1777,13 @@ function closeSubscriptionModal() {
 window.closeSubscriptionModal = closeSubscriptionModal;
 
 function toggleProStatusForDemo() {
+  // 嚴格檢驗：若目前為免費版且從未填寫過表單，絕對不允許一鍵切換至 Pro 版
+  if (!state.isPro && !isUserEntitledToPro()) {
+    showToast('您尚未填寫過使用回饋，請先登入 LINE 並完成表單登記以開通 Pro 權限');
+    openLeadModal('subscription_modal');
+    return;
+  }
+
   state.isPro = !state.isPro;
   const uid = getActiveLineUserId();
   localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
@@ -1816,9 +1843,18 @@ async function initUserAuth() {
     };
     state.currentUser = user;
     localStorage.setItem('purepick_user', JSON.stringify(user));
-    if (params.get('pro') === '1' || localStorage.getItem(`purepick_pro_${user.userId}`) === 'true') {
+    if (params.get('pro') === '1') {
       state.isPro = true;
+      state.hasProEntitlement = true;
+      localStorage.setItem(`purepick_entitled_${user.userId}`, 'true');
+      localStorage.setItem(`purepick_pro_${user.userId}`, 'true');
       localStorage.setItem('purepick_pro', 'true');
+    } else {
+      state.isPro = false;
+      state.hasProEntitlement = false;
+      localStorage.removeItem(`purepick_entitled_${user.userId}`);
+      localStorage.setItem(`purepick_pro_${user.userId}`, 'false');
+      localStorage.setItem('purepick_pro', 'false');
     }
     window.history.replaceState({}, document.title, '/');
 
@@ -1839,9 +1875,15 @@ async function initUserAuth() {
   if (saved) {
     try {
       state.currentUser = JSON.parse(saved);
-      if (state.currentUser?.userId && localStorage.getItem(`purepick_pro_${state.currentUser.userId}`) === 'true') {
-        state.isPro = true;
-        localStorage.setItem('purepick_pro', 'true');
+      if (state.currentUser?.userId && localStorage.getItem(`purepick_entitled_${state.currentUser.userId}`) === 'true') {
+        state.hasProEntitlement = true;
+        const manualDemo = localStorage.getItem(`purepick_demo_mode_${state.currentUser.userId}`);
+        state.isPro = manualDemo !== 'free';
+        localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
+      } else {
+        state.isPro = false;
+        state.hasProEntitlement = false;
+        localStorage.setItem('purepick_pro', 'false');
       }
     } catch (e) {}
   }
@@ -2075,7 +2117,13 @@ async function loginWithDemoLineUser() {
     pictureUrl: ''
   };
   state.currentUser = demoUser;
+  state.isPro = false;
+  state.hasProEntitlement = false;
+  state.userLead = null;
   localStorage.setItem('purepick_user', JSON.stringify(demoUser));
+  localStorage.setItem('purepick_pro', 'false');
+  localStorage.removeItem(`purepick_entitled_${demoUser.userId}`);
+  localStorage.removeItem('purepick_pro_entitled');
   renderAuthUI();
   await loadBootstrapData();
   showToast('已成功以【LINE 官方實名認證】會員登入！');

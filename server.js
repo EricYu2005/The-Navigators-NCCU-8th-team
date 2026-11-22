@@ -146,6 +146,7 @@ app.get('/api/bootstrap', async (req, res) => {
         calendarLogs,
         wishlistAnalysis,
         isPro,
+        hasProEntitlement: isPro,
         userLead
       }
     });

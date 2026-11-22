@@ -17,8 +17,43 @@ const state = {
   selectedDateStr: formatDateStr(new Date()),
   currentUser: null,
   isDemoCleared: false,
-  isPro: localStorage.getItem('purepick_pro') === 'true'
+  isPro: localStorage.getItem('purepick_pro') === 'true',
+  hasProEntitlement: localStorage.getItem('purepick_pro_entitled') === 'true',
+  userLead: null
 };
+
+function isUserEntitledToPro() {
+  if (state.hasProEntitlement) return true;
+  if (state.userLead) return true;
+  const uid = getActiveLineUserId();
+  if (uid && localStorage.getItem(`purepick_entitled_${uid}`) === 'true') return true;
+  if (localStorage.getItem('purepick_pro_entitled') === 'true') return true;
+  return false;
+}
+window.isUserEntitledToPro = isUserEntitledToPro;
+
+function restoreProStatus() {
+  state.isPro = true;
+  state.hasProEntitlement = true;
+  localStorage.setItem('purepick_pro', 'true');
+  localStorage.setItem('purepick_pro_entitled', 'true');
+  const uid = getActiveLineUserId();
+  if (uid) {
+    localStorage.setItem(`purepick_pro_${uid}`, 'true');
+    localStorage.setItem(`purepick_entitled_${uid}`, 'true');
+    localStorage.removeItem(`purepick_demo_mode_${uid}`);
+  }
+  if (state.activeView === 'view-wishlist') {
+    renderWishlistView();
+  }
+  if (state.activeView === 'view-calendar') {
+    renderCalendarView();
+  }
+  closeSubscriptionModal();
+  closeLeadModal();
+  showToast('已一鍵恢復 Pro 方案，所有功能已全面解鎖！');
+}
+window.restoreProStatus = restoreProStatus;
 
 let deferredPwaPrompt = null;
 
@@ -141,11 +176,23 @@ async function loadBootstrapData(skipLocalSync = false) {
       state.wishlistAnalysis = data.wishlistAnalysis || null;
       state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
 
-      // 依伺服器資料庫確認 Pro 資格（若該 LINE 帳號在 leads 或 users 具備 Pro 資格，直接開通）
+      // 依伺服器資料庫確認 Pro 資格（若該 LINE 帳號在 leads 或 users 具備 Pro 資格，記錄資格）
       if (uid) {
-        if (data.isPro !== undefined) {
+        if (data.hasProEntitlement !== undefined) {
+          state.hasProEntitlement = !!data.hasProEntitlement;
+          if (state.hasProEntitlement) {
+            localStorage.setItem(`purepick_entitled_${uid}`, 'true');
+            localStorage.setItem('purepick_pro_entitled', 'true');
+          }
+        }
+        state.userLead = data.userLead || null;
+
+        // 若使用者在展示期間手動切換為免費版，保留手動展示狀態；否則依資料庫資格自動開通 Pro
+        const manualDemo = localStorage.getItem(`purepick_demo_mode_${uid}`);
+        if (manualDemo === 'free') {
+          state.isPro = false;
+        } else if (data.isPro !== undefined) {
           state.isPro = !!data.isPro;
-          state.userLead = data.userLead || null;
           localStorage.setItem(`purepick_pro_${uid}`, state.isPro ? 'true' : 'false');
           localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
         } else if (localStorage.getItem(`purepick_pro_${uid}`) === 'true') {
@@ -154,6 +201,7 @@ async function loadBootstrapData(skipLocalSync = false) {
         }
       } else {
         state.isPro = localStorage.getItem('purepick_pro') === 'true';
+        state.hasProEntitlement = localStorage.getItem('purepick_pro_entitled') === 'true';
       }
 
       if (uid) {
@@ -800,11 +848,17 @@ function renderWishlistView() {
       <p>免費版僅支援最多 2 款基礎成分比對。想要一次比對多款保健品、省下每年數千元重複購買的冤枉錢嗎？</p>
       <div class="mvp-gate-note">
         <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span><strong>政大創創專題研究說明</strong>：本專案目前為學術研究階段，<strong>不收取任何真實費用</strong>。填寫簡短回饋問卷，即可立刻免費開通 Pro 完整檢查功能！</span>
+        <span><strong>政大創創專題研究說明</strong>：本專案目前為學術研究階段，<strong>不收取任何真實費用</strong>。${isUserEntitledToPro() ? '您的 LINE 帳號已具備 Pro 會員資格，點擊即可一鍵恢復！' : '填寫簡短回饋問卷，即可立刻免費開通 Pro 完整檢查功能！'}</span>
       </div>
-      <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_pro_gate')">
-        立即免費填寫回饋（開通 Pro 完整檢查）
-      </button>
+      ${isUserEntitledToPro() ? `
+        <button type="button" class="btn btn-primary" onclick="restoreProStatus()">
+          一鍵切換回 Pro 版（免重填立即恢復）
+        </button>
+      ` : `
+        <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_pro_gate')">
+          立即免費填寫回饋（開通 Pro 完整檢查）
+        </button>
+      `}
     </div>
   ` : `
     <div class="pro-unlocked-banner">
@@ -852,11 +906,17 @@ function renderWishlistView() {
           解鎖完整每日安全劑量把關與服用時段提醒
         </div>
         <p style="font-size:0.8rem; color:#4b5563; max-width:360px; margin-bottom:0.5rem;">
-          避免鈣鐵同時吃互相影響吸收、或單一營養素吃過量。填寫簡短回饋即可免費開通！
+          避免鈣鐵同時吃互相影響吸收、或單一營養素吃過量。${isUserEntitledToPro() ? '您已具備 Pro 資格，可一鍵直接恢復！' : '填寫簡短回饋即可免費開通！'}
         </p>
-        <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('dosage_lock')">
-          填寫回饋免費開通 Pro 權限
-        </button>
+        ${isUserEntitledToPro() ? `
+          <button type="button" class="btn btn-primary btn-sm" onclick="restoreProStatus()">
+            一鍵恢復 Pro 權限（免重填）
+          </button>
+        ` : `
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('dosage_lock')">
+            填寫回饋免費開通 Pro 權限
+          </button>
+        `}
       </div>
     </div>
   `;
@@ -907,9 +967,15 @@ function renderWeeklySummary() {
         <p style="font-size:0.83rem; color:#475569; max-width:540px; margin:0 auto 0.75rem auto; line-height:1.45;">
           系統會根據您過去 7 天的身體狀態日誌（如眼乾、疲勞、排便脹氣頻率），自動進行體感痛點複盤，並推薦同品類性價比更高的進化商品！
         </p>
-        <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('weekly_summary_lock')">
-          填寫簡短回饋，免費開通 Pro 權限 (NT$ 99 / 月)
-        </button>
+        ${isUserEntitledToPro() ? `
+          <button type="button" class="btn btn-primary btn-sm" onclick="restoreProStatus()">
+            一鍵切換回 Pro 版（免重填立即恢復）
+          </button>
+        ` : `
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('weekly_summary_lock')">
+            填寫簡短回饋，免費開通 Pro 權限 (NT$ 99 / 月)
+          </button>
+        `}
       </div>
     `;
     return;
@@ -1278,6 +1344,16 @@ function renderDailyTrackerPanel() {
     } else {
       proTeaser.style.display = 'block';
       proControls.style.display = 'none';
+      const teaserBtn = proTeaser.querySelector('button');
+      if (teaserBtn) {
+        if (isUserEntitledToPro()) {
+          teaserBtn.textContent = '一鍵切換回 Pro 版（免重填立即恢復）';
+          teaserBtn.onclick = () => restoreProStatus();
+        } else {
+          teaserBtn.textContent = '填寫簡短回饋，免費開通 Pro 權限 (NT$ 99/月)';
+          teaserBtn.onclick = () => openLeadModal('daily_log_pro_lock');
+        }
+      }
     }
   }
 
@@ -1653,6 +1729,15 @@ function openSubscriptionModal() {
           切換回免費版（展示未開通狀態）
         </button>
       `;
+    } else if (isUserEntitledToPro()) {
+      actionArea.innerHTML = `
+        <div style="padding:0.6rem 0.85rem; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; color:#334155; font-size:0.85rem; font-weight:700; text-align:center;">
+          您已具備 Pro 資格（目前處於免費版展示模式）
+        </div>
+        <button type="button" class="btn btn-primary btn-block" onclick="restoreProStatus()">
+          一鍵切換回 Pro 版（免重填立即恢復）
+        </button>
+      `;
     } else {
       actionArea.innerHTML = `
         <button type="button" class="btn btn-primary btn-block" onclick="openLeadModal('subscription_modal')">
@@ -1673,7 +1758,16 @@ window.closeSubscriptionModal = closeSubscriptionModal;
 
 function toggleProStatusForDemo() {
   state.isPro = !state.isPro;
+  const uid = getActiveLineUserId();
   localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
+  if (uid) {
+    localStorage.setItem(`purepick_pro_${uid}`, state.isPro ? 'true' : 'false');
+    if (!state.isPro) {
+      localStorage.setItem(`purepick_demo_mode_${uid}`, 'free');
+    } else {
+      localStorage.removeItem(`purepick_demo_mode_${uid}`);
+    }
+  }
   if (state.activeView === 'view-wishlist') {
     renderWishlistView();
   }
@@ -1681,7 +1775,7 @@ function toggleProStatusForDemo() {
     renderCalendarView();
   }
   closeSubscriptionModal();
-  showToast(state.isPro ? '已切換為 Pro 方案（展示全功能解鎖狀態）' : '已切換為 免費版（展示回饋開通門檻）');
+  showToast(state.isPro ? '已切換為 Pro 方案（展示全功能解鎖狀態）' : '已切換為 免費版（展示未開通狀態）');
 }
 window.toggleProStatusForDemo = toggleProStatusForDemo;
 
@@ -1790,7 +1884,9 @@ async function logoutAndRestoreDemo() {
     localStorage.removeItem('purepick_user');
     state.isDemoCleared = false;
     state.isPro = false;
+    state.hasProEntitlement = false;
     localStorage.setItem('purepick_pro', 'false');
+    localStorage.removeItem('purepick_pro_entitled');
     // 3. 重新載入初始示範資料
     await loadBootstrapData();
     renderAuthUI();
@@ -1914,12 +2010,36 @@ function openLeadModal(source = 'general') {
     if (authGate) authGate.style.display = 'block';
     if (alreadyProBox) alreadyProBox.style.display = 'none';
     if (formContent) formContent.style.display = 'none';
-  } else if (state.isPro) {
-    // 已開通 Pro 會員：直接呈現已開通狀態卡片，絕不重複要求填寫
+  } else if (isUserEntitledToPro() || state.isPro) {
+    // 已擁有 Pro 資格（包含先前填過名單但手動切換到免費版者）：
+    // 絕不強迫重填表單，直接提供一鍵開通/恢復按鈕！
     if (authGate) authGate.style.display = 'none';
     if (alreadyProBox) alreadyProBox.style.display = 'block';
     if (formContent) formContent.style.display = 'none';
     if (proUserName) proUserName.textContent = state.currentUser.displayName || 'LINE 會員';
+
+    const proBadgeText = document.getElementById('lead-already-pro-badge-text');
+    const proTitle = document.getElementById('lead-already-pro-title');
+    const proDesc = document.getElementById('lead-already-pro-desc');
+    const mainBtn = document.getElementById('btn-lead-action-main');
+
+    if (state.isPro) {
+      if (proBadgeText) proBadgeText.textContent = 'LINE 實名認證 Pro 會員資格有效';
+      if (proTitle) proTitle.textContent = '您已享有完整 Pro 權限';
+      if (proDesc) proDesc.innerHTML = `您好，<strong>${state.currentUser.displayName || '會員'}</strong>！您的 LINE 帳號已在資料庫登記過使用回饋，系統已為您永久開通 Pro 資格，<strong>無需重新填寫名單</strong>。`;
+      if (mainBtn) {
+        mainBtn.textContent = '確認並回到專案使用';
+        mainBtn.onclick = () => closeLeadModal();
+      }
+    } else {
+      if (proBadgeText) proBadgeText.textContent = '已具備 Pro 會員資格（免費展示模式）';
+      if (proTitle) proTitle.textContent = '隨時一鍵恢復 Pro 權限';
+      if (proDesc) proDesc.innerHTML = `您好，<strong>${state.currentUser.displayName || '會員'}</strong>！您先前已完成回饋登記，目前處於免費展示模式，點擊下方按鈕即可立即恢復 Pro 完整功能，<strong>免填寫任何表單</strong>。`;
+      if (mainBtn) {
+        mainBtn.textContent = '一鍵切換回 Pro 版（免重填立即恢復）';
+        mainBtn.onclick = () => restoreProStatus();
+      }
+    }
   } else {
     if (authGate) authGate.style.display = 'none';
     if (alreadyProBox) alreadyProBox.style.display = 'none';
@@ -2012,9 +2132,13 @@ async function handleLeadSubmit(event) {
     const json = await res.json();
     if (json.success) {
       state.isPro = true;
+      state.hasProEntitlement = true;
       localStorage.setItem('purepick_pro', 'true');
+      localStorage.setItem('purepick_pro_entitled', 'true');
       if (state.currentUser?.userId) {
         localStorage.setItem(`purepick_pro_${state.currentUser.userId}`, 'true');
+        localStorage.setItem(`purepick_entitled_${state.currentUser.userId}`, 'true');
+        localStorage.removeItem(`purepick_demo_mode_${state.currentUser.userId}`);
       }
       closeLeadModal();
       showToast('【登記成功】感謝您的寶貴回饋！已為您免費開通 Pro 完整重複檢查、身體狀態日誌與每週總結！');

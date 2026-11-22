@@ -783,17 +783,17 @@
       <div id="lead-already-pro-box" style="display:none; padding:1.5rem 1.25rem; text-align:center;">
         <div style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:999px; color:#065f46; font-size:0.82rem; font-weight:800; margin-bottom:0.85rem;">
           <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#059669;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
-          <span>LINE 實名認證 Pro 會員資格有效</span>
+          <span id="lead-already-pro-badge-text">LINE 實名認證 Pro 會員資格有效</span>
         </div>
-        <h4 style="font-size:1.15rem; color:#0f172a; margin-bottom:0.5rem; font-weight:800;">
+        <h4 style="font-size:1.15rem; color:#0f172a; margin-bottom:0.5rem; font-weight:800;" id="lead-already-pro-title">
           您已享有完整 Pro 權限
         </h4>
-        <p style="font-size:0.88rem; color:#475569; line-height:1.6; max-width:440px; margin:0 auto 1.25rem auto;">
-          您好，<strong id="lead-pro-user-name">會員</strong>！您的 LINE 帳號先前已在資料庫登記過使用回饋，系統已為您永久開通 Pro 完整去冗精算、每日安全劑量把關與身體狀態日誌，<strong>無需重新填寫名單</strong>。
+        <p style="font-size:0.88rem; color:#475569; line-height:1.6; max-width:440px; margin:0 auto 1.25rem auto;" id="lead-already-pro-desc">
+          您好，<strong id="lead-pro-user-name">會員</strong>！您的 LINE 帳號先前已在資料庫登記過使用回饋，系統已為您永久開通 Pro 資格，<strong>無需重新填寫名單</strong>。
         </p>
         <div style="display:flex; flex-direction:column; gap:0.6rem; max-width:320px; margin:0 auto;">
-          <button type="button" class="btn btn-primary btn-block" onclick="closeLeadModal()">
-            確認並回到專案使用
+          <button type="button" class="btn btn-primary btn-block" id="btn-lead-action-main" onclick="restoreProStatus()">
+            一鍵切換回 Pro 版（免重填立即恢復）
           </button>
           <button type="button" class="btn btn-outline btn-sm btn-block" onclick="toggleLeadFormForUpdate()" style="color:#64748b; font-size:0.8rem;">
             再次修改或補充體驗建議

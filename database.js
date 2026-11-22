@@ -594,9 +594,12 @@ function initDatabase() {
         display_name TEXT NOT NULL,
         picture_url TEXT,
         family_role TEXT DEFAULT '消費者',
+        is_pro INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
-    `);
+    `, () => {
+      db.run('ALTER TABLE users ADD COLUMN is_pro INTEGER DEFAULT 0', () => {});
+    });
 
     // 2. 跨品牌保健食品標準資料庫
     db.run(`

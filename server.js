@@ -119,6 +119,24 @@ app.get('/api/bootstrap', async (req, res) => {
     const calendarLogs = await getUserCalendarLogs(lineUserId);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
 
+    // 檢查該 LINE 會員是否已在資料庫登記過回饋並具備 Pro 資格
+    let isPro = false;
+    let userLead = null;
+    if (lineUserId) {
+      const leadRow = await dbQuery.get(
+        'SELECT id, name, contact_value, satisfaction_score, created_at FROM leads WHERE line_user_id = ? ORDER BY id DESC LIMIT 1',
+        [lineUserId]
+      );
+      const userRow = await dbQuery.get(
+        'SELECT is_pro FROM users WHERE provider_id = ? LIMIT 1',
+        [lineUserId]
+      );
+      if (leadRow || (userRow && userRow.is_pro === 1)) {
+        isPro = true;
+        userLead = leadRow || { id: 1 };
+      }
+    }
+
     res.json({
       success: true,
       data: {
@@ -126,7 +144,9 @@ app.get('/api/bootstrap', async (req, res) => {
         wishlist,
         purchased,
         calendarLogs,
-        wishlistAnalysis
+        wishlistAnalysis,
+        isPro,
+        userLead
       }
     });
   } catch (error) {
@@ -647,20 +667,24 @@ app.get('/auth/line/callback', async (req, res) => {
     });
     const profile = await profileRes.json();
 
-    const existing = await dbQuery.get('SELECT id FROM users WHERE provider_id = ?', [profile.userId]);
+    const existingLead = await dbQuery.get('SELECT id FROM leads WHERE line_user_id = ? LIMIT 1', [profile.userId]);
+    const isProUser = existingLead ? 1 : 0;
+
+    const existing = await dbQuery.get('SELECT id, is_pro FROM users WHERE provider_id = ?', [profile.userId]);
     if (existing) {
+      const proFlag = (existing.is_pro === 1 || isProUser === 1) ? 1 : 0;
       await dbQuery.run(
-        'UPDATE users SET display_name = ?, picture_url = ? WHERE id = ?',
-        [profile.displayName || 'LINE 用戶', profile.pictureUrl || null, existing.id]
+        'UPDATE users SET display_name = ?, picture_url = ?, is_pro = ? WHERE id = ?',
+        [profile.displayName || 'LINE 用戶', profile.pictureUrl || null, proFlag, existing.id]
       );
     } else {
       await dbQuery.run(
-        'INSERT INTO users (provider, provider_id, display_name, picture_url, family_role) VALUES (\'line\', ?, ?, ?, \'消費者\')',
-        [profile.userId, profile.displayName || 'LINE 用戶', profile.pictureUrl || null]
+        'INSERT INTO users (provider, provider_id, display_name, picture_url, family_role, is_pro) VALUES (\'line\', ?, ?, ?, \'消費者\', ?)',
+        [profile.userId, profile.displayName || 'LINE 用戶', profile.pictureUrl || null, isProUser]
       );
     }
 
-    res.redirect(`/?line_login=success&name=${encodeURIComponent(profile.displayName || 'LINE 用戶')}&pic=${encodeURIComponent(profile.pictureUrl || '')}&uid=${encodeURIComponent(profile.userId)}`);
+    res.redirect(`/?line_login=success&name=${encodeURIComponent(profile.displayName || 'LINE 用戶')}&pic=${encodeURIComponent(profile.pictureUrl || '')}&uid=${encodeURIComponent(profile.userId)}&pro=${isProUser}`);
   } catch (err) {
     res.redirect(`/?auth_error=${encodeURIComponent(err.message)}`);
   }
@@ -707,10 +731,16 @@ app.post('/api/leads', async (req, res) => {
       source || 'web_feedback_pro'
     ]);
 
+    // 同步更新 users 表中該 LINE 帳號的 is_pro 狀態
+    await dbQuery.run(
+      'UPDATE users SET is_pro = 1 WHERE provider_id = ?',
+      [finalLineUserId]
+    );
+
     res.json({
       success: true,
       message: '感謝您的回饋！已為您免費開通 Pro 完整去冗精算與動態身體日誌權限。',
-      data: { leadId: result.id, satisfactionScore: score }
+      data: { leadId: result.id, satisfactionScore: score, isPro: true }
     });
   } catch (error) {
     console.error('儲存留名單回饋失敗:', error);

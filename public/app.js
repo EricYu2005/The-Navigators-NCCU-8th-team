@@ -141,6 +141,21 @@ async function loadBootstrapData(skipLocalSync = false) {
       state.wishlistAnalysis = data.wishlistAnalysis || null;
       state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
 
+      // 依伺服器資料庫確認 Pro 資格（若該 LINE 帳號在 leads 或 users 具備 Pro 資格，直接開通）
+      if (uid) {
+        if (data.isPro !== undefined) {
+          state.isPro = !!data.isPro;
+          state.userLead = data.userLead || null;
+          localStorage.setItem(`purepick_pro_${uid}`, state.isPro ? 'true' : 'false');
+          localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
+        } else if (localStorage.getItem(`purepick_pro_${uid}`) === 'true') {
+          state.isPro = true;
+          localStorage.setItem('purepick_pro', 'true');
+        }
+      } else {
+        state.isPro = localStorage.getItem('purepick_pro') === 'true';
+      }
+
       if (uid) {
         saveLoggedInUserStateToLocal();
       }
@@ -1707,6 +1722,10 @@ async function initUserAuth() {
     };
     state.currentUser = user;
     localStorage.setItem('purepick_user', JSON.stringify(user));
+    if (params.get('pro') === '1' || localStorage.getItem(`purepick_pro_${user.userId}`) === 'true') {
+      state.isPro = true;
+      localStorage.setItem('purepick_pro', 'true');
+    }
     window.history.replaceState({}, document.title, '/');
 
     // 各 LINE 會員資料已與示範帳號嚴格隔離，登入後直接載入該會員自己的獨立資料
@@ -1726,6 +1745,10 @@ async function initUserAuth() {
   if (saved) {
     try {
       state.currentUser = JSON.parse(saved);
+      if (state.currentUser?.userId && localStorage.getItem(`purepick_pro_${state.currentUser.userId}`) === 'true') {
+        state.isPro = true;
+        localStorage.setItem('purepick_pro', 'true');
+      }
     } catch (e) {}
   }
   renderAuthUI();
@@ -1766,6 +1789,8 @@ async function logoutAndRestoreDemo() {
     state.currentUser = null;
     localStorage.removeItem('purepick_user');
     state.isDemoCleared = false;
+    state.isPro = false;
+    localStorage.setItem('purepick_pro', 'false');
     // 3. 重新載入初始示範資料
     await loadBootstrapData();
     renderAuthUI();
@@ -1880,14 +1905,24 @@ function openLeadModal(source = 'general') {
   if (srcInput) srcInput.value = source;
 
   const authGate = document.getElementById('lead-auth-gate');
+  const alreadyProBox = document.getElementById('lead-already-pro-box');
   const formContent = document.getElementById('lead-capture-form');
   const verifiedLineName = document.getElementById('lead-verified-line-name');
+  const proUserName = document.getElementById('lead-pro-user-name');
 
   if (!state.currentUser) {
     if (authGate) authGate.style.display = 'block';
+    if (alreadyProBox) alreadyProBox.style.display = 'none';
     if (formContent) formContent.style.display = 'none';
+  } else if (state.isPro) {
+    // 已開通 Pro 會員：直接呈現已開通狀態卡片，絕不重複要求填寫
+    if (authGate) authGate.style.display = 'none';
+    if (alreadyProBox) alreadyProBox.style.display = 'block';
+    if (formContent) formContent.style.display = 'none';
+    if (proUserName) proUserName.textContent = state.currentUser.displayName || 'LINE 會員';
   } else {
     if (authGate) authGate.style.display = 'none';
+    if (alreadyProBox) alreadyProBox.style.display = 'none';
     if (formContent) formContent.style.display = 'block';
 
     if (verifiedLineName) {
@@ -1904,6 +1939,14 @@ function openLeadModal(source = 'general') {
   modal.style.display = 'flex';
 }
 window.openLeadModal = openLeadModal;
+
+function toggleLeadFormForUpdate() {
+  const alreadyProBox = document.getElementById('lead-already-pro-box');
+  const formContent = document.getElementById('lead-capture-form');
+  if (alreadyProBox) alreadyProBox.style.display = 'none';
+  if (formContent) formContent.style.display = 'block';
+}
+window.toggleLeadFormForUpdate = toggleLeadFormForUpdate;
 
 async function loginWithDemoLineUser() {
   const demoUser = {
@@ -1970,6 +2013,9 @@ async function handleLeadSubmit(event) {
     if (json.success) {
       state.isPro = true;
       localStorage.setItem('purepick_pro', 'true');
+      if (state.currentUser?.userId) {
+        localStorage.setItem(`purepick_pro_${state.currentUser.userId}`, 'true');
+      }
       closeLeadModal();
       showToast('【登記成功】感謝您的寶貴回饋！已為您免費開通 Pro 完整重複檢查、身體狀態日誌與每週總結！');
       if (state.activeView === 'view-wishlist') {

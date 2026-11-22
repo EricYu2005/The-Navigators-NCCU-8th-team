@@ -492,20 +492,19 @@ async function evaluateWishlistPortfolio({ wishlist, purchased }) {
   if (wishlist.length === 0 && purchased.length === 0) {
     return {
       ...pyResult,
-      overallVerdict: '您目前尚未在「有興趣清單」加入商品。您可以先在「尋找保健方案」挑選商品加入，系統將為您精算是否有重複購買或可以省錢刪除的品項。'
+      overallVerdict: '目前尚未加入考慮購買商品。請先至「尋找」挑選商品，系統將為您比對重複與精算開銷。'
     };
   }
 
-  // 2. 呼叫嚴格 LLM 針對目前的「有興趣清單 + 已購買清單」進行總體審視
+  // 2. 呼叫嚴格 LLM 針對目前的「有興趣清單 + 已購買清單」進行總體審視（精簡摘要，控制在 40~60 字以內）
   const systemPrompt = `你是一位嚴格替消費者把關荷包與劑量安全的保健品精算師。
-請檢視消費者「考慮購買（有興趣）」與「已經購買正在吃」的保健品清單，給出一段直白、一針見血的總評結論（約 80~140 字）。
-重點指出：
-1. 是否有功能或成分重複的商品（「因為已經有 B，所以不需要買 A」）。
-2. 剔除重複商品後每個月可以省下多少錢。
-3. 服用時段上最需要注意的一件事。
-注意：不可出現任何技術名詞（如AI、LLM、Python等）。請輸出 JSON 格式：
+請檢視消費者「考慮購買（有興趣）」與「已經購買正在吃」的保健品清單，給出一段簡明俐落、聚焦核心的總評結論（字數請精簡控制在 40~60 字以內，不超過 2 句話）。
+重點：
+1. 若有重複：直接點出發現幾處重複，建議剔除哪款多餘商品，每個月可省下多少錢。
+2. 若無重複：簡明說明挑選商品配置均衡無重複、花費合理。
+注意：不可贅述過多細項數據（留給下方詳細報告），不可出現任何技術名詞（如 AI、LLM、Python 等）。請輸出 JSON 格式：
 {
-  "overallVerdict": "給消費者的直白總評結論"
+  "overallVerdict": "精簡總評結論"
 }`;
 
   const userPrompt = `
@@ -519,11 +518,11 @@ async function evaluateWishlistPortfolio({ wishlist, purchased }) {
 
   let defaultVerdict = '';
   if ((pyResult.redundancyAlerts || []).length > 0) {
-    defaultVerdict = `經交叉比對您的「有興趣清單」與「已購買商品」，發現共有 ${pyResult.redundancyAlerts.length} 處成分或功效重疊！您不需要把清單上的商品全買齊，按照下方建議剔除重複品項後，既能避免單一營養素過量，每個月還能直接省下 NT$ ${pyResult.potentialMonthlySavings}（每月花費由 NT$ ${pyResult.wishlistMonthlyCost} 降至 NT$ ${pyResult.optimizedMonthlyCost}）。`;
+    defaultVerdict = `比對發現共有 ${pyResult.redundancyAlerts.length} 處成分重疊，建議依照下方提示剔除重複商品，每月可直接省下 NT$ ${pyResult.potentialMonthlySavings}。`;
   } else if (wishlist.length > 0) {
-    defaultVerdict = `您目前挑選的 ${wishlist.length} 款有興趣商品與現有保健品之間無明顯重複購買，各主要營養素皆落在安全且有效的每日建議範圍內，每月預計花費為 NT$ ${pyResult.wishlistMonthlyCost}。`;
+    defaultVerdict = `目前挑選的 ${wishlist.length} 款商品配置均衡無重複，主要成分皆在每日建議範圍內，每月預計花費 NT$ ${pyResult.wishlistMonthlyCost}。`;
   } else {
-    defaultVerdict = `您目前已購買 ${purchased.length} 款商品正在服用中（每月花費 NT$ ${pyResult.purchasedMonthlyCost}）。若看到其他想買的新商品，可先加入「有興趣清單」，系統會幫您比對是否與現有保健品重複。`;
+    defaultVerdict = `目前服用中共 ${purchased.length} 款商品。加入新商品時系統將自動比對重複並精算荷包。`;
   }
 
   return {

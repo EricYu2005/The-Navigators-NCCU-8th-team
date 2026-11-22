@@ -642,7 +642,7 @@ function renderWishlistView() {
     redundancyAlerts: [],
     dosageChecks: [],
     timingWarnings: [],
-    overallVerdict: '尚未加入有興趣商品'
+    overallVerdict: '目前尚未加入考慮購買商品。請先至「尋找」挑選商品以進行重複檢查與開銷精算。'
   };
 
   // 1. 頂部 KPI
@@ -850,8 +850,8 @@ function renderWishlistView() {
     ${proGateBannerHtml}
 
     <div class="verdict-banner">
-      <strong>整體評估：</strong><br/>
-      ${analysis.overallVerdict}
+      <div style="font-weight:700; color:#0f172a; margin-bottom:0.25rem;">整體評估結論</div>
+      <div style="font-size:0.9rem; line-height:1.5; color:#1e293b;">${analysis.overallVerdict}</div>
     </div>
 
     <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">

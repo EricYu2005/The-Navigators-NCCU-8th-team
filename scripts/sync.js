@@ -378,7 +378,7 @@ async function handleViewLeads() {
     console.log(`目前資料庫名單總計：${rows.length} 筆\n`);
 
     if (rows.length === 0) {
-      console.log('目前尚無名單登記記錄。可透過網頁索取報告或預約表單進行登記！');
+      console.log('目前尚無名單登記記錄。可透過網頁回饋問卷解鎖 Pro 進行登記！');
     } else {
       // 1. 在控制台列印預覽
       rows.slice(0, 5).forEach((r, idx) => {
@@ -407,7 +407,7 @@ async function handleViewLeads() {
         '電子信箱',
         '流程順暢度評分 (1~5分)',
         '來源管道標籤',
-        '諮詢問題與回饋建議'
+        '使用體驗回饋建議'
       ].map(escapeCsv).join(',');
 
       const lines = rows.map(r => [

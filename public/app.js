@@ -282,22 +282,6 @@ function renderFinderResult(result) {
         </div>
       </div>
 
-      <!-- 潛在消費者名單登記 CTA (創創團隊驗證專用) -->
-      <div class="lead-cta-card">
-        <div class="lead-cta-content">
-          <div class="lead-cta-icon-wrap">
-            <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          </div>
-          <div>
-            <h4>索取個人專屬保健避坑與省錢評估報告</h4>
-            <p>我們的演算法已為您初篩合適成分。若想由團隊提供更深度的成分重複檢視或客製化優惠情報，歡迎免費登記！</p>
-          </div>
-        </div>
-        <button type="button" class="btn btn-primary" onclick="openLeadModal('finder_result')">
-          免費登記索取報告
-        </button>
-      </div>
-
       ${comparisonsHtml}
     </div>
   `;
@@ -781,17 +765,6 @@ function renderWishlistView() {
     ${alertsHtml}
 
     ${dosageAndTimingSection}
-
-    <!-- 藥師審查預約名單卡片 -->
-    <div style="margin-top:1.5rem; padding:1.1rem 1.25rem; background:#fffbeb; border:1.5px solid #e5e7eb; border-radius:14px; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
-      <div style="min-width:240px; flex:1;">
-        <h5 style="font-size:0.96rem; font-weight:800; color:#111827; margin-bottom:0.25rem;">想要無偏見藥師幫您一對一檢查目前吃的所有保健品嗎？</h5>
-        <p style="font-size:0.83rem; color:#4b5563; margin:0;">歡迎登記預約，我們提供不推銷特定品牌的學術研究諮詢。</p>
-      </div>
-      <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_analysis')">
-        預約免費名單登記
-      </button>
-    </div>
   `;
 }
 
@@ -1468,26 +1441,6 @@ function renderPurchasedCardsHtml() {
   }).join('');
 }
 
-function renderAnalysisPurchasedSection() {
-  const grid = document.getElementById('analysis-purchased-grid');
-  const countEl = document.getElementById('analysis-purchased-count');
-  if (countEl) {
-    countEl.textContent = `${state.purchased.length} 款服用中`;
-  }
-  if (!grid) return;
-
-  if (state.purchased.length === 0) {
-    grid.innerHTML = `
-      <div style="grid-column:1/-1; text-align:center; padding:1.35rem; color:#4b5563; background:#f8fafc; border-radius:10px;">
-        目前尚未加入正在吃的保健品。您可以在上方貼上商品名稱、點擊「＋ 手動新增」，或在比價卡片點選「已在外部購買（加入日曆）」。
-      </div>
-    `;
-    return;
-  }
-
-  grid.innerHTML = renderPurchasedCardsHtml();
-}
-
 function renderPurchasedCabinet() {
   const grid = document.getElementById('purchased-cabinet-grid');
   const countEl = document.getElementById('purchased-cabinet-count');
@@ -1499,7 +1452,7 @@ function renderPurchasedCabinet() {
   if (state.purchased.length === 0) {
     grid.innerHTML = `
       <div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:#64748b; background:#f8fafc; border-radius:10px;">
-        目前尚無已購買服用的保健品。您可以在上方貼上商品名稱、點擊「＋ 手動新增」，或在比價卡片點選「已在外部購買（加入日曆）」。
+        目前尚無已購買服用的保健品。
       </div>
     `;
     return;
@@ -1944,6 +1897,18 @@ window.handleLeadSubmit = handleLeadSubmit;
 // ========================================================
 // 10. 手機版 Web App 教學、Web Share Target 接收與看診大字卡
 // ========================================================
+function openUserGuideModal() {
+  const modal = document.getElementById('user-guide-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openUserGuideModal = openUserGuideModal;
+
+function closeUserGuideModal() {
+  const modal = document.getElementById('user-guide-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeUserGuideModal = closeUserGuideModal;
+
 function openWebAppModal() {
   const modal = document.getElementById('webapp-install-modal');
   if (modal) modal.style.display = 'flex';
@@ -1981,10 +1946,7 @@ window.shareAppUrlToFriends = shareAppUrlToFriends;
 
 async function importSharedProductByName(productText, sourceChannel = '手機分享匯入') {
   const cleanText = String(productText || '').trim();
-  if (!cleanText) {
-    showToast('請輸入或貼上保健食品名稱');
-    return;
-  }
+  if (!cleanText) return;
 
   try {
     const res = await fetch('/api/purchased/quick-import', {
@@ -2005,7 +1967,7 @@ async function importSharedProductByName(productText, sourceChannel = '手機分
       renderWishlistView();
       renderCalendarView();
       switchView('view-calendar');
-      showToast(json.message || '已成功加入「告知醫生目前使用的保健品」清單！');
+      showToast(json.message || '已成功加入已購買清單！');
     } else {
       showToast(json.message || '未偵測到保健食品名稱，系統已自動排除非保健品');
     }
@@ -2014,18 +1976,6 @@ async function importSharedProductByName(productText, sourceChannel = '手機分
     showToast('匯入失敗，請稍後再試');
   }
 }
-
-async function handleQuickImportSubmit() {
-  const input = document.getElementById('quick-import-input');
-  const val = (input?.value || '').trim();
-  if (!val) {
-    showToast('請先貼上或輸入保健食品名稱（例如：大研生醫魚油）');
-    return;
-  }
-  await importSharedProductByName(val, '手機貼上快速加入');
-  if (input) input.value = '';
-}
-window.handleQuickImportSubmit = handleQuickImportSubmit;
 
 async function handleIncomingPwaShare() {
   const params = new URLSearchParams(window.location.search);
@@ -2038,25 +1988,9 @@ async function handleIncomingPwaShare() {
     window.history.replaceState({}, document.title, '/');
     if (combined) {
       await importSharedProductByName(combined, '手機購物分享匯入');
-    } else {
-      switchView('view-wishlist');
-      showToast('已接收分享連結，請在輸入框確認保健品名稱後加入清單');
     }
   }
 }
-
-async function simulateMobileShareImport() {
-  closeWebAppModal();
-  const sampleItems = [
-    '大研生醫 德國頂級高濃度魚油 (84%)',
-    '悠活原力 金盞花萃取葉黃素 + 蝦紅素',
-    '威德 健康益生菌 (顆粒粉包)'
-  ];
-  const currentNames = new Set((state.purchased || []).map(p => p.name));
-  const pick = sampleItems.find(x => !Array.from(currentNames).some(n => x.includes(n.slice(0, 4)))) || sampleItems[0];
-  await importSharedProductByName(pick, '手機購物網站分享');
-}
-window.simulateMobileShareImport = simulateMobileShareImport;
 
 function openDoctorFullscreenModal() {
   const modal = document.getElementById('doctor-fullscreen-modal');
@@ -2069,10 +2003,8 @@ function openDoctorFullscreenModal() {
   if (!state.purchased || state.purchased.length === 0) {
     body.innerHTML = `
       <div style="text-align:center; padding:2rem 1rem; color:#4b5563;">
-        <p style="font-size:1.05rem; margin-bottom:1rem;">目前尚未加入任何正在服用的保健品。</p>
-        <button type="button" class="btn btn-primary" onclick="closeDoctorFullscreenModal(); openAddSupplementModal('purchased');">
-          ＋ 立即新增手邊正在吃的保健品
-        </button>
+        <p style="font-size:1.05rem; margin-bottom:0.5rem;">目前「已購買清單」尚無正在服用的保健品。</p>
+        <p style="font-size:0.88rem; color:#64748b;">當您的已購買清單有商品時，點擊此按鈕即會自動將清單匯出成大字看診卡。</p>
       </div>
     `;
   } else {

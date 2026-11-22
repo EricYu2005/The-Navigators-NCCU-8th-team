@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.2.0" />
+  <link rel="stylesheet" href="style.css?v=4.3.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -308,13 +308,33 @@
       <div class="wishlist-kpi-grid" id="wishlist-kpi-grid"></div>
 
       <div class="two-col-management">
-        <!-- 左欄：有興趣的商品清單 -->
-        <div class="card">
-          <div class="card-title-bar">
-            <h3>我有興趣考慮購買的商品</h3>
-            <span class="pill-count" id="wishlist-panel-count">0 款</span>
+        <!-- 左欄：有興趣的商品清單 ＆ 目前已購買比對基準（皆可隨時剔除） -->
+        <div style="display:flex; flex-direction:column; gap:1.25rem;">
+          <div class="card">
+            <div class="card-title-bar">
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <h3>我有興趣考慮購買的商品</h3>
+                <span class="pill-count" id="wishlist-panel-count">0 款</span>
+              </div>
+              <button type="button" class="btn btn-sm btn-danger-soft" id="btn-clear-wishlist" style="display:none;" onclick="clearUserListByStatus('wishlist')">
+                全部剔除
+              </button>
+            </div>
+            <div id="wishlist-items-container" class="managed-list-container"></div>
           </div>
-          <div id="wishlist-items-container" class="managed-list-container"></div>
+
+          <div class="card">
+            <div class="card-title-bar">
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <h3>目前已購買服用中的商品（比對基準）</h3>
+                <span class="pill-count" id="wishlist-purchased-count">0 款</span>
+              </div>
+              <button type="button" class="btn btn-sm btn-danger-soft" id="btn-clear-purchased-wishlist" style="display:none;" onclick="clearUserListByStatus('purchased')">
+                全部剔除
+              </button>
+            </div>
+            <div id="wishlist-purchased-container" class="managed-list-container"></div>
+          </div>
         </div>
 
         <!-- 右欄：嚴格重疊去冗與劑量安全分析報告 -->
@@ -540,10 +560,15 @@
             <h3>目前已購買正在服用的保健品</h3>
             <span class="pill-count" id="purchased-cabinet-count">0 款服用中</span>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
-            <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            <span>告知醫生目前使用的保健品</span>
-          </button>
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              <span>告知醫生目前使用的保健品</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-danger-soft" id="btn-clear-purchased-cabinet" style="display:none;" onclick="clearUserListByStatus('purchased')">
+              全部剔除
+            </button>
+          </div>
         </div>
         <div id="purchased-cabinet-grid" class="purchased-cabinet-grid"></div>
       </div>
@@ -1017,6 +1042,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.2.0"></script>
+  <script src="app.js?v=4.3.0"></script>
 </body>
 </html>

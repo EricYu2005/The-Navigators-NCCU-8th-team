@@ -397,22 +397,32 @@ function renderSupplementCardHtml(item, isTopPick) {
         </div>
       </div>
 
-      <div class="supp-actions-row">
+      <div class="supp-actions-row" style="flex-wrap:wrap;">
         <button
           type="button"
-          class="btn btn-sm ${inWishlist ? 'btn-primary' : 'btn-outline'}"
+          class="btn btn-sm ${inWishlist ? 'btn-danger-soft' : 'btn-outline'}"
           onclick="toggleUserListItem(${item.id}, 'wishlist')"
         >
-          ${inWishlist ? '已關注' : '加入分析'}
+          ${inWishlist ? '剔除分析清單' : '加入分析'}
         </button>
         <button
           type="button"
-          class="btn btn-sm ${inPurchased ? 'btn-teal' : 'btn-outline'}"
+          class="btn btn-sm ${inPurchased ? 'btn-danger-soft' : 'btn-outline'}"
           onclick="toggleUserListItem(${item.id}, 'purchased')"
-          title="加入已購買服用日曆櫃"
+          title="加入或剔除已購買服用清單"
         >
-          ${inPurchased ? '已在日曆櫃' : '已在外部購買（加入日曆）'}
+          ${inPurchased ? '剔除已購清單' : '已在外部購買（加入日曆）'}
         </button>
+        ${(Number(item.id) > 24 || item.source_channel === '消費者新增') ? `
+          <button
+            type="button"
+            class="btn btn-sm btn-danger-soft"
+            onclick="deleteCustomSupplement(${item.id})"
+            title="永久刪除此筆自訂新增的商品"
+          >
+            刪除自訂商品
+          </button>
+        ` : ''}
       </div>
     </div>
   `;
@@ -480,13 +490,69 @@ async function removeFromUserList(supplementId, status) {
       if (state.finderResult) renderFinderResult(state.finderResult);
       renderWishlistView();
       renderCalendarView();
-      showToast('已從清單移除並重新計算費用與效益');
+      const docModal = document.getElementById('doctor-fullscreen-modal');
+      if (docModal && docModal.style.display === 'flex') {
+        openDoctorFullscreenModal();
+      }
+      showToast('已從清單剔除該項保健品並重新計算');
     }
   } catch (err) {
     console.error(err);
   }
 }
 window.removeFromUserList = removeFromUserList;
+
+async function clearUserListByStatus(status) {
+  try {
+    const res = await fetch(`/api/user-supplements/all?status=${status}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.wishlist = json.data.wishlist || [];
+      state.purchased = json.data.purchased || [];
+      state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      updateNavBadges();
+      renderCatalog();
+      if (state.finderResult) renderFinderResult(state.finderResult);
+      renderWishlistView();
+      renderCalendarView();
+      const docModal = document.getElementById('doctor-fullscreen-modal');
+      if (docModal && docModal.style.display === 'flex') {
+        openDoctorFullscreenModal();
+      }
+      const label = status === 'purchased' ? '目前已購買服用中清單' : '有興趣考慮購買清單';
+      showToast(`已全部剔除「${label}」！`);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.clearUserListByStatus = clearUserListByStatus;
+
+async function deleteCustomSupplement(supplementId) {
+  try {
+    const res = await fetch(`/api/supplements/${supplementId}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.supplements = json.data.supplements || state.supplements;
+      state.wishlist = json.data.wishlist || [];
+      state.purchased = json.data.purchased || [];
+      state.wishlistAnalysis = json.data.wishlistAnalysis || null;
+      updateNavBadges();
+      renderCatalog();
+      if (state.finderResult) renderFinderResult(state.finderResult);
+      renderWishlistView();
+      renderCalendarView();
+      showToast('已永久刪除此筆自訂新增的保健品');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+window.deleteCustomSupplement = deleteCustomSupplement;
 
 async function moveWishlistToPurchased(supplementId) {
   try {
@@ -569,13 +635,17 @@ function renderWishlistView() {
     </div>
   `;
 
-  // 2. 左欄：有興趣清單卡片
+  // 2. 左欄：有興趣清單卡片 ＆ 目前已購買比對基準卡片
+  const btnClearWishlist = document.getElementById('btn-clear-wishlist');
+  if (btnClearWishlist) {
+    btnClearWishlist.style.display = state.wishlist.length > 0 ? 'inline-flex' : 'none';
+  }
+
   const redundantIds = new Set((analysis.redundancyAlerts || []).map(a => Number(a.dropProductId)));
   if (state.wishlist.length === 0) {
     itemsContainer.innerHTML = `
-      <div style="text-align:center; padding:2rem 1rem; color:#64748b;">
-        <p style="margin-bottom:0.85rem;">目前「有興趣清單」沒有商品。</p>
-        <button type="button" class="btn btn-primary btn-sm" onclick="switchView('view-finder')">去尋找並加入有興趣的保健品</button>
+      <div style="text-align:center; padding:1.5rem 1rem; color:#64748b;">
+        <p style="margin:0;">目前「有興趣清單」沒有商品。</p>
       </div>
     `;
   } else {
@@ -609,6 +679,40 @@ function renderWishlistView() {
         </div>
       `;
     }).join('');
+  }
+
+  const wishlistPurchasedContainer = document.getElementById('wishlist-purchased-container');
+  const wishlistPurchasedCount = document.getElementById('wishlist-purchased-count');
+  const btnClearPurchasedWishlist = document.getElementById('btn-clear-purchased-wishlist');
+  if (wishlistPurchasedCount) {
+    wishlistPurchasedCount.textContent = `${state.purchased.length} 款`;
+  }
+  if (btnClearPurchasedWishlist) {
+    btnClearPurchasedWishlist.style.display = state.purchased.length > 0 ? 'inline-flex' : 'none';
+  }
+  if (wishlistPurchasedContainer) {
+    if (state.purchased.length === 0) {
+      wishlistPurchasedContainer.innerHTML = `
+        <div style="text-align:center; padding:1.25rem 1rem; color:#64748b;">
+          <p style="margin:0;">目前無已購買服用的商品。</p>
+        </div>
+      `;
+    } else {
+      wishlistPurchasedContainer.innerHTML = state.purchased.map(item => `
+        <div class="managed-item-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+            <div>
+              <span class="supp-cat-badge">${escapeHtml(item.category)}</span>
+              <h4 style="font-size:0.95rem; font-weight:800; color:#0f172a; margin-top:0.3rem;">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</h4>
+              <div style="font-size:0.78rem; color:#475569; margin-top:0.25rem;">${escapeHtml(item.active_summary)}</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">
+              剔除
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
   }
 
   // 3. 右欄：去冗省錢建議、合併劑量檢核、服用時段提醒
@@ -1223,20 +1327,23 @@ function renderDailyTrackerPanel() {
       const isChecked = takenSet.has(Number(item.id));
       const timing = item.intake_time || item.recommended_timing || '隨餐/飯後';
       return `
-        <label class="intake-check-item ${isChecked ? 'checked' : ''}">
-          <div class="intake-check-left">
+        <div class="intake-check-item ${isChecked ? 'checked' : ''}">
+          <label class="intake-check-left" style="flex:1; cursor:pointer;">
             <input
               type="checkbox"
               ${isChecked ? 'checked' : ''}
               onchange="toggleSupplementTaken(${item.id}, this.checked)"
             />
             <div>
-              <div style="font-size:0.9rem; font-weight:800; color:#0f172a;">${item.brand}｜${item.name}</div>
-              <div style="font-size:0.75rem; color:#64748b;">建議份量：每日 ${item.daily_units} 份（${item.dosage_form}）</div>
+              <div style="font-size:0.9rem; font-weight:800; color:#0f172a;">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</div>
+              <div style="font-size:0.75rem; color:#64748b;">建議份量：每日 ${item.daily_units} 份（${escapeHtml(item.dosage_form)}）</div>
             </div>
+          </label>
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span class="timing-tag">${escapeHtml(timing)}</span>
+            <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">剔除</button>
           </div>
-          <span class="timing-tag">${timing}</span>
-        </label>
+        </div>
       `;
     }).join('');
   }
@@ -1429,7 +1536,7 @@ function renderPurchasedCardsHtml() {
             <span class="timing-tag" style="margin-left:4px; display:inline-flex; align-items:center; gap:2px;"><svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${escapeHtml(item.intake_time || item.recommended_timing || '隨餐/飯後')}</span>
             <h4 style="font-size:1rem; font-weight:800; color:#0f172a; margin-top:0.35rem;">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</h4>
           </div>
-          <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">移除</button>
+          <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">剔除</button>
         </div>
         <div style="font-size:0.84rem; color:#374151; margin-top:0.45rem; line-height:1.5;">
           <div><strong>主要成分：</strong>${escapeHtml(item.active_summary)}</div>
@@ -1444,8 +1551,12 @@ function renderPurchasedCardsHtml() {
 function renderPurchasedCabinet() {
   const grid = document.getElementById('purchased-cabinet-grid');
   const countEl = document.getElementById('purchased-cabinet-count');
+  const btnClearCabinet = document.getElementById('btn-clear-purchased-cabinet');
   if (countEl) {
     countEl.textContent = `${state.purchased.length} 款服用中`;
+  }
+  if (btnClearCabinet) {
+    btnClearCabinet.style.display = state.purchased.length > 0 ? 'inline-flex' : 'none';
   }
   if (!grid) return;
 
@@ -1641,7 +1752,7 @@ function renderAuthUI() {
 
   if (state.currentUser) {
     if (loginBtn) loginBtn.style.display = 'none';
-    if (toggleDemoBtn) toggleDemoBtn.style.display = 'none';
+    if (toggleDemoBtn) toggleDemoBtn.style.display = 'inline-flex';
     if (chip) chip.style.display = 'inline-flex';
     if (nameEl) nameEl.textContent = state.currentUser.displayName;
     if (logoutDemoBtn) logoutDemoBtn.style.display = 'inline-flex';
@@ -2014,9 +2125,12 @@ function openDoctorFullscreenModal() {
         <div class="doctor-show-row">
           <div class="doctor-show-index">${idx + 1}</div>
           <div class="doctor-show-main">
-            <div class="doctor-show-top">
-              <span class="doctor-show-cat">${escapeHtml(item.category)}</span>
-              <span class="doctor-show-timing">服用時段：${escapeHtml(item.intake_time || item.recommended_timing || '隨餐/飯後')}｜每日 ${item.daily_units || 1} 份</span>
+            <div class="doctor-show-top" style="justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <span class="doctor-show-cat">${escapeHtml(item.category)}</span>
+                <span class="doctor-show-timing">服用時段：${escapeHtml(item.intake_time || item.recommended_timing || '隨餐/飯後')}｜每日 ${item.daily_units || 1} 份</span>
+              </div>
+              <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${item.id}, 'purchased')">剔除</button>
             </div>
             <div class="doctor-show-name">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</div>
             <div class="doctor-show-ing"><strong>主要成分與含量：</strong>${escapeHtml(item.active_summary)}</div>

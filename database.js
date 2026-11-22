@@ -804,6 +804,7 @@ function clearUserPersonalData() {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
       db.run('DELETE FROM user_supplements');
+      db.run('DELETE FROM supplements WHERE id > 24');
       db.run('DELETE FROM calendar_logs', (err) => {
         if (err) return reject(err);
         resolve(true);

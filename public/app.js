@@ -22,15 +22,39 @@ const state = {
   userLead: null
 };
 
+function readLeadReceiptFromLocal(uid) {
+  if (!uid) return null;
+  try {
+    const raw = localStorage.getItem(`purepick_lead_receipt_${uid}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.name && parsed.email) return parsed;
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveLeadReceiptToLocal(uid, receipt) {
+  if (!uid || !receipt || !receipt.name || !receipt.email) return;
+  try {
+    localStorage.setItem(`purepick_lead_receipt_${uid}`, JSON.stringify({
+      ...receipt,
+      submittedAt: new Date().toISOString()
+    }));
+  } catch (e) {}
+}
+
 function isUserEntitledToPro() {
   const uid = getActiveLineUserId();
   // 嚴格檢驗：未登入 LINE 實名帳號者，絕不可能具備實名 Pro 資格
   if (!uid) return false;
   // 伺服器端資料庫確認：該 LINE 帳號在 leads 表中已有登記紀錄
-  if (state.userLead && state.userLead.id) return true;
+  if (state.userLead && (state.userLead.id || state.userLead.email)) return true;
+  // 本機已留存該 LINE 帳號實際送出表單的憑證（避免 Render 重啟清空 SQLite 後遺失資格）
+  if (readLeadReceiptFromLocal(uid)) return true;
   // 或前端已同步確認該 LINE 帳號的實名資格
   if (state.hasProEntitlement && localStorage.getItem(`purepick_entitled_${uid}`) === 'true') return true;
-  if (localStorage.getItem(`purepick_entitled_${uid}`) === 'true') return true;
   return false;
 }
 window.isUserEntitledToPro = isUserEntitledToPro;
@@ -185,30 +209,67 @@ async function loadBootstrapData(skipLocalSync = false) {
       state.wishlistAnalysis = data.wishlistAnalysis || null;
       state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
 
-      // 依伺服器資料庫確認 Pro 資格（嚴格驗證：未填過表單者絕對不可開通 Pro）
+      // 依伺服器資料庫確認 Pro 資格（若 Render 重啟清空 SQLite，自動以本機實際填表憑證回寫）
       if (uid) {
-        if (data.hasProEntitlement !== undefined) {
-          state.hasProEntitlement = !!data.hasProEntitlement;
-          if (state.hasProEntitlement) {
-            localStorage.setItem(`purepick_entitled_${uid}`, 'true');
-          } else {
-            localStorage.removeItem(`purepick_entitled_${uid}`);
-          }
-        }
-        state.userLead = data.userLead || null;
+        let entitled = !!data.hasProEntitlement;
+        let leadObj = data.userLead || null;
 
-        // 若資料庫確認此 LINE 帳號未填寫過名單，強制鎖定為非 Pro，絕不允許切換
-        if (!data.hasProEntitlement) {
+        if (!entitled) {
+          const localReceipt = readLeadReceiptFromLocal(uid);
+          if (localReceipt) {
+            // 此 LINE 帳號先前確實有提交過表單，Render 重新部署導致 SQLite 重置 -> 自動回寫還原
+            try {
+              const resRestore = await fetch('/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: localReceipt.name,
+                  age: localReceipt.age || '35~49歲',
+                  email: localReceipt.email,
+                  satisfaction_score: localReceipt.satisfaction_score || 5,
+                  note: localReceipt.note || '',
+                  source: 'auto_restore_after_restart',
+                  line_user_id: uid
+                })
+              });
+              const restoreJson = await resRestore.json();
+              if (restoreJson && restoreJson.success) {
+                entitled = true;
+                leadObj = { id: restoreJson.data?.leadId || 1, ...localReceipt };
+              }
+            } catch (e) {
+              entitled = true;
+              leadObj = localReceipt;
+            }
+          }
+        } else if (leadObj && leadObj.name && leadObj.contact_value && !readLeadReceiptFromLocal(uid)) {
+          // 伺服器已有紀錄但本機尚無憑證（例如換裝置登入）-> 補存本機憑證避免下次重啟遺失
+          saveLeadReceiptToLocal(uid, {
+            name: leadObj.name,
+            age: '',
+            email: leadObj.contact_value,
+            satisfaction_score: leadObj.satisfaction_score || 5,
+            note: ''
+          });
+        }
+
+        state.hasProEntitlement = entitled;
+        state.userLead = leadObj;
+
+        if (!entitled) {
+          // 既無資料庫紀錄、也無本機實際填表憑證 -> 嚴格鎖定為非 Pro，絕不允許一鍵切換
           state.isPro = false;
-          state.hasProEntitlement = false;
           localStorage.removeItem(`purepick_entitled_${uid}`);
           localStorage.setItem(`purepick_pro_${uid}`, 'false');
           localStorage.setItem('purepick_pro', 'false');
         } else {
-          // 已具有資料庫資格者：若手動切換為免費展示模式，維持展示；否則為 Pro
+          localStorage.setItem(`purepick_entitled_${uid}`, 'true');
+          // 已具有資格者：若手動切換為免費展示模式，維持展示；否則自動開通 Pro
           const manualDemo = localStorage.getItem(`purepick_demo_mode_${uid}`);
           if (manualDemo === 'free') {
             state.isPro = false;
+            localStorage.setItem(`purepick_pro_${uid}`, 'false');
+            localStorage.setItem('purepick_pro', 'false');
           } else {
             state.isPro = true;
             localStorage.setItem(`purepick_pro_${uid}`, 'true');
@@ -2181,9 +2242,10 @@ async function handleLeadSubmit(event) {
     if (json.success) {
       state.isPro = true;
       state.hasProEntitlement = true;
+      state.userLead = { id: json.data?.leadId || 1, name, contact_value: email, satisfaction_score };
       localStorage.setItem('purepick_pro', 'true');
-      localStorage.setItem('purepick_pro_entitled', 'true');
       if (state.currentUser?.userId) {
+        saveLeadReceiptToLocal(state.currentUser.userId, { name, age, email, satisfaction_score, note });
         localStorage.setItem(`purepick_pro_${state.currentUser.userId}`, 'true');
         localStorage.setItem(`purepick_entitled_${state.currentUser.userId}`, 'true');
         localStorage.removeItem(`purepick_demo_mode_${state.currentUser.userId}`);

@@ -21,7 +21,13 @@ app.use('/api', (req, res, next) => {
   res.set('Expires', '0');
   next();
 });
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.set('Cache-Control', 'no-cache, must-revalidate');
+    }
+  }
+}));
 
 function normalizeLineUserId(raw) {
   return String(raw || '').trim();
@@ -718,6 +724,22 @@ app.post('/api/leads', async (req, res) => {
     }
 
     const score = Math.max(1, Math.min(5, parseInt(satisfaction_score, 10) || 5));
+
+    // 若為伺服器重啟後的自動回寫，避免重複寫入多筆
+    if (source === 'auto_restore_after_restart') {
+      const existingLead = await dbQuery.get(
+        'SELECT id FROM leads WHERE line_user_id = ? LIMIT 1',
+        [finalLineUserId]
+      );
+      if (existingLead) {
+        await dbQuery.run('UPDATE users SET is_pro = 1 WHERE provider_id = ?', [finalLineUserId]);
+        return res.json({
+          success: true,
+          message: '已確認 Pro 資格存在。',
+          data: { leadId: existingLead.id, satisfactionScore: score, isPro: true }
+        });
+      }
+    }
 
     const result = await dbQuery.run(`
       INSERT INTO leads (name, age, contact_type, contact_value, line_user_id, health_goal, monthly_budget, satisfaction_score, note, source)

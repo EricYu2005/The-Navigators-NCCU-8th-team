@@ -46,9 +46,9 @@ function base64UrlEncode(input) {
 }
 
 /**
- * 載入 GCP Service Account 憑證
+ * 載入 GCP 憑證（同時支援 service_account 金鑰與 Render WIF external_account 設定檔）
  */
-function loadServiceAccountCredentials() {
+function loadGcpCredentials() {
   if (cachedCredentials) return cachedCredentials;
 
   // 1. 優先檢查雲端環境變數 GCP_SERVICE_ACCOUNT_JSON
@@ -61,17 +61,17 @@ function loadServiceAccountCredentials() {
       const decoded = Buffer.from(rawJsonEnv, 'base64').toString('utf8');
       parsed = JSON.parse(decoded);
     }
-    if (!parsed.client_email || !parsed.private_key) {
-      throw new Error('GCP_SERVICE_ACCOUNT_JSON 缺少 client_email 或 private_key');
+    if ((parsed.client_email && parsed.private_key) || parsed.type === 'external_account') {
+      cachedCredentials = parsed;
+      return cachedCredentials;
     }
-    cachedCredentials = parsed;
-    return cachedCredentials;
+    throw new Error('GCP_SERVICE_ACCOUNT_JSON 格式不正確');
   }
 
-  // 2. 檢查本機金鑰檔案路徑
+  // 2. 檢查 Render 自動掛載的 GOOGLE_APPLICATION_CREDENTIALS 或本機金鑰檔案路徑
   const candidates = [
-    (process.env.GCP_PROJECT_KEY || '').trim(),
     (process.env.GOOGLE_APPLICATION_CREDENTIALS || '').trim(),
+    (process.env.GCP_PROJECT_KEY || '').trim(),
     path.resolve(__dirname, 'service_account.json'),
     path.resolve(__dirname, 'gcp-key.json')
   ].filter(Boolean);
@@ -82,23 +82,108 @@ function loadServiceAccountCredentials() {
       : path.resolve(__dirname, candidate);
     if (fs.existsSync(resolved)) {
       const parsed = JSON.parse(fs.readFileSync(resolved, 'utf8'));
-      if (parsed.client_email && parsed.private_key) {
+      if ((parsed.client_email && parsed.private_key) || parsed.type === 'external_account') {
         cachedCredentials = parsed;
         return cachedCredentials;
       }
     }
   }
 
-  throw new Error('找不到有效的 GCP Service Account 金鑰（請確認 service_account.json 或 GCP_SERVICE_ACCOUNT_JSON 已設定）');
+  throw new Error('找不到有效的 GCP 憑證（請確認本機 service_account.json、Render WIF 或 GCP_SERVICE_ACCOUNT_JSON 已設定）');
 }
 
 function isVertexAiConfigured() {
   try {
-    loadServiceAccountCredentials();
+    loadGcpCredentials();
     return true;
   } catch (_) {
     return false;
   }
+}
+
+/**
+ * 透過 Render / GCP Workload Identity Federation (external_account) 換取 Access Token
+ */
+async function getExternalAccountAccessToken(creds) {
+  const src = creds.credential_source || {};
+  let subjectToken = '';
+
+  if (src.file) {
+    const raw = fs.readFileSync(src.file, 'utf8').trim();
+    if (src.format?.type === 'json' && src.format?.subject_token_field_name) {
+      const obj = JSON.parse(raw);
+      subjectToken = String(obj[src.format.subject_token_field_name] || '').trim();
+    } else {
+      subjectToken = raw;
+    }
+  } else if (src.url) {
+    const headers = src.headers || {};
+    const res = await fetch(src.url, { headers });
+    const raw = (await res.text()).trim();
+    if (!res.ok) {
+      throw new Error(`無法從 credential_source.url 取得 OIDC Token (${res.status})`);
+    }
+    if (src.format?.type === 'json' && src.format?.subject_token_field_name) {
+      const obj = JSON.parse(raw);
+      subjectToken = String(obj[src.format.subject_token_field_name] || '').trim();
+    } else {
+      subjectToken = raw;
+    }
+  } else {
+    throw new Error('external_account 缺少有效的 credential_source (file 或 url)');
+  }
+
+  if (!subjectToken) {
+    throw new Error('無法讀取外部 OIDC subject token');
+  }
+
+  // Step 1: 向 Google STS 交換 Federated Token
+  const stsUrl = creds.token_url || 'https://sts.googleapis.com/v1/token';
+  const stsRes = await fetch(stsUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grantType: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      audience: creds.audience,
+      scope: VERTEX_SCOPE,
+      requestedTokenType: 'urn:ietf:params:oauth:token-type:access_token',
+      subjectToken,
+      subjectTokenType: creds.subject_token_type || 'urn:ietf:params:oauth:token-type:jwt'
+    })
+  });
+
+  const stsJson = await stsRes.json().catch(() => ({}));
+  if (!stsRes.ok || !stsJson.access_token) {
+    throw new Error(`GCP STS Token 交換失敗 (${stsRes.status}): ${stsJson.error_description || stsJson.error || '未知錯誤'}`);
+  }
+
+  // Step 2: 若有設定 Service Account Impersonation，進一步換取目標 SA 的 Access Token
+  if (creds.service_account_impersonation_url) {
+    const impRes = await fetch(creds.service_account_impersonation_url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${stsJson.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        scope: [VERTEX_SCOPE],
+        lifetime: '3600s'
+      })
+    });
+    const impJson = await impRes.json().catch(() => ({}));
+    if (!impRes.ok || !impJson.accessToken) {
+      throw new Error(`GCP Service Account 模擬授權失敗 (${impRes.status}): ${impJson.error?.message || '未知錯誤'}`);
+    }
+    const expiresAt = impJson.expireTime
+      ? Math.floor(new Date(impJson.expireTime).getTime() / 1000)
+      : Math.floor(Date.now() / 1000) + 3600;
+    return { accessToken: impJson.accessToken, expiresAt };
+  }
+
+  return {
+    accessToken: stsJson.access_token,
+    expiresAt: Math.floor(Date.now() / 1000) + (Number(stsJson.expires_in) || 3600)
+  };
 }
 
 /**
@@ -110,7 +195,16 @@ async function getAccessToken() {
     return cachedAccessToken;
   }
 
-  const creds = loadServiceAccountCredentials();
+  const creds = loadGcpCredentials();
+
+  // 支援 Render Workload Identity Federation (external_account)
+  if (creds.type === 'external_account') {
+    const { accessToken, expiresAt } = await getExternalAccountAccessToken(creds);
+    cachedAccessToken = accessToken;
+    cachedTokenExpiresAt = expiresAt;
+    return cachedAccessToken;
+  }
+
   const header = { alg: 'RS256', typ: 'JWT' };
   const payload = {
     iss: creds.client_email,
@@ -231,14 +325,17 @@ function normalizeSupplementResult(raw) {
  * @param {string} params.mimeType - 如 image/jpeg, image/png, image/webp
  */
 async function analyzeSupplementImage({ imageBase64, mimeType = 'image/jpeg' }) {
-  const creds = loadServiceAccountCredentials();
-  // 以 service_account.json 內的 project_id 為準，避免 .env 誤填
-  const projectId = creds.project_id || (process.env.GCP_PROJECT_ID || '').trim();
+  const creds = loadGcpCredentials();
+  // 優先使用憑證內的 project_id，若為 external_account 則讀取環境變數 GCP_PROJECT_ID / GCP_PROJECT（或預設專案）
+  const envProjectId = (process.env.GCP_PROJECT_ID || '').trim();
+  const rawGcpProject = (process.env.GCP_PROJECT || '').trim();
+  const safeGcpProject = rawGcpProject && !rawGcpProject.includes('/') ? rawGcpProject : '';
+  const projectId = creds.project_id || envProjectId || safeGcpProject;
   const location = (process.env.GCP_LOCATION || 'us-central1').trim();
   const preferredModel = (process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash').trim();
 
   if (!projectId) {
-    throw new Error('找不到有效的 GCP Project ID');
+    throw new Error('找不到有效的 GCP Project ID（請在環境變數設定 GCP_PROJECT_ID=gen-lang-client-0610302397）');
   }
 
   const accessToken = await getAccessToken();

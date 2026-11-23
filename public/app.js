@@ -336,16 +336,6 @@ function switchView(viewId) {
     btn.classList.toggle('active', btn.dataset.target === viewId);
   });
 
-  const viewTitles = {
-    'view-finder': '尋找適合您的保健方案',
-    'view-wishlist': '告知醫生目前使用的保健品 ＆ 重複檢查',
-    'view-calendar': '每日服用打卡 ＆ 身體狀態日曆'
-  };
-  const labelEl = document.getElementById('top-current-view-label');
-  if (labelEl && viewTitles[viewId]) {
-    labelEl.textContent = viewTitles[viewId];
-  }
-
   if (viewId === 'view-wishlist') {
     renderWishlistView();
   } else if (viewId === 'view-calendar') {

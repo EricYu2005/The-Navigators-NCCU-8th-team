@@ -166,15 +166,6 @@ body {
   line-height: 1.2;
 }
 
-.brand-sub {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: #7c3aed;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .header-actions {
   display: flex;
   align-items: center;
@@ -2183,10 +2174,6 @@ body {
     font-size: 0.94rem;
   }
 
-  .brand-sub {
-    font-size: 0.68rem;
-  }
-
   .brand-logo-box {
     width: 30px;
     height: 30px;
@@ -3102,11 +3089,6 @@ body {
 
   .brand-name {
     font-size: 0.98rem;
-  }
-
-  .brand-sub {
-    display: block;
-    font-size: 0.72rem;
   }
 
   /* 第二排：上方工具按鈕與 LINE 登入區塊整齊排列（自動換行絕不裁切） */

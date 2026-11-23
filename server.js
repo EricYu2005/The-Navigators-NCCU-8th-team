@@ -108,6 +108,207 @@ async function getUserCalendarLogs(lineUserId = '') {
   return calendarLogs;
 }
 
+const LINE_BOT_BASIC_ID = process.env.LINE_BOT_BASIC_ID || '@044ihumq';
+
+function sanitizeSlotTime(val) {
+  const s = String(val || '').trim();
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(s) ? s : '';
+}
+
+function parseTimeToMinutes(hhmm) {
+  const clean = sanitizeSlotTime(hhmm);
+  if (!clean) return null;
+  const [h, m] = clean.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getTaiwanDateTimeParts(nowDate = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(nowDate);
+  const map = {};
+  for (const p of parts) map[p.type] = p.value;
+  const hour = Number(map.hour === '24' ? '0' : map.hour);
+  const minute = Number(map.minute);
+  return {
+    dateStr: `${map.year}-${map.month}-${map.day}`,
+    hour,
+    minute,
+    totalMinutes: hour * 60 + minute,
+    timeStr: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+  };
+}
+
+async function getUserReminderSettings(lineUserId = '') {
+  const uid = normalizeLineUserId(lineUserId);
+  const defaults = {
+    enabled: false,
+    morning_time: '08:30',
+    noon_time: '12:30',
+    evening_time: '',
+    bedtime_time: '22:00',
+    botBasicId: LINE_BOT_BASIC_ID,
+    lineMessagingConfigured: !!process.env.LINE_MESSAGING_ACCESS_TOKEN
+  };
+  if (!uid) return defaults;
+
+  const row = await dbQuery.get(
+    'SELECT * FROM user_reminder_settings WHERE line_user_id = ? LIMIT 1',
+    [uid]
+  );
+  if (!row) return defaults;
+
+  return {
+    enabled: !!row.enabled,
+    morning_time: sanitizeSlotTime(row.morning_time),
+    noon_time: sanitizeSlotTime(row.noon_time),
+    evening_time: sanitizeSlotTime(row.evening_time),
+    bedtime_time: sanitizeSlotTime(row.bedtime_time),
+    botBasicId: LINE_BOT_BASIC_ID,
+    lineMessagingConfigured: !!process.env.LINE_MESSAGING_ACCESS_TOKEN
+  };
+}
+
+async function sendLinePushCard({ to, title, slotLabel, supplementLines, appUrl }) {
+  const token = (process.env.LINE_MESSAGING_ACCESS_TOKEN || '').trim();
+  if (!token) {
+    return {
+      ok: false,
+      status: 503,
+      error: '伺服器尚未設定 LINE_MESSAGING_ACCESS_TOKEN 環境變數，請至 Render 後台確認。'
+    };
+  }
+
+  const safeUrl = (appUrl || 'https://carenav-nin9.onrender.com').replace(/\/+$/, '');
+  const calendarUrl = `${safeUrl}/?view=calendar`;
+  const listText = (supplementLines && supplementLines.length > 0)
+    ? supplementLines.map((line, i) => `${i + 1}. ${line}`).join('\n')
+    : '請打開日曆檢視今日應服用的保健品清單並完成打卡。';
+
+  const flexPayload = {
+    to,
+    messages: [
+      {
+        type: 'flex',
+        altText: `好選保健提醒（${slotLabel}）：記得服用今日保健品並打卡`,
+        contents: {
+          type: 'bubble',
+          size: 'kilo',
+          header: {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#6d28d9',
+            paddingAll: '14px',
+            contents: [
+              {
+                type: 'text',
+                text: '好選保健 PurePick',
+                color: '#ede9fe',
+                size: 'xs',
+                weight: 'bold'
+              },
+              {
+                type: 'text',
+                text: title || `每日服用提醒（${slotLabel}）`,
+                color: '#ffffff',
+                size: 'md',
+                weight: 'bold',
+                margin: 'xs'
+              }
+            ]
+          },
+          body: {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'sm',
+            paddingAll: '14px',
+            contents: [
+              {
+                type: 'text',
+                text: `提醒時段：${slotLabel}`,
+                size: 'xs',
+                color: '#64748b',
+                weight: 'bold'
+              },
+              {
+                type: 'text',
+                text: listText,
+                size: 'sm',
+                color: '#1e293b',
+                wrap: true,
+                margin: 'sm'
+              }
+            ]
+          },
+          footer: {
+            type: 'box',
+            layout: 'vertical',
+            paddingAll: '12px',
+            contents: [
+              {
+                type: 'button',
+                style: 'primary',
+                color: '#06c755',
+                height: 'sm',
+                action: {
+                  type: 'uri',
+                  label: '開啟日曆一鍵打卡',
+                  uri: calendarUrl
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  };
+
+  try {
+    const resp = await fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(flexPayload)
+    });
+    if (resp.ok) {
+      return { ok: true, status: resp.status };
+    }
+    const errText = await resp.text();
+    let friendly = `LINE 推播失敗（狀態碼 ${resp.status}）`;
+    if (resp.status === 400) {
+      friendly = `無法送達您的 LINE 帳號：請確認您已加入官方帳號 ${LINE_BOT_BASIC_ID} 為好友，且 Messaging API 與 LINE Login 屬於同一個 Provider。`;
+    } else if (resp.status === 401) {
+      friendly = 'LINE_MESSAGING_ACCESS_TOKEN 無效或已過期，請在 LINE Developers 重新 Issue 並更新至 Render。';
+    } else if (resp.status === 429) {
+      friendly = '本月 LINE 官方帳號免費推播額度已達上限。';
+    }
+    return { ok: false, status: resp.status, error: friendly, raw: errText };
+  } catch (err) {
+    return { ok: false, status: 500, error: `連線 LINE 推播伺服器失敗：${err.message}` };
+  }
+}
+
+// ========================================================
+// 0. 雲端健康檢查 (供 GitHub Actions 喚醒 Render 免費主機)
+// ========================================================
+app.get('/api/health', (req, res) => {
+  const tw = getTaiwanDateTimeParts();
+  res.json({
+    ok: true,
+    taiwanDate: tw.dateStr,
+    taiwanTime: tw.timeStr,
+    uptimeSec: Math.round(process.uptime())
+  });
+});
+
 // ========================================================
 // 1. 平台初始資料載入 (Bootstrap)
 // ========================================================
@@ -124,6 +325,7 @@ app.get('/api/bootstrap', async (req, res) => {
     const { wishlist, purchased } = await getUserLists(lineUserId);
     const calendarLogs = await getUserCalendarLogs(lineUserId);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
+    const reminderSettings = await getUserReminderSettings(lineUserId);
 
     // 檢查該 LINE 會員是否已在資料庫登記過回饋並具備 Pro 資格
     let isPro = false;
@@ -151,6 +353,7 @@ app.get('/api/bootstrap', async (req, res) => {
         purchased,
         calendarLogs,
         wishlistAnalysis,
+        reminderSettings,
         isPro,
         hasProEntitlement: isPro,
         userLead
@@ -388,7 +591,7 @@ app.delete('/api/user-supplements/:supplementId', async (req, res) => {
 // 同步已登入使用者的清單與日曆狀態（避免雲端伺服器重啟後遺失或恢復舊資料）
 app.post('/api/user-state/sync', async (req, res) => {
   try {
-    const { lineUserId, userName, wishlistIds, purchasedIds, customSupplements, calendarLogs } = req.body;
+    const { lineUserId, userName, wishlistIds, purchasedIds, customSupplements, calendarLogs, reminderSettings } = req.body;
     const uid = normalizeLineUserId(lineUserId);
     if (!uid) {
       return res.status(400).json({ success: false, message: '缺少 LINE 使用者識別碼' });
@@ -485,6 +688,30 @@ app.post('/api/user-state/sync', async (req, res) => {
       }
     }
 
+    if (reminderSettings && typeof reminderSettings === 'object') {
+      await dbQuery.run(`
+        INSERT INTO user_reminder_settings (
+          line_user_id, display_name, enabled, morning_time, noon_time, evening_time, bedtime_time, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(line_user_id) DO UPDATE SET
+          display_name = excluded.display_name,
+          enabled = excluded.enabled,
+          morning_time = excluded.morning_time,
+          noon_time = excluded.noon_time,
+          evening_time = excluded.evening_time,
+          bedtime_time = excluded.bedtime_time,
+          updated_at = CURRENT_TIMESTAMP
+      `, [
+        uid,
+        (userName || '消費者').trim(),
+        reminderSettings.enabled ? 1 : 0,
+        sanitizeSlotTime(reminderSettings.morning_time),
+        sanitizeSlotTime(reminderSettings.noon_time),
+        sanitizeSlotTime(reminderSettings.evening_time),
+        sanitizeSlotTime(reminderSettings.bedtime_time)
+      ]);
+    }
+
     const rawSupplements = await dbQuery.all('SELECT * FROM supplements ORDER BY category ASC, value_score DESC');
     const supplements = rawSupplements.map(s => {
       let nutrients = {};
@@ -494,10 +721,11 @@ app.post('/api/user-state/sync', async (req, res) => {
     const { wishlist, purchased } = await getUserLists(uid);
     const syncedLogs = await getUserCalendarLogs(uid);
     const wishlistAnalysis = await evaluateWishlistPortfolio({ wishlist, purchased });
+    const syncedReminder = await getUserReminderSettings(uid);
 
     res.json({
       success: true,
-      data: { supplements, wishlist, purchased, calendarLogs: syncedLogs, wishlistAnalysis }
+      data: { supplements, wishlist, purchased, calendarLogs: syncedLogs, wishlistAnalysis, reminderSettings: syncedReminder }
     });
   } catch (error) {
     console.error('同步使用者狀態失敗:', error);
@@ -631,7 +859,7 @@ app.get('/auth/line', (req, res) => {
   const callbackUrl = process.env.LINE_CALLBACK_URL || `${protocol}://${host}/auth/line/callback`;
   const state = Math.random().toString(36).substring(2, 15);
 
-  const authUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${channelId}&redirect_uri=${encodeURIComponent(callbackUrl)}&state=${state}&scope=profile%20openid`;
+  const authUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${channelId}&redirect_uri=${encodeURIComponent(callbackUrl)}&state=${state}&scope=profile%20openid&bot_prompt=normal`;
   res.redirect(authUrl);
 });
 
@@ -892,6 +1120,264 @@ app.delete('/api/leads/:id', async (req, res) => {
     await dbQuery.run('DELETE FROM leads WHERE id = ?', [id]);
     res.json({ success: true, message: '已刪除此筆名單' });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========================================================
+// 9. LINE 每日服用提醒設定、即時測試推播與 GitHub Actions 定時排程
+// ========================================================
+app.get('/api/reminders/settings', async (req, res) => {
+  try {
+    const lineUserId = normalizeLineUserId(req.query.lineUserId);
+    const data = await getUserReminderSettings(lineUserId);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('讀取提醒設定失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/reminders/settings', async (req, res) => {
+  try {
+    const {
+      lineUserId,
+      displayName,
+      enabled,
+      morning_time,
+      noon_time,
+      evening_time,
+      bedtime_time
+    } = req.body;
+
+    const uid = normalizeLineUserId(lineUserId);
+    if (!uid) {
+      return res.status(401).json({ success: false, message: '請先以 LINE 帳號登入後再設定提醒' });
+    }
+
+    const mTime = sanitizeSlotTime(morning_time);
+    const nTime = sanitizeSlotTime(noon_time);
+    const eTime = sanitizeSlotTime(evening_time);
+    const bTime = sanitizeSlotTime(bedtime_time);
+    const isEnabled = enabled ? 1 : 0;
+
+    if (isEnabled && !mTime && !nTime && !eTime && !bTime) {
+      return res.status(400).json({ success: false, message: '開啟提醒時，請至少勾選一個提醒時段' });
+    }
+
+    await dbQuery.run(`
+      INSERT INTO user_reminder_settings (
+        line_user_id, display_name, enabled, morning_time, noon_time, evening_time, bedtime_time, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(line_user_id) DO UPDATE SET
+        display_name = excluded.display_name,
+        enabled = excluded.enabled,
+        morning_time = excluded.morning_time,
+        noon_time = excluded.noon_time,
+        evening_time = excluded.evening_time,
+        bedtime_time = excluded.bedtime_time,
+        updated_at = CURRENT_TIMESTAMP
+    `, [uid, (displayName || '').trim(), isEnabled, mTime, nTime, eTime, bTime]);
+
+    const updated = await getUserReminderSettings(uid);
+    res.json({
+      success: true,
+      message: isEnabled ? '已儲存 LINE 每日服用提醒設定！' : '已暫停 LINE 每日服用提醒。',
+      data: updated
+    });
+  } catch (error) {
+    console.error('儲存提醒設定失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/reminders/test', async (req, res) => {
+  try {
+    const { lineUserId, displayName } = req.body;
+    const uid = normalizeLineUserId(lineUserId);
+    if (!uid) {
+      return res.status(401).json({ success: false, message: '請先登入 LINE 帳號才能發送測試提醒' });
+    }
+
+    const { purchased } = await getUserLists(uid);
+    const host = req.get('host');
+    const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+    const appUrl = process.env.PUBLIC_APP_URL || `${protocol}://${host}`;
+
+    const supplementLines = purchased.length > 0
+      ? purchased.slice(0, 6).map(p => `${p.brand} ${p.name}（${p.recommended_timing || '依包裝建議'}）`)
+      : ['您尚未加入已購買保健品，之後加入的商品會自動顯示在這裡'];
+
+    const pushRes = await sendLinePushCard({
+      to: uid,
+      title: `${displayName ? displayName + ' 您好，' : ''}這是 PurePick 測試提醒`,
+      slotLabel: '即時測試推播',
+      supplementLines,
+      appUrl
+    });
+
+    if (!pushRes.ok) {
+      return res.status(pushRes.status >= 400 && pushRes.status < 600 ? pushRes.status : 500).json({
+        success: false,
+        message: pushRes.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '測試提醒已發送！請立刻檢查您的 LINE 訊息。'
+    });
+  } catch (error) {
+    console.error('發送測試提醒失敗:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GitHub Actions 定時排程呼叫端點（強制驗證 REMINDER_CRON_SECRET）
+app.post('/api/cron/send-reminders', async (req, res) => {
+  try {
+    const expectedSecret = (process.env.REMINDER_CRON_SECRET || '').trim();
+    if (!expectedSecret) {
+      return res.status(503).json({
+        success: false,
+        message: '伺服器尚未設定 REMINDER_CRON_SECRET 環境變數'
+      });
+    }
+
+    const authHeader = req.get('authorization') || '';
+    const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    const provided = (req.get('x-cron-secret') || bearer || '').trim();
+
+    if (!provided || provided !== expectedSecret) {
+      return res.status(401).json({ success: false, message: '無效的排程驗證密鑰' });
+    }
+
+    if (!(process.env.LINE_MESSAGING_ACCESS_TOKEN || '').trim()) {
+      return res.status(503).json({
+        success: false,
+        message: '伺服器尚未設定 LINE_MESSAGING_ACCESS_TOKEN 環境變數'
+      });
+    }
+
+    const tw = getTaiwanDateTimeParts();
+    const host = req.get('host');
+    const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+    const appUrl = process.env.PUBLIC_APP_URL || `${protocol}://${host}`;
+
+    const rows = await dbQuery.all(
+      'SELECT * FROM user_reminder_settings WHERE enabled = 1'
+    );
+
+    const slotDefs = [
+      { key: 'morning', col: 'morning_time', label: '早餐後' },
+      { key: 'noon', col: 'noon_time', label: '午餐後' },
+      { key: 'evening', col: 'evening_time', label: '晚餐後' },
+      { key: 'bedtime', col: 'bedtime_time', label: '睡前' }
+    ];
+
+    let sentCount = 0;
+    let skippedCount = 0;
+    const details = [];
+
+    for (const row of rows) {
+      const uid = normalizeLineUserId(row.line_user_id);
+      if (!uid) continue;
+
+      let lastSent = {};
+      try { lastSent = JSON.parse(row.last_sent_slots || '{}'); } catch (e) {}
+
+      // 只保留今日紀錄，避免 JSON 無限膨脹
+      const cleanedSent = {};
+      for (const [k, v] of Object.entries(lastSent)) {
+        if (k.startsWith(tw.dateStr + '_')) cleanedSent[k] = v;
+      }
+
+      // 檢查今日是否開啟「生病休養暫停服用模式」
+      const todayLog = await dbQuery.get(
+        'SELECT taken_ids_json, is_sick_mode FROM user_calendar_logs WHERE line_user_id = ? AND date_str = ? LIMIT 1',
+        [uid, tw.dateStr]
+      );
+      if (todayLog && todayLog.is_sick_mode === 1) {
+        skippedCount += 1;
+        details.push({ user: row.display_name || uid.slice(0, 6), reason: 'sick_mode_paused' });
+        continue;
+      }
+
+      let takenIds = [];
+      if (todayLog && todayLog.taken_ids_json) {
+        try { takenIds = JSON.parse(todayLog.taken_ids_json).map(Number); } catch (e) {}
+      }
+      const takenSet = new Set(takenIds);
+
+      const { purchased } = await getUserLists(uid);
+      const pendingItems = purchased.filter(p => !takenSet.has(Number(p.id)));
+
+      let modifiedSent = false;
+
+      for (const slot of slotDefs) {
+        const slotTime = sanitizeSlotTime(row[slot.col]);
+        if (!slotTime) continue;
+
+        const slotMin = parseTimeToMinutes(slotTime);
+        if (slotMin === null) continue;
+
+        const sentKey = `${tw.dateStr}_${slot.key}`;
+        if (cleanedSent[sentKey]) continue;
+
+        // 允許 GitHub Actions 排程延遲 0 ~ 35 分鐘內皆能可靠觸發，絕不漏發也不重發
+        const diff = tw.totalMinutes - slotMin;
+        if (diff >= 0 && diff <= 35) {
+          if (purchased.length > 0 && pendingItems.length === 0) {
+            // 今日全部保健品皆已吃完打卡，不打擾使用者
+            cleanedSent[sentKey] = 'all_taken';
+            modifiedSent = true;
+            skippedCount += 1;
+            details.push({ user: row.display_name || uid.slice(0, 6), slot: slot.key, reason: 'already_all_taken' });
+            continue;
+          }
+
+          const lines = pendingItems.length > 0
+            ? pendingItems.slice(0, 6).map(p => `${p.brand} ${p.name}（${p.recommended_timing || '依包裝建議'}）`)
+            : ['記得檢視今日保健品並至日曆完成打卡'];
+
+          const pushRes = await sendLinePushCard({
+            to: uid,
+            title: `該吃保健品囉（${slot.label} ${slotTime}）`,
+            slotLabel: `${slot.label} ${slotTime}`,
+            supplementLines: lines,
+            appUrl
+          });
+
+          if (pushRes.ok) {
+            cleanedSent[sentKey] = tw.timeStr;
+            modifiedSent = true;
+            sentCount += 1;
+            details.push({ user: row.display_name || uid.slice(0, 6), slot: slot.key, status: 'sent' });
+          } else {
+            details.push({ user: row.display_name || uid.slice(0, 6), slot: slot.key, status: 'failed', error: pushRes.error });
+          }
+        }
+      }
+
+      if (modifiedSent) {
+        await dbQuery.run(
+          'UPDATE user_reminder_settings SET last_sent_slots = ?, updated_at = CURRENT_TIMESTAMP WHERE line_user_id = ?',
+          [JSON.stringify(cleanedSent), uid]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      taiwanDate: tw.dateStr,
+      taiwanTime: tw.timeStr,
+      checkedUsers: rows.length,
+      sentCount,
+      skippedCount,
+      details
+    });
+  } catch (error) {
+    console.error('排程推播失敗:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

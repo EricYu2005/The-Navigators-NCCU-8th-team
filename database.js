@@ -697,6 +697,22 @@ function initDatabase() {
       db.run('ALTER TABLE leads ADD COLUMN satisfaction_score INTEGER DEFAULT 5', () => {});
       db.run('ALTER TABLE leads ADD COLUMN age TEXT DEFAULT ""', () => {});
       db.run('ALTER TABLE leads ADD COLUMN line_user_id TEXT DEFAULT ""', () => {});
+    });
+
+    // 6. LINE 每日服用提醒設定表 (依 LINE 實名帳號隔離，含防重複發送紀錄)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_reminder_settings (
+        line_user_id TEXT PRIMARY KEY,
+        display_name TEXT DEFAULT '',
+        enabled INTEGER DEFAULT 0,
+        morning_time TEXT DEFAULT '08:30',
+        noon_time TEXT DEFAULT '12:30',
+        evening_time TEXT DEFAULT '',
+        bedtime_time TEXT DEFAULT '22:00',
+        last_sent_slots TEXT DEFAULT '{}',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `, () => {
       seedSupplementCatalog();
     });
   });

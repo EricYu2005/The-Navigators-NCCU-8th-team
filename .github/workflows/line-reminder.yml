@@ -1,0 +1,60 @@
+name: LINE Daily Supplement Reminder
+
+on:
+  schedule:
+    # 每 30 分鐘執行一次，配合後端台灣時區（Asia/Taipei）0~35 分鐘防漏發視窗與防重發紀錄
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  send-line-reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Wake up Render service and dispatch LINE reminders
+        env:
+          RENDER_APP_URL: ${{ secrets.RENDER_APP_URL }}
+          REMINDER_CRON_SECRET: ${{ secrets.REMINDER_CRON_SECRET }}
+        run: |
+          set -e
+          if [ -z "$RENDER_APP_URL" ] || [ -z "$REMINDER_CRON_SECRET" ]; then
+            echo "Error: Missing RENDER_APP_URL or REMINDER_CRON_SECRET in GitHub Repository Secrets."
+            exit 1
+          fi
+
+          BASE_URL="${RENDER_APP_URL%/}"
+          echo "Step 1: Waking up Render service at ${BASE_URL}/api/health ..."
+
+          READY=0
+          for i in $(seq 1 12); do
+            HTTP_CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 15 "${BASE_URL}/api/health" || echo "000")
+            echo "Attempt ${i}/12 -> HTTP ${HTTP_CODE}"
+            if [ "$HTTP_CODE" = "200" ]; then
+              cat /tmp/health.json
+              echo ""
+              READY=1
+              break
+            fi
+            sleep 10
+          done
+
+          if [ "$READY" != "1" ]; then
+            echo "Error: Render service did not become ready within 120 seconds."
+            exit 1
+          fi
+
+          echo "Step 2: Triggering POST ${BASE_URL}/api/cron/send-reminders ..."
+          CRON_CODE=$(curl -sS -o /tmp/cron_result.json -w "%{http_code}" --max-time 30 \
+            -X POST "${BASE_URL}/api/cron/send-reminders" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${REMINDER_CRON_SECRET}")
+
+          echo "Cron HTTP status: ${CRON_CODE}"
+          cat /tmp/cron_result.json
+          echo ""
+
+          if [ "$CRON_CODE" != "200" ]; then
+            echo "Error: Reminder dispatch failed with HTTP ${CRON_CODE}."
+            exit 1
+          fi

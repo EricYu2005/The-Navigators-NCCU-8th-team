@@ -24,6 +24,16 @@ const state = {
     alerts: false,
     dosage: false,
     timing: false
+  },
+  reminderCardOpen: false,
+  reminderSettings: {
+    enabled: false,
+    morning_time: '08:30',
+    noon_time: '12:30',
+    evening_time: '',
+    bedtime_time: '22:00',
+    botBasicId: '@044ihumq',
+    lineMessagingConfigured: false
   }
 };
 
@@ -133,6 +143,7 @@ function saveLoggedInUserStateToLocal() {
       purchasedIds: (state.purchased || []).map(x => Number(x.id)),
       customSupplements,
       calendarLogs: state.calendarLogs || {},
+      reminderSettings: state.reminderSettings || null,
       updatedAt: Date.now()
     };
     localStorage.setItem(key, JSON.stringify(payload));
@@ -158,9 +169,16 @@ function readLoggedInUserStateFromLocal() {
 // ========================================================
 document.addEventListener('DOMContentLoaded', async () => {
   checkIosPwaPrompt();
+  const initialParams = new URLSearchParams(window.location.search);
+  const requestedView = initialParams.get('view');
   await initUserAuth();
   await loadBootstrapData();
   await handleIncomingPwaShare();
+  if (requestedView === 'calendar') {
+    switchView('view-calendar');
+  } else if (requestedView === 'wishlist') {
+    switchView('view-wishlist');
+  }
 });
 
 async function loadBootstrapData(skipLocalSync = false) {
@@ -175,7 +193,7 @@ async function loadBootstrapData(skipLocalSync = false) {
     if (json.success && json.data) {
       let data = json.data;
 
-      // 已登入會員：若本機已有最新操作紀錄（包含剛刪除過的清單），自動與伺服器同步，避免伺服器重啟或快取導致已刪除商品再次出現
+      // 已登入會員：若本機已有最新操作紀錄（包含剛刪除過的清單與提醒設定），自動與伺服器同步，避免伺服器重啟或快取導致資料遺失
       if (uid && !skipLocalSync) {
         const localState = readLoggedInUserStateFromLocal();
         if (localState) {
@@ -185,8 +203,9 @@ async function loadBootstrapData(skipLocalSync = false) {
           const locP = (localState.purchasedIds || []).map(Number).sort((a, b) => a - b).join(',');
           const srvLogKeys = Object.keys(data.calendarLogs || {}).length;
           const locLogKeys = Object.keys(localState.calendarLogs || {}).length;
+          const needReminderRestore = !!(localState.reminderSettings && localState.reminderSettings.enabled && (!data.reminderSettings || !data.reminderSettings.enabled));
 
-          if (srvW !== locW || srvP !== locP || (srvLogKeys === 0 && locLogKeys > 0)) {
+          if (srvW !== locW || srvP !== locP || (srvLogKeys === 0 && locLogKeys > 0) || needReminderRestore) {
             const syncRes = await fetch('/api/user-state/sync', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -196,12 +215,13 @@ async function loadBootstrapData(skipLocalSync = false) {
                 wishlistIds: localState.wishlistIds || [],
                 purchasedIds: localState.purchasedIds || [],
                 customSupplements: localState.customSupplements || [],
-                calendarLogs: localState.calendarLogs || {}
+                calendarLogs: localState.calendarLogs || {},
+                reminderSettings: needReminderRestore ? localState.reminderSettings : undefined
               })
             });
             const syncJson = await syncRes.json();
             if (syncJson.success && syncJson.data) {
-              data = syncJson.data;
+              data = { ...data, ...syncJson.data };
             }
           }
         }
@@ -212,6 +232,9 @@ async function loadBootstrapData(skipLocalSync = false) {
       state.purchased = data.purchased || [];
       state.calendarLogs = data.calendarLogs || {};
       state.wishlistAnalysis = data.wishlistAnalysis || null;
+      if (data.reminderSettings) {
+        state.reminderSettings = { ...state.reminderSettings, ...data.reminderSettings };
+      }
       state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
 
       // 依伺服器資料庫確認 Pro 資格（若 Render 重啟清空 SQLite，自動以本機實際填表憑證回寫）
@@ -1178,11 +1201,266 @@ window.toggleAnalysisAccordion = toggleAnalysisAccordion;
 // ========================================================
 function renderCalendarView() {
   renderCalendarKpis();
+  renderLineReminderCard();
   renderWeeklySummary();
   renderCalendarGrid();
   renderDailyTrackerPanel();
   renderPurchasedCabinet();
 }
+
+function buildHalfHourTimeOptions(startHour, endHour, selectedVal) {
+  const opts = [];
+  for (let h = startHour; h <= endHour; h++) {
+    for (const m of [0, 30]) {
+      if (h === endHour && m === 30) continue;
+      const val = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      opts.push(`<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${val}</option>`);
+    }
+  }
+  return opts.join('');
+}
+
+function toggleLineReminderCard() {
+  state.reminderCardOpen = !state.reminderCardOpen;
+  const card = document.getElementById('line-reminder-card');
+  const btn = document.getElementById('btn-toggle-line-reminder');
+  const label = document.getElementById('reminder-toggle-label');
+  if (card) card.classList.toggle('is-open', state.reminderCardOpen);
+  if (btn) btn.setAttribute('aria-expanded', state.reminderCardOpen ? 'true' : 'false');
+  if (label) label.textContent = state.reminderCardOpen ? '收起' : '設定提醒';
+}
+window.toggleLineReminderCard = toggleLineReminderCard;
+
+function renderLineReminderCard() {
+  const card = document.getElementById('line-reminder-card');
+  const pill = document.getElementById('reminder-status-pill');
+  const sub = document.getElementById('reminder-summary-sub');
+  const iconBox = document.getElementById('reminder-icon-box');
+  const body = document.getElementById('line-reminder-body');
+  if (!card || !body) return;
+
+  const rs = state.reminderSettings || {};
+  const botId = rs.botBasicId || '@044ihumq';
+  const addFriendUrl = `https://line.me/R/ti/p/${encodeURIComponent(botId)}`;
+  const isLoggedIn = !!(state.currentUser && state.currentUser.userId);
+  const activeSlots = [
+    rs.morning_time ? `早 ${rs.morning_time}` : '',
+    rs.noon_time ? `午 ${rs.noon_time}` : '',
+    rs.evening_time ? `晚 ${rs.evening_time}` : '',
+    rs.bedtime_time ? `睡前 ${rs.bedtime_time}` : ''
+  ].filter(Boolean);
+
+  card.classList.toggle('is-open', !!state.reminderCardOpen);
+  card.classList.toggle('acc-tone-safe', isLoggedIn && !!rs.enabled);
+  card.classList.toggle('acc-tone-neutral', !(isLoggedIn && !!rs.enabled));
+
+  if (iconBox) {
+    iconBox.classList.toggle('acc-icon-safe', isLoggedIn && !!rs.enabled);
+  }
+  if (pill) {
+    if (isLoggedIn && rs.enabled) {
+      pill.textContent = '已開啟';
+      pill.classList.add('is-active');
+    } else {
+      pill.textContent = '未開啟';
+      pill.classList.remove('is-active');
+    }
+  }
+  if (sub) {
+    if (isLoggedIn && rs.enabled && activeSlots.length > 0) {
+      sub.textContent = `每日 LINE 推播時段：${activeSlots.join(' / ')}`;
+    } else {
+      sub.textContent = '設定早、午、晚、睡前時段，透過 LINE 官方帳號定時提醒吃保健品';
+    }
+  }
+
+  if (!isLoggedIn) {
+    body.innerHTML = `
+      <div class="reminder-login-gate">
+        <p>請先登入您的 LINE 帳號並加入官方帳號 <strong>${botId}</strong> 為好友，即可開啟每日定時服用提醒，並直接從 LINE 訊息一鍵回日曆打卡。</p>
+        <button type="button" class="btn-line-auth" style="height:36px; padding:0 1rem; font-size:0.84rem;" onclick="startLineLogin()">
+          <svg class="line-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/></svg>
+          <span>LINE 登入以開啟提醒</span>
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="reminder-friend-banner">
+      <div>
+        <strong>步驟 1：確認已加入官方帳號好友（${botId}）</strong>
+        <span>需先加入 PurePick 官方帳號為好友，LINE 才能準時把提醒送到您的手機。</span>
+      </div>
+      <a href="${addFriendUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline reminder-friend-btn">
+        加入好友
+      </a>
+    </div>
+
+    <label class="reminder-master-toggle">
+      <input type="checkbox" id="rem-enabled-chk" ${rs.enabled ? 'checked' : ''} />
+      <div>
+        <strong>步驟 2：啟用每日 LINE 定時提醒</strong>
+        <span>若當日保健品皆已打卡，或開啟「生病休養暫停」，系統會自動跳過不打擾。</span>
+      </div>
+    </label>
+
+    <div class="reminder-slots-grid">
+      <div class="reminder-slot-item">
+        <label class="slot-chk-label">
+          <input type="checkbox" id="rem-chk-morning" ${rs.morning_time ? 'checked' : ''} />
+          <span>早餐後</span>
+        </label>
+        <select id="rem-time-morning" class="form-select form-select-sm">
+          ${buildHalfHourTimeOptions(6, 11, rs.morning_time || '08:30')}
+        </select>
+      </div>
+
+      <div class="reminder-slot-item">
+        <label class="slot-chk-label">
+          <input type="checkbox" id="rem-chk-noon" ${rs.noon_time ? 'checked' : ''} />
+          <span>午餐後</span>
+        </label>
+        <select id="rem-time-noon" class="form-select form-select-sm">
+          ${buildHalfHourTimeOptions(11, 15, rs.noon_time || '12:30')}
+        </select>
+      </div>
+
+      <div class="reminder-slot-item">
+        <label class="slot-chk-label">
+          <input type="checkbox" id="rem-chk-evening" ${rs.evening_time ? 'checked' : ''} />
+          <span>晚餐後</span>
+        </label>
+        <select id="rem-time-evening" class="form-select form-select-sm">
+          ${buildHalfHourTimeOptions(17, 21, rs.evening_time || '18:30')}
+        </select>
+      </div>
+
+      <div class="reminder-slot-item">
+        <label class="slot-chk-label">
+          <input type="checkbox" id="rem-chk-bedtime" ${rs.bedtime_time ? 'checked' : ''} />
+          <span>睡前</span>
+        </label>
+        <select id="rem-time-bedtime" class="form-select form-select-sm">
+          ${buildHalfHourTimeOptions(21, 24, rs.bedtime_time || '22:00')}
+        </select>
+      </div>
+    </div>
+
+    <div class="reminder-actions-row">
+      <button type="button" class="btn btn-primary btn-sm" id="btn-save-reminder" onclick="saveLineReminderSettings()">
+        儲存提醒設定
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" id="btn-test-reminder" onclick="sendTestLineReminder()">
+        發送測試提醒到我的 LINE
+      </button>
+    </div>
+  `;
+}
+
+async function saveLineReminderSettings() {
+  const uid = getActiveLineUserId();
+  if (!uid) {
+    showToast('請先以 LINE 帳號登入');
+    return;
+  }
+
+  const enabled = !!document.getElementById('rem-enabled-chk')?.checked;
+  const morning_time = document.getElementById('rem-chk-morning')?.checked
+    ? (document.getElementById('rem-time-morning')?.value || '08:30') : '';
+  const noon_time = document.getElementById('rem-chk-noon')?.checked
+    ? (document.getElementById('rem-time-noon')?.value || '12:30') : '';
+  const evening_time = document.getElementById('rem-chk-evening')?.checked
+    ? (document.getElementById('rem-time-evening')?.value || '18:30') : '';
+  const bedtime_time = document.getElementById('rem-chk-bedtime')?.checked
+    ? (document.getElementById('rem-time-bedtime')?.value || '22:00') : '';
+
+  if (enabled && !morning_time && !noon_time && !evening_time && !bedtime_time) {
+    showToast('請至少勾選一個提醒時段（早、午、晚或睡前）');
+    return;
+  }
+
+  const btn = document.getElementById('btn-save-reminder');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '儲存中...';
+  }
+
+  try {
+    const res = await fetch('/api/reminders/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lineUserId: uid,
+        displayName: state.currentUser?.displayName || '消費者',
+        enabled,
+        morning_time,
+        noon_time,
+        evening_time,
+        bedtime_time
+      })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.reminderSettings = { ...state.reminderSettings, ...json.data };
+      saveLoggedInUserStateToLocal();
+      renderLineReminderCard();
+      showToast(json.message || '已儲存提醒設定！');
+    } else {
+      showToast(json.message || '儲存失敗，請稍後再試');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('連線失敗，請檢查網路狀態');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '儲存提醒設定';
+    }
+  }
+}
+window.saveLineReminderSettings = saveLineReminderSettings;
+
+async function sendTestLineReminder() {
+  const uid = getActiveLineUserId();
+  if (!uid) {
+    showToast('請先以 LINE 帳號登入');
+    return;
+  }
+
+  const btn = document.getElementById('btn-test-reminder');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '發送測試中...';
+  }
+
+  try {
+    const res = await fetch('/api/reminders/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lineUserId: uid,
+        displayName: state.currentUser?.displayName || ''
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast(json.message || '測試提醒已發送！請檢查您的 LINE。');
+    } else {
+      showToast(json.message || '發送失敗，請確認已加好友與 Render Token 設定');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('連線失敗，請稍後再試');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '發送測試提醒到我的 LINE';
+    }
+  }
+}
+window.sendTestLineReminder = sendTestLineReminder;
 
 function renderWeeklySummary() {
   const container = document.getElementById('weekly-summary-body');

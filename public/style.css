@@ -3648,6 +3648,173 @@ body {
   }
 }
 
+/* ========================================================
+   日曆頁：LINE 每日服用提醒設定卡片
+   ======================================================== */
+.line-reminder-acc {
+  margin-bottom: 1.15rem;
+}
+
+.reminder-status-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.reminder-status-pill.is-active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.reminder-login-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.reminder-login-gate p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.reminder-friend-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.reminder-friend-banner strong {
+  display: block;
+  font-size: 0.86rem;
+  color: #166534;
+}
+
+.reminder-friend-banner span {
+  display: block;
+  font-size: 0.76rem;
+  color: #15803d;
+  margin-top: 0.12rem;
+}
+
+.reminder-friend-btn {
+  text-decoration: none;
+  border-color: #16a34a !important;
+  color: #15803d !important;
+  background: #ffffff !important;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.reminder-friend-btn:hover {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+
+.reminder-master-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 0.85rem;
+}
+
+.reminder-master-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.reminder-master-toggle strong {
+  display: block;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.reminder-master-toggle span {
+  display: block;
+  font-size: 0.76rem;
+  color: #64748b;
+  margin-top: 0.12rem;
+}
+
+.reminder-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.reminder-slot-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0.7rem;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.slot-chk-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.slot-chk-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.form-select-sm {
+  padding: 0.36rem 0.5rem;
+  font-size: 0.82rem;
+  min-height: 34px;
+}
+
+.reminder-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .reminder-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reminder-actions-row .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+}
+
+
 
 
 

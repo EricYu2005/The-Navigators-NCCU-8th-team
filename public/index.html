@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.2.8" />
+  <link rel="stylesheet" href="style.css?v=4.2.9" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -370,6 +370,33 @@
 
       <!-- 日曆頂部統計指標 -->
       <div class="calendar-kpi-row" id="calendar-kpi-row"></div>
+
+      <!-- LINE 每日服用提醒設定卡片（預設收合，展開可設定提醒時段與測試推播） -->
+      <div class="analysis-acc-card acc-tone-neutral line-reminder-acc" id="line-reminder-card">
+        <button type="button" class="analysis-acc-header" id="btn-toggle-line-reminder" aria-expanded="false" onclick="toggleLineReminderCard()">
+          <div class="acc-title-wrap">
+            <span class="acc-icon-box" id="reminder-icon-box">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </span>
+            <div class="acc-text-group">
+              <strong>
+                <span>LINE 每日服用提醒</span>
+                <span class="reminder-status-pill" id="reminder-status-pill">未開啟</span>
+              </strong>
+              <span id="reminder-summary-sub">設定早、午、晚、睡前時段，透過 LINE 官方帳號定時提醒吃保健品</span>
+            </div>
+          </div>
+          <div class="acc-toggle-right">
+            <span class="acc-toggle-label" id="reminder-toggle-label">設定提醒</span>
+            <svg class="icon-svg-sm acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </button>
+        <div class="analysis-acc-body">
+          <div class="analysis-acc-body-inner" id="line-reminder-body">
+            <!-- 由 app.js 動態渲染登入狀態、加好友提示、時段勾選與測試推播 -->
+          </div>
+        </div>
+      </div>
 
       <!-- 本週健康總結與配方動態升級建議卡片 (Weekly Health Review & Regimen Evolution) -->
       <div class="card weekly-summary-card" id="weekly-summary-card">
@@ -1060,6 +1087,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.2.7"></script>
+  <script src="app.js?v=4.2.8"></script>
 </body>
 </html>

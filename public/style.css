@@ -321,6 +321,10 @@ body {
   stroke: #b91c1c;
 }
 
+.logout-text-short {
+  display: none;
+}
+
 .btn-chip-logout {
   background: transparent;
   border: none;
@@ -3070,27 +3074,136 @@ body {
 }
 
 /* ==================== 手機版 UI 適配與觸控優化 ==================== */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .header-inner {
-    padding: 0 0.7rem;
-    gap: 0.4rem;
+    height: auto;
+    min-height: 52px;
+    max-height: none;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0.5rem 0.75rem 0.45rem 0.75rem;
+    row-gap: 0.45rem;
+    column-gap: 0.5rem;
+    overflow: visible;
+  }
+
+  /* 第一排：Logo 與品牌名稱獨立完整呈現，絕不被右側按鈕擠壓或遮擋 */
+  .brand-group {
+    width: 100%;
+    flex: 1 1 100%;
+    flex-shrink: 0;
+    gap: 0.55rem;
+  }
+
+  .brand-logo-box {
+    width: 32px;
+    height: 32px;
   }
 
   .brand-name {
-    font-size: 0.92rem;
+    font-size: 0.98rem;
   }
 
   .brand-sub {
+    display: block;
+    font-size: 0.72rem;
+  }
+
+  /* 第二排：上方工具按鈕與 LINE 登入區塊整齊排列（自動換行絕不裁切） */
+  .header-actions {
+    width: 100%;
+    flex: 1 1 100%;
+    flex-shrink: 0;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+    column-gap: 0.35rem;
+    padding-top: 0.42rem;
+    border-top: 1px solid var(--border);
+    overflow: visible;
+  }
+
+  .auth-box {
+    margin-left: auto;
+    flex-shrink: 0;
+    gap: 0.35rem;
+  }
+
+  .btn-top-webapp,
+  .btn-top-lead {
+    height: 30px;
+    padding: 0 0.55rem;
+    font-size: 0.74rem;
+    gap: 0.28rem;
+    flex-shrink: 0;
+  }
+
+  .btn-icon-top {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .btn-line-auth {
+    height: 30px;
+    padding: 0 0.6rem;
+    font-size: 0.74rem;
+  }
+
+  .user-chip {
+    max-width: 96px;
+    padding: 0.18rem 0.55rem;
+    font-size: 0.74rem;
+    overflow: hidden;
+  }
+
+  .user-chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .btn-logout-demo {
+    height: 30px;
+    padding: 0 0.55rem;
+    font-size: 0.74rem;
+    gap: 0.25rem;
+  }
+
+  .logout-text-full {
     display: none;
+  }
+
+  .logout-text-short {
+    display: inline;
+  }
+}
+
+@media (max-width: 390px) {
+  .header-inner {
+    padding: 0.45rem 0.6rem 0.4rem 0.6rem;
+  }
+
+  .header-actions {
+    gap: 0.3rem;
   }
 
   .btn-top-webapp,
   .btn-top-lead,
-  .btn-line-auth {
-    padding: 0.34rem 0.55rem;
-    font-size: 0.74rem;
+  .btn-line-auth,
+  .btn-logout-demo {
+    padding: 0 0.45rem;
+    font-size: 0.71rem;
   }
 
+  .user-chip {
+    max-width: 78px;
+    padding: 0.16rem 0.45rem;
+    font-size: 0.71rem;
+  }
+}
+
+@media (max-width: 640px) {
   .page-container {
     padding: 0.85rem 0.75rem 2rem 0.75rem;
   }

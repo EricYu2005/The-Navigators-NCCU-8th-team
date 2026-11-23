@@ -319,6 +319,39 @@ function normalizeSupplementResult(raw) {
 }
 
 /**
+ * 從憑證內容（service_account 或 Render WIF external_account）自動推導 GCP Project ID / Number
+ * 走 WIF 時完全不需要額外在環境變數重複填寫 GCP_PROJECT_ID
+ */
+function resolveGcpProject(creds) {
+  if (creds.project_id) return creds.project_id;
+  if (creds.quota_project_id) return creds.quota_project_id;
+
+  // 從 service_account_impersonation_url 擷取專案 ID（例如 ...@gen-lang-client-0610302397.iam.gserviceaccount.com...）
+  if (creds.service_account_impersonation_url) {
+    const saMatch = String(creds.service_account_impersonation_url).match(/@([^.]+)\.iam\.gserviceaccount\.com/i);
+    if (saMatch && saMatch[1]) return saMatch[1];
+  }
+
+  // 從 audience 擷取專案編號（例如 //iam.googleapis.com/projects/123456789012/locations/global/...）
+  if (creds.audience) {
+    const audMatch = String(creds.audience).match(/projects\/([^/]+)\//i);
+    if (audMatch && audMatch[1]) return audMatch[1];
+  }
+
+  const envProjectId = (process.env.GCP_PROJECT_ID || '').trim();
+  if (envProjectId) return envProjectId;
+
+  const rawGcpProject = (process.env.GCP_PROJECT || '').trim();
+  if (rawGcpProject) {
+    const pathMatch = rawGcpProject.match(/projects\/([^/]+)\//i);
+    if (pathMatch && pathMatch[1]) return pathMatch[1];
+    if (!rawGcpProject.includes('/')) return rawGcpProject;
+  }
+
+  return '';
+}
+
+/**
  * 呼叫 Vertex AI Gemini 多模態模型辨識保健食品包裝 / 成分表照片
  * @param {Object} params
  * @param {string} params.imageBase64 - 不含 data:image/... 前綴的純 base64 字串
@@ -326,16 +359,12 @@ function normalizeSupplementResult(raw) {
  */
 async function analyzeSupplementImage({ imageBase64, mimeType = 'image/jpeg' }) {
   const creds = loadGcpCredentials();
-  // 優先使用憑證內的 project_id，若為 external_account 則讀取環境變數 GCP_PROJECT_ID / GCP_PROJECT（或預設專案）
-  const envProjectId = (process.env.GCP_PROJECT_ID || '').trim();
-  const rawGcpProject = (process.env.GCP_PROJECT || '').trim();
-  const safeGcpProject = rawGcpProject && !rawGcpProject.includes('/') ? rawGcpProject : '';
-  const projectId = creds.project_id || envProjectId || safeGcpProject;
-  const location = (process.env.GCP_LOCATION || 'us-central1').trim();
-  const preferredModel = (process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash').trim();
+  const projectId = resolveGcpProject(creds);
+  const location = (process.env.GCP_LOCATION || 'global').trim();
+  const preferredModel = (process.env.VERTEX_AI_MODEL || 'gemini-3.5-flash').trim();
 
   if (!projectId) {
-    throw new Error('找不到有效的 GCP Project ID（請在環境變數設定 GCP_PROJECT_ID=gen-lang-client-0610302397）');
+    throw new Error('無法從 WIF 憑證或環境變數取得 GCP 專案識別碼');
   }
 
   const accessToken = await getAccessToken();
@@ -382,15 +411,19 @@ JSON 欄位規格如下：
 
   const modelCandidates = [...new Set([
     preferredModel,
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-001',
-    'gemini-1.5-flash-002'
+    'gemini-3.5-flash',
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview',
+    'gemini-2.5-flash-lite'
   ])];
+
+  const apiHost = location === 'global'
+    ? 'aiplatform.googleapis.com'
+    : `${location}-aiplatform.googleapis.com`;
 
   let lastError = null;
   for (const model of modelCandidates) {
-    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/publishers/google/models/${encodeURIComponent(model)}:generateContent`;
+    const endpoint = `https://${apiHost}/v1/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/publishers/google/models/${encodeURIComponent(model)}:generateContent`;
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -415,7 +448,7 @@ JSON 欄位規格如下：
         ],
         generationConfig: {
           temperature: 0.15,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 2048,
           responseMimeType: 'application/json'
         }
       })
@@ -423,8 +456,10 @@ JSON 欄位規格如下：
 
     const data = await response.json().catch(() => ({}));
     if (response.ok) {
-      const text = data?.candidates?.[0]?.content?.parts
-        ?.map((p) => p.text || '')
+      const parts = data?.candidates?.[0]?.content?.parts || [];
+      const text = parts
+        .filter((p) => !p.thought && typeof p.text === 'string')
+        .map((p) => p.text)
         .join('')
         .trim();
       if (!text) {

@@ -19,7 +19,12 @@ const state = {
   isDemoCleared: false,
   isPro: localStorage.getItem('purepick_pro') === 'true',
   hasProEntitlement: localStorage.getItem('purepick_pro_entitled') === 'true',
-  userLead: null
+  userLead: null,
+  analysisAccordions: {
+    alerts: false,
+    dosage: false,
+    timing: false
+  }
 };
 
 function readLeadReceiptFromLocal(uid) {
@@ -404,6 +409,26 @@ function fillFinderSample(sampleId) {
 }
 window.fillFinderSample = fillFinderSample;
 
+function toggleFinderDrawer(forceOpen) {
+  const drawer = document.getElementById('finder-drawer');
+  const toggleBtn = document.getElementById('finder-toggle-btn');
+  const pillText = document.getElementById('finder-toggle-pill-text');
+  if (!drawer || !toggleBtn) return;
+
+  const willOpen = typeof forceOpen === 'boolean'
+    ? forceOpen
+    : !drawer.classList.contains('is-open');
+
+  drawer.classList.toggle('is-open', willOpen);
+  toggleBtn.classList.toggle('is-open', willOpen);
+  toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  drawer.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+  if (pillText) {
+    pillText.textContent = willOpen ? '收起表單' : '開啟表單';
+  }
+}
+window.toggleFinderDrawer = toggleFinderDrawer;
+
 async function handleFinderSubmit(e) {
   if (e) e.preventDefault();
 
@@ -429,13 +454,21 @@ async function handleFinderSubmit(e) {
     if (json.success && json.data) {
       state.finderResult = json.data;
       renderFinderResult(json.data);
+      // 產出推薦方案後自動收合表單並平滑捲動至結果區，保持畫面簡潔
+      toggleFinderDrawer(false);
+      const area = document.getElementById('finder-result-area');
+      if (area) {
+        setTimeout(() => {
+          area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      }
     }
   } catch (err) {
     showToast('分析發生錯誤，請稍後再試');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '開始分析方案';
+      btn.textContent = '制定我的方案';
     }
   }
 }
@@ -840,33 +873,40 @@ function renderWishlistView() {
     }).join('');
   }
 
-  // 3. 右欄：去冗省錢建議、合併劑量檢核、服用時段提醒
+  // 3. 右欄：可展開／收合的三大分析摘要卡片（預設收合，降低視覺雜訊）
+  if (!state.analysisAccordions) {
+    state.analysisAccordions = { alerts: false, dosage: false, timing: false };
+  }
+
   const rawAlerts = analysis.redundancyAlerts || [];
   let visibleAlerts = rawAlerts;
   if (!state.isPro && rawAlerts.length > 1) {
     visibleAlerts = rawAlerts.slice(0, 1);
   }
 
-  const alertsHtml = visibleAlerts.length === 0
-    ? `<div style="padding:0.9rem 1rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; color:#065f46; font-size:0.88rem; margin-bottom:1rem;">
-         目前有興趣與服用中的商品無重複或衝突，配置精準！
-       </div>`
-    : visibleAlerts.map(alert => `
-        <div class="redundancy-alert-card">
-          <div class="redundancy-header">
-            <span class="redundancy-title">建議無需購買【${alert.dropProductName}】</span>
-            <span class="save-badge">刪除可省 NT$ ${alert.savedMonthly} / 月</span>
-          </div>
-          <p style="font-size:0.85rem; color:#881337; margin-bottom:0.65rem;">
-            ${alert.reason}
-          </p>
-          <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${alert.dropProductId}, 'wishlist')">
-            從清單剔除（月省 $${alert.savedMonthly}）
-          </button>
-        </div>
-      `).join('');
+  const alertsHtml = visibleAlerts.map(alert => `
+    <div class="redundancy-alert-card">
+      <div class="redundancy-header">
+        <span class="redundancy-title">建議無需購買【${alert.dropProductName}】</span>
+        <span class="save-badge">刪除可省 NT$ ${alert.savedMonthly} / 月</span>
+      </div>
+      <p style="font-size:0.85rem; color:#881337; margin-bottom:0.65rem;">
+        ${alert.reason}
+      </p>
+      <button type="button" class="btn btn-sm btn-danger-soft" onclick="removeFromUserList(${alert.dropProductId}, 'wishlist')">
+        從清單剔除（月省 $${alert.savedMonthly}）
+      </button>
+    </div>
+  `).join('') + (!state.isPro && rawAlerts.length > 1 ? `
+    <div style="padding:0.65rem 0.85rem; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; font-size:0.8rem; color:#475569; margin-top:0.4rem;">
+      免費版顯示第 1 則警告，尚有 <strong>${rawAlerts.length - 1} 則</strong>跨商品重複警告可於 Pro 方案完整檢視。
+    </div>
+  ` : '');
 
-  const dosageHtml = (analysis.dosageChecks || []).map(d => {
+  const dosageList = analysis.dosageChecks || [];
+  const dosageWarnCount = dosageList.filter(d => d.status === 'exceed_ul' || d.status === 'duplicate_high').length;
+
+  const dosageHtml = dosageList.map(d => {
     const widthPct = Math.min(100, Math.max(12, Math.round((d.totalAmount / (d.recommended * 1.5)) * 100)));
     let barClass = 'fill-optimal';
     let badgeBg = '#dcfce7';
@@ -902,9 +942,10 @@ function renderWishlistView() {
     `;
   }).join('');
 
-  const timingHtml = (analysis.timingWarnings || []).map(w => `
-    <div style="display:flex; align-items:center; gap:0.4rem; padding:0.65rem 0.85rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:0.83rem; color:#92400e; margin-bottom:0.5rem;">
-      <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  const timingList = analysis.timingWarnings || [];
+  const timingHtml = timingList.map(w => `
+    <div style="display:flex; align-items:flex-start; gap:0.45rem; padding:0.65rem 0.85rem; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:0.83rem; color:#92400e; margin-bottom:0.5rem;">
+      <svg class="icon-svg-sm" style="flex-shrink:0; margin-top:2px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span>${w}</span>
     </div>
   `).join('');
@@ -938,56 +979,164 @@ function renderWishlistView() {
     </div>
   `;
 
-  // 劑量檢核與時段提醒區塊 (若非 Pro 則加上局部鎖定覆蓋)
-  const dosageAndTimingSection = state.isPro ? `
-    <div class="dosage-table-wrap">
-      <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-        2. 合併每日營養素總量檢查（對照每日建議量與安全上限）
-      </h4>
-      ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
-    </div>
-    ${timingHtml ? `
-      <div style="margin-top:1.25rem;">
-        <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-          3. 服用時段與互相影響提醒
-        </h4>
-        ${timingHtml}
+  const buildProOverlay = (title, desc, lockSource) => `
+    <div class="pro-lock-overlay-btn-box">
+      <div style="font-size:0.92rem; font-weight:800; color:#111827; margin-bottom:0.25rem;">
+        ${title}
       </div>
-    ` : ''}
+      <p style="font-size:0.79rem; color:#4b5563; max-width:340px; margin-bottom:0.5rem;">
+        ${desc}${isUserEntitledToPro() ? '您已具備 Pro 資格，可一鍵直接恢復！' : '填寫簡短回饋即可免費開通！'}
+      </p>
+      ${isUserEntitledToPro() ? `
+        <button type="button" class="btn btn-primary btn-sm" onclick="restoreProStatus()">
+          一鍵恢復 Pro 權限（免重填）
+        </button>
+      ` : `
+        <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('${lockSource}')">
+          填寫回饋免費開通 Pro 權限
+        </button>
+      `}
+    </div>
+  `;
+
+  // 區塊 1：重複購買警訊（可收合摘要卡）
+  const isAlertsOpen = !!state.analysisAccordions.alerts;
+  const alertsAccordionHtml = rawAlerts.length === 0 ? `
+    <div class="analysis-acc-card acc-tone-safe">
+      <div class="analysis-acc-static">
+        <div class="acc-title-wrap">
+          <span class="acc-icon-box acc-icon-safe">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+          </span>
+          <div class="acc-text-group">
+            <strong>你有 0 則警告</strong>
+            <span>1. 跨商品重複購買檢查・目前清單無重複或衝突，配置精準</span>
+          </div>
+        </div>
+        <span class="acc-badge acc-badge-safe">無重複</span>
+      </div>
+    </div>
+  ` : `
+    <div class="analysis-acc-card acc-tone-danger ${isAlertsOpen ? 'is-open' : ''}" id="acc-card-alerts">
+      <button type="button" class="analysis-acc-header" id="acc-btn-alerts" aria-expanded="${isAlertsOpen ? 'true' : 'false'}" onclick="toggleAnalysisAccordion('alerts')">
+        <div class="acc-title-wrap">
+          <span class="acc-icon-box acc-icon-danger">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </span>
+          <div class="acc-text-group">
+            <strong>你有 <span class="acc-count-highlight">${rawAlerts.length}</span> 則警告</strong>
+            <span>1. 跨商品重複購買檢查・剔除可月省 NT$ ${analysis.potentialMonthlySavings}</span>
+          </div>
+        </div>
+        <div class="acc-toggle-right">
+          <span class="acc-toggle-label" id="acc-label-alerts">${isAlertsOpen ? '收起' : '展開查看'}</span>
+          <svg class="icon-svg-sm acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </button>
+      <div class="analysis-acc-body">
+        <div class="analysis-acc-body-inner">
+          ${alertsHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 區塊 2：合併每日營養素總量檢查（可收合摘要卡）
+  const isDosageOpen = !!state.analysisAccordions.dosage;
+  let dosageSubtitle = '';
+  if (!state.isPro) {
+    dosageSubtitle = `Pro 專屬把關・共追蹤 ${dosageList.length} 項主要營養素安全上限`;
+  } else if (dosageList.length === 0) {
+    dosageSubtitle = '目前清單尚無可計算之成分資料';
+  } else if (dosageWarnCount > 0) {
+    dosageSubtitle = `共 ${dosageList.length} 項成分・其中 ${dosageWarnCount} 項偏高或超過安全上限`;
+  } else {
+    dosageSubtitle = `共 ${dosageList.length} 項成分・皆落在每日建議安全範圍內`;
+  }
+
+  const dosageInnerContent = state.isPro ? `
+    <div class="dosage-table-wrap">
+      ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;margin:0;">尚無成分資料</p>'}
+    </div>
   ` : `
     <div class="pro-lock-overlay-wrap">
       <div class="pro-blur-content">
         <div class="dosage-table-wrap">
-          <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-            2. 合併每日營養素總量檢查（對照每日建議量與安全上限）
-          </h4>
-          ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;">尚無成分資料</p>'}
+          ${dosageHtml || '<p style="font-size:0.84rem;color:#64748b;margin:0;">尚無成分資料</p>'}
         </div>
-        ${timingHtml ? `
-          <div style="margin-top:1.25rem;">
-            <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-              3. 服用時段與互相影響提醒
-            </h4>
-            ${timingHtml}
-          </div>
-        ` : ''}
       </div>
-      <div class="pro-lock-overlay-btn-box">
-        <div style="font-size:0.95rem; font-weight:800; color:#111827; margin-bottom:0.25rem;">
-          解鎖完整每日安全劑量把關與服用時段提醒
+      ${buildProOverlay('解鎖每日安全劑量把關', '對照每日建議量與安全上限，避免單一營養素吃過量。', 'dosage_lock')}
+    </div>
+  `;
+
+  const dosageAccordionHtml = `
+    <div class="analysis-acc-card ${state.isPro && dosageWarnCount > 0 ? 'acc-tone-warn' : 'acc-tone-neutral'} ${isDosageOpen ? 'is-open' : ''}" id="acc-card-dosage">
+      <button type="button" class="analysis-acc-header" id="acc-btn-dosage" aria-expanded="${isDosageOpen ? 'true' : 'false'}" onclick="toggleAnalysisAccordion('dosage')">
+        <div class="acc-title-wrap">
+          <span class="acc-icon-box ${state.isPro && dosageWarnCount > 0 ? 'acc-icon-warn' : 'acc-icon-neutral'}">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          <div class="acc-text-group">
+            <strong>2. 合併每日營養素總量檢查${!state.isPro ? ' <span class="acc-pro-mini">PRO</span>' : ''}</strong>
+            <span>${dosageSubtitle}</span>
+          </div>
         </div>
-        <p style="font-size:0.8rem; color:#4b5563; max-width:360px; margin-bottom:0.5rem;">
-          避免鈣鐵同時吃互相影響吸收、或單一營養素吃過量。${isUserEntitledToPro() ? '您已具備 Pro 資格，可一鍵直接恢復！' : '填寫簡短回饋即可免費開通！'}
-        </p>
-        ${isUserEntitledToPro() ? `
-          <button type="button" class="btn btn-primary btn-sm" onclick="restoreProStatus()">
-            一鍵恢復 Pro 權限（免重填）
-          </button>
-        ` : `
-          <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('dosage_lock')">
-            填寫回饋免費開通 Pro 權限
-          </button>
-        `}
+        <div class="acc-toggle-right">
+          <span class="acc-toggle-label" id="acc-label-dosage">${isDosageOpen ? '收起' : '展開查看'}</span>
+          <svg class="icon-svg-sm acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </button>
+      <div class="analysis-acc-body">
+        <div class="analysis-acc-body-inner">
+          ${dosageInnerContent}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 區塊 3：服用時段與互相影響提醒（可收合摘要卡）
+  const isTimingOpen = !!state.analysisAccordions.timing;
+  let timingSubtitle = '';
+  if (timingList.length === 0) {
+    timingSubtitle = '目前清單無特殊吸收互斥，依包裝建議服用即可';
+  } else if (!state.isPro) {
+    timingSubtitle = `Pro 專屬提醒・偵測到 ${timingList.length} 則服用時段建議`;
+  } else {
+    timingSubtitle = `你有 ${timingList.length} 則服用時段與吸收搭配提醒`;
+  }
+
+  const timingInnerContent = timingList.length === 0 ? `
+    <p style="font-size:0.84rem;color:#64748b;margin:0;">目前清單內商品無明顯吸收互斥，按照各產品建議時段服用即可。</p>
+  ` : (state.isPro ? timingHtml : `
+    <div class="pro-lock-overlay-wrap">
+      <div class="pro-blur-content">
+        ${timingHtml}
+      </div>
+      ${buildProOverlay('解鎖服用時段與互斥提醒', '避開鈣鐵同時吃互相影響吸收，發揮營養素最佳效益。', 'dosage_lock')}
+    </div>
+  `);
+
+  const timingAccordionHtml = `
+    <div class="analysis-acc-card ${timingList.length > 0 ? 'acc-tone-warn' : 'acc-tone-neutral'} ${isTimingOpen ? 'is-open' : ''}" id="acc-card-timing">
+      <button type="button" class="analysis-acc-header" id="acc-btn-timing" aria-expanded="${isTimingOpen ? 'true' : 'false'}" onclick="toggleAnalysisAccordion('timing')">
+        <div class="acc-title-wrap">
+          <span class="acc-icon-box ${timingList.length > 0 ? 'acc-icon-warn' : 'acc-icon-neutral'}">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <div class="acc-text-group">
+            <strong>3. 服用時段與互相影響提醒${!state.isPro && timingList.length > 0 ? ' <span class="acc-pro-mini">PRO</span>' : ''}</strong>
+            <span>${timingSubtitle}</span>
+          </div>
+        </div>
+        <div class="acc-toggle-right">
+          <span class="acc-toggle-label" id="acc-label-timing">${isTimingOpen ? '收起' : '展開查看'}</span>
+          <svg class="icon-svg-sm acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </button>
+      <div class="analysis-acc-body">
+        <div class="analysis-acc-body-inner">
+          ${timingInnerContent}
+        </div>
       </div>
     </div>
   `;
@@ -1000,14 +1149,29 @@ function renderWishlistView() {
       <div style="font-size:0.9rem; line-height:1.5; color:#1e293b;">${analysis.overallVerdict}</div>
     </div>
 
-    <h4 style="font-size:0.96rem; font-weight:800; color:#0f172a; margin-bottom:0.6rem;">
-      1. 跨商品重複購買檢查（有興趣清單 vs. 目前使用中）
-    </h4>
-    ${alertsHtml}
-
-    ${dosageAndTimingSection}
+    <div class="analysis-accordions-stack">
+      ${alertsAccordionHtml}
+      ${dosageAccordionHtml}
+      ${timingAccordionHtml}
+    </div>
   `;
 }
+
+function toggleAnalysisAccordion(key) {
+  if (!state.analysisAccordions) {
+    state.analysisAccordions = { alerts: false, dosage: false, timing: false };
+  }
+  const nextOpen = !state.analysisAccordions[key];
+  state.analysisAccordions[key] = nextOpen;
+
+  const card = document.getElementById(`acc-card-${key}`);
+  const btn = document.getElementById(`acc-btn-${key}`);
+  const label = document.getElementById(`acc-label-${key}`);
+  if (card) card.classList.toggle('is-open', nextOpen);
+  if (btn) btn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+  if (label) label.textContent = nextOpen ? '收起' : '展開查看';
+}
+window.toggleAnalysisAccordion = toggleAnalysisAccordion;
 
 // ========================================================
 // 5. 【功能三：管理 B - 已購買清單與月經日曆式服用追蹤】

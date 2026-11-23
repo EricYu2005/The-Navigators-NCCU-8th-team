@@ -175,56 +175,85 @@ async function getUserReminderSettings(lineUserId = '') {
   };
 }
 
+/**
+ * 嚴格依每款保健品的服用時段（recommended_timing / category）進行精準分流：
+ * - 早上 (morning)：只推「早上空腹／餐前」「早餐／隨餐／飯後」與未指定時段的品項，絕不推播「睡前」品項
+ * - 午餐 (noon)：只推「午餐／隨餐／飯後」與明確標註午餐前的品項，絕不推播「早上空腹」或「睡前」品項
+ * - 晚餐 (evening)：只推「晚餐／隨餐／飯後」品項，排除「早上空腹」「睡前」與「B 群」（避免影響睡眠）
+ * - 睡前 (bedtime)：只推明確標註「睡前」的品項，絕不推播白天隨餐品項
+ * - 若該時段無任何符合的待服用商品，回傳空陣列 []，由排程靜音跳過不打擾使用者
+ */
 function buildSlotSupplementLines(slotKey, pendingItems = []) {
   if (!Array.isArray(pendingItems) || pendingItems.length === 0) {
-    return ['記得檢視今日保健品並至日曆完成打卡'];
+    return [];
   }
-
-  const isBeforeMeal = (p) => {
-    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
-    return /空腹|餐前|益生菌|膠原蛋白/i.test(t);
-  };
-  const isAfterMeal = (p) => {
-    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
-    return /飯後|隨餐|早餐|午餐|晚餐|魚油|葉黃素|B群/i.test(t);
-  };
-  const isBedtime = (p) => {
-    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
-    return /睡前|鈣|鎂|益生菌|膠原蛋白|芝麻素/i.test(t);
-  };
 
   const lines = [];
 
   if (slotKey === 'bedtime') {
-    const bedItems = pendingItems.filter(isBedtime);
-    const chosen = bedItems.length > 0 ? bedItems : pendingItems;
-    for (const p of chosen.slice(0, 6)) {
-      lines.push(`【睡前】${p.brand} ${p.name}`);
+    for (const p of pendingItems) {
+      const timing = String(p.recommended_timing || '').trim();
+      if (/睡前/i.test(timing)) {
+        lines.push(`【睡前】${p.brand} ${p.name}`);
+      }
     }
-    return lines;
+    return lines.slice(0, 6);
   }
 
-  // 早／午／晚餐前／後：清楚拆成「餐前／空腹」與「餐後／隨餐」
-  const beforeItems = pendingItems.filter(p => {
-    if (slotKey === 'morning') return isBeforeMeal(p);
-    // 午／晚餐前只挑明確寫餐前／空腹者
-    return /空腹|餐前/i.test(p.recommended_timing || '');
-  });
+  const beforeItems = [];
+  const afterItems = [];
 
-  const afterItems = pendingItems.filter(p => {
-    if (beforeItems.includes(p)) return false;
-    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
+  for (const p of pendingItems) {
+    const timing = String(p.recommended_timing || '').trim();
+    const cat = String(p.category || '').trim();
+    const isBComplex = /B群|維生素B/i.test(`${cat} ${p.name || ''}`);
+
+    // 明確標註「睡前」（且未同時標註早上／空腹）者，只允許在睡前推播，白天一律排除
+    const hasBedtime = /睡前/i.test(timing);
+    const hasMorning = /早|晨/i.test(timing);
+    const hasNoon = /午|中餐/i.test(timing);
+    const hasEvening = /晚餐|晚上/i.test(timing);
+    const hasFasting = /空腹|餐前/i.test(timing);
+    const hasWithMeal = /隨餐|飯後/i.test(timing);
+
+    if (hasBedtime && !hasMorning && !hasFasting && !hasWithMeal) {
+      continue;
+    }
+
     if (slotKey === 'morning') {
-      return /早餐|飯後|隨餐|B群|魚油|葉黃素/i.test(t) && !/僅限睡前|睡前/i.test(p.recommended_timing || '');
+      // 排除明確只屬於午餐／晚餐的品項
+      if ((hasNoon || hasEvening) && !hasMorning && !hasWithMeal) continue;
+
+      if (hasFasting) {
+        beforeItems.push(p);
+      } else if (hasMorning || hasWithMeal || !timing) {
+        // 含未填寫特定時段的自訂商品，預設歸入早餐後提醒
+        afterItems.push(p);
+      }
+    } else if (slotKey === 'noon') {
+      // 排除僅限早上空腹、僅限早餐、僅限晚餐、僅限睡前
+      if (hasFasting && !hasNoon) continue;
+      if (hasMorning && !hasNoon && !hasWithMeal) continue;
+      if (hasEvening && !hasNoon && !hasWithMeal) continue;
+
+      if (hasNoon && hasFasting) {
+        beforeItems.push(p);
+      } else if (hasNoon || hasWithMeal) {
+        afterItems.push(p);
+      }
+    } else if (slotKey === 'evening') {
+      // 晚餐時段排除 B 群（避免夜間亢奮影響睡眠）、早上空腹與睡前品項
+      if (isBComplex) continue;
+      if (hasFasting && !hasEvening) continue;
+      if ((hasMorning || hasNoon) && !hasEvening && !hasWithMeal) continue;
+
+      if (hasEvening && hasFasting) {
+        beforeItems.push(p);
+      } else if (hasEvening || hasWithMeal) {
+        afterItems.push(p);
+      }
     }
-    if (slotKey === 'noon') {
-      return /午餐|飯後|隨餐|魚油|葉黃素|B群/i.test(t) && !/睡前/i.test(p.recommended_timing || '');
-    }
-    if (slotKey === 'evening') {
-      return /晚餐|飯後|隨餐|魚油|葉黃素/i.test(t) && !/睡前|B群/i.test(t);
-    }
-    return isAfterMeal(p);
-  });
+  }
 
   const mealLabel = slotKey === 'morning' ? '早餐' : (slotKey === 'noon' ? '午餐' : '晚餐');
   for (const p of beforeItems.slice(0, 3)) {
@@ -234,12 +263,6 @@ function buildSlotSupplementLines(slotKey, pendingItems = []) {
     lines.push(`【${mealLabel}後／隨餐】${p.brand} ${p.name}`);
   }
 
-  // 若該時段沒命中特定關鍵字，仍列出剩餘未服用的保健品，確保提醒有實質內容
-  if (lines.length === 0) {
-    for (const p of pendingItems.slice(0, 6)) {
-      lines.push(`${p.brand} ${p.name}（${p.recommended_timing || '依包裝建議'}）`);
-    }
-  }
   return lines;
 }
 
@@ -1395,7 +1418,15 @@ app.post('/api/cron/send-reminders', async (req, res) => {
         // 配合每 10 分鐘 GitHub Actions 排程，允許 0 ~ 25 分鐘容錯視窗，準時觸發且絕不重複發送
         const diff = tw.totalMinutes - slotMin;
         if (diff >= 0 && diff <= 25) {
-          if (purchased.length > 0 && pendingItems.length === 0) {
+          if (purchased.length === 0) {
+            cleanedSent[sentKey] = 'no_purchased';
+            modifiedSent = true;
+            skippedCount += 1;
+            details.push({ user: row.display_name || uid.slice(0, 6), slot: slot.key, reason: 'no_purchased_items' });
+            continue;
+          }
+
+          if (pendingItems.length === 0) {
             // 今日全部保健品皆已吃完打卡，不打擾使用者
             cleanedSent[sentKey] = 'all_taken';
             modifiedSent = true;
@@ -1405,6 +1436,14 @@ app.post('/api/cron/send-reminders', async (req, res) => {
           }
 
           const lines = buildSlotSupplementLines(slot.key, pendingItems);
+          if (lines.length === 0) {
+            // 該時段無對應要服用的保健品（例如早上 7 點不推睡前品項、睡前不推白天 B 群），靜音跳過並省下推播額度
+            cleanedSent[sentKey] = 'no_slot_items';
+            modifiedSent = true;
+            skippedCount += 1;
+            details.push({ user: row.display_name || uid.slice(0, 6), slot: slot.key, reason: 'no_matching_items_for_slot' });
+            continue;
+          }
 
           const pushRes = await sendLinePushCard({
             to: uid,

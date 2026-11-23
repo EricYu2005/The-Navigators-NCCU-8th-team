@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.3.1" />
+  <link rel="stylesheet" href="style.css?v=4.3.2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -601,7 +601,7 @@
           本網頁僅供政治大學創創入門課程使用，非正式平台。
         </p>
         <p class="legal-statement-desc">
-          本平台（好選保健 PurePick）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示模型，非屬我國《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之正式醫療診斷軟體或藥事諮詢機構。網頁所載之各品牌保健食品價格、成分含量換算、重複購買檢查與服用日曆紀錄，均僅供課堂教學演練與小組專題報告展示用途，不具備任何臨床醫療診斷、處方指示或疾病治療效力。若真實生活中有身體不適、慢性疾病服藥疑問或醫療需求，請務必諮詢合格執業醫師、藥師或營養師。
+          本平台（好選保健 PurePick）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示模型，全線上營運且未設立實體營業處所，非屬我國《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之正式醫療診斷軟體或藥事諮詢機構。網頁所載之各品牌保健食品價格、成分含量換算、重複購買檢查與服用日曆紀錄，均僅供課堂教學演練與小組專題報告展示用途，不具備任何臨床醫療診斷、處方指示或疾病治療效力。若真實生活中有身體不適、慢性疾病服藥疑問或醫療需求，請務必諮詢合格執業醫師、藥師或營養師。
         </p>
         <div class="legal-footer-meta">
           <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
@@ -1020,11 +1020,11 @@
           <div class="ext-step-item">
             <span class="ext-step-idx">1</span>
             <div class="ext-step-content">
-              <strong>尋找與透明比價（底部「尋找」頁）</strong>
+              <strong>尋找、透明比價與彈性新增（底部「尋找」頁）</strong>
               <p>
                 輸入您的生活作息困擾、勾選保養重點並設定每月預算，系統會自動將各品牌商品統一換算為「每日真實花費」與「有效成分含量」。<br />
                 • 看到想比較的商品：點擊<strong>「加入有興趣清單」</strong>。<br />
-                • 家裡已經有買正在吃的商品：在商品卡片點擊<strong>「已在外部購買（加入日曆）」</strong>，或點下方導覽列中間的<strong>「＋」按鈕</strong>手動新增。
+                • 家裡正在吃的商品不在資料庫：點擊下方導覽列中間的<strong>「＋」按鈕</strong>手動輸入產品名與劑量加入日曆（團隊正導入 Vertex AI 拍照辨識，未來隨手拍外包裝即可建檔）。
               </p>
             </div>
           </div>
@@ -1032,9 +1032,9 @@
           <div class="ext-step-item">
             <span class="ext-step-idx">2</span>
             <div class="ext-step-content">
-              <strong>檢查重複購買與安全劑量（底部「分析」頁）</strong>
+              <strong>檢查重複購買與安全劑量上限（底部「分析」頁）</strong>
               <p>
-                系統會自動比對您「考慮購買的商品」與「目前正在服用的保健品」，檢查跨品牌混吃是否有重複成分或超過每日安全上限，幫您精算並省下多買的重複花費。
+                頂部統整三項核心數據（已省重複花費、安全把關指標、每日花費）。系統自動交叉比對「考慮購買」與「正在服用」的所有商品，防範跨品牌成分過量（UL 監控），避免花冤枉錢多買重複成分。
               </p>
             </div>
           </div>
@@ -1042,10 +1042,11 @@
           <div class="ext-step-item">
             <span class="ext-step-idx">3</span>
             <div class="ext-step-content">
-              <strong>每日服用打卡與「告知醫生目前使用的保健品」（底部「日曆」頁）</strong>
+              <strong>手機抽屜式打卡、防呆復原與生病暫停（底部「日曆」頁）</strong>
               <p>
-                • <strong>日曆打卡與狀態日誌</strong>：像記錄生理期日曆一樣，每天勾選吃過的保健品並記錄精神、排便與睡眠感受；若遇重感冒吃西藥，可開啟「生病休養暫停」。<br />
-                • <strong>告知醫生目前使用的保健品</strong>：點擊日曆頁的<strong>「告知醫生目前使用的保健品」</strong>按鈕，系統會直接將下方的已購買清單輸出為大字看診卡供醫師檢視，並可點擊<strong>「分享清單至 LINE（顧及親屬）」</strong>傳給家人備查。
+                • <strong>手機抽屜式操作</strong>：手機點擊日曆日期，畫面右側自動滑出抽屜選單，單手快速勾選服用項目並記錄精神、排便與睡眠；電腦版則保持寬幅雙欄對照。<br />
+                • <strong>誤刪防呆復原 (Undo)</strong>：不小心按到移除保健品？系統會跳出 6 秒「復原」按鈕，點擊立即恢復清單，安心不丟失紀錄。<br />
+                • <strong>生病休養暫停</strong>：突發感冒看診領西藥時，可一鍵開啟「生病休養暫停」，暫停提醒與打卡計算，守護用藥安全。
               </p>
             </div>
           </div>
@@ -1053,9 +1054,20 @@
           <div class="ext-step-item">
             <span class="ext-step-idx">4</span>
             <div class="ext-step-content">
-              <strong>切換頁面與加到手機主畫面</strong>
+              <strong>置頂「告知醫生目前使用的保健品」（日曆頁最上方）</strong>
               <p>
-                點擊畫面最下方的導覽列即可快速切換「尋找」、「分析」、「＋（新增）」、「日曆」與「方案」；點擊頂部「手機版 App」可將平台加到手機桌面隨時開啟。
+                看診拿藥不再憑記憶猜測！點擊日曆頁最上方的<strong>「告知醫生目前使用的保健品」</strong>按鈕，立即展開全螢幕大字看診卡供醫師快速過目；亦可一鍵<strong>「分享清單至 LINE」</strong>讓家人親屬同步掌握。
+              </p>
+            </div>
+          </div>
+
+          <div class="ext-step-item">
+            <span class="ext-step-idx">5</span>
+            <div class="ext-step-content">
+              <strong>LINE 官方帳號時段推播提醒與加到手機桌面</strong>
+              <p>
+                • <strong>分時段精準提醒</strong>：加入官方 LINE 好友，系統會依據保健品特性（早餐前/後、午餐、睡前）於合適時段自動推播提醒，不在清晨推播睡前產品，告別無效打擾。<br />
+                • <strong>加到主畫面 (PWA)</strong>：點擊頂部「手機版 App」指引，將平台一鍵加到手機主畫面，每日打卡與就醫出示隨開即用。
               </p>
             </div>
           </div>
@@ -1084,6 +1096,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.3.1"></script>
+  <script src="app.js?v=4.3.2"></script>
 </body>
 </html>

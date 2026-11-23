@@ -1,4 +1,4 @@
-const CACHE_NAME = 'purepick-webapp-v34';
+const CACHE_NAME = 'purepick-webapp-v35';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

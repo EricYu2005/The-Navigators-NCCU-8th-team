@@ -248,6 +248,8 @@
       <a href="#sec-future-ads">6. 非保健品周邊廣告收益提案</a>
       <a href="#sec-personas">7. 鎖定 Persona 定案與價值主張</a>
       <a href="#sec-nhi">8. 未來展望：健保快易通 SDK 自動介接</a>
+      <a href="#sec-early-adopter">9. 早期使用者不在資料庫：手動＋Vertex AI 拍照辨識</a>
+      <a href="#sec-line-reminder">10. 智能時段提醒：LINE 官方帳號推播</a>
     </nav>
 
     <!-- ==================== 第一單元：綜合效益評分 ==================== -->
@@ -445,6 +447,17 @@
           </div>
         </div>
       </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q3：LINE 官方帳號設定必須填寫地址，團隊填在政大，是否會引發合規或欺瞞疑慮？</div>
+        <div class="qa-a">
+          <div class="pitch-script">
+            <strong>回答關鍵（營運模式與誠實揭露原則）：</strong><br />
+            「報告評審，LINE 官方帳號在建立時系統強制要求填寫聯絡地址。PurePick 是國立政治大學創創入門課程團隊所研發的學術專案，因此以專案發源基地（國立政治大學）作為聯絡申報。<br />
+            更重要的是，我們秉持<strong>極致資訊對稱</strong>原則：在網站 Footer、使用說明與 LINE 官方帳號簡介中皆已同步明確載明：<em>『本專案為政大創創入門課程專題成果，採全線上運作無實體門市，所填地址僅供平台系統驗證與學術聯絡使用』</em>，充分揭露無實體營運據點，完全合乎消費者保護與平台合規告知精神！」
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ==================== 第五單元：方案二未來展望 (軟硬整合智慧藥盒 / 隨身小撕包) ==================== -->
@@ -636,9 +649,11 @@
       <div class="qa-box">
         <div class="qa-q">Q4：為什麼「已購管理頁置頂告知醫生清單」加上「日曆動態管理」比傳統吃藥鬧鐘更有商業價值？</div>
         <div class="qa-a">
-          <p>傳統用藥提醒軟體（如定時鬧鐘）用戶流失率高達 80%，因為它只有「單向打擾」。PurePick 為 35~60 歲手機使用者打造了<strong>「門診對照 ＋ 雙向動態健康閉環」</strong>：</p>
+          <p>傳統用藥提醒軟體（如定時鬧鐘）用戶流失率高達 80%，因為它只有「單向打擾」。PurePick 為 35~60 歲手機使用者打造了<strong>「門診對照 ＋ 雙向動態健康閉環 ＋ 手機極致防呆互動」</strong>：</p>
           <ul class="step-list">
-            <li><strong>已購管理頁置頂「告知醫生目前使用的保健品（全螢幕大字看診卡）」</strong>：35~60 歲族群看診拿藥、做完健檢諮詢醫師、或陪同家中長輩看診時，不必再憑記憶背誦家裡吃哪幾罐。打開手機版 Web App 已購管理與日曆頁，第一眼就能展開「全螢幕大字看診卡」，清楚列出每一項保健品的重點成分、毫克數與「門診看診提醒（如：拔牙手術或服用抗凝血藥前請告知醫師；與抗生素或鐵劑請隔開 2 小時）」，還能一鍵透過手機分享到 LINE 給親屬家人備查，體貼長輩與照顧者。</li>
+            <li><strong>已購管理頁置頂「告知醫生目前使用的保健品（全螢幕大字看診卡）」</strong>：35~60 歲族群看診拿藥、做完健檢諮詢醫師、或陪同家中長輩看診時，不必再憑記憶背誦家裡吃哪幾罐。打開手機版 Web App 已購管理與日曆頁，第一眼就能展開「全螢幕大字看診卡」，清楚列出每一項保健品的重點成分、毫克數與「門診看診提醒（如：拔牙手術或服用抗凝血藥前請告知醫師；與抗生素或鐵劑請隔開 2 小時）」，還能一鍵透過手機分享到 LINE 給親屬家人備查，體貼長輩與照顧者。（已去除過往左下角重複顯示區域，統一於頂端最醒目位置出示）。</li>
+            <li><strong>手機抽屜式操作（Drawer Panel）與頂部連貫資訊</strong>：手機打開分析與日曆頁面時，頂部的已省花費、安全指標與每日花費整合成一體化資訊區塊；點選日曆日期時，直接從右方平滑滑出抽屜選單，單手即可完成吃藥勾選與身心感受記錄，大幅降低滑動疲憊感。</li>
+            <li><strong>防呆復原（Undo）彈窗機制</strong>：針對長輩或通勤族單手滑動容易誤觸「移除/剔除」保健品的問題，系統內建 6 秒即時「復原 (Undo)」Toast 彈窗，誤觸時一鍵即時恢復原狀，無痛保護珍貴的使用紀錄。</li>
             <li><strong>每週健康總結與 1-to-1 配方升級建議（Pro 專屬）</strong>：使用者在日曆記錄過去 7 天的體感（如「眼睛乾酸」或「下午疲倦想睡」），系統每週自動彙整痛點，主動推薦同品類吸收率或性價比更佳的進化商品，點擊一鍵加入去冗試算。</li>
             <li><strong>生病看診／休養一鍵暫停模式</strong>：看診領取西藥（如感冒藥、抗生素、止痛藥）時，一鍵開啟「生病休養暫停」，不計入缺漏紀錄，以零摩擦方式守護就醫用藥安全。</li>
           </ul>
@@ -712,6 +727,94 @@
             2. <strong>MVP 階段（現在）：</strong> 以極致零摩擦的<strong>「日曆一鍵生病休養／重感冒暫停服用模式」</strong>解決白領突發感冒時的用藥安全痛點，確保產品流程輕快流暢。<br /><br />
             3. <strong>Phase 2（正式商轉／未來展望）：</strong> 健保署官方 SDK 開發者資格需立案公司並通過資安標章（MAS）審查（約 2~4 個月）。團隊將於成立公司後正式介接官方健康存摺 OAuth SDK，實現<strong>「完全無須用戶手動輸入，只要刷健保卡就醫，系統背景全自動偵測處方衝突並啟動保護」</strong>的終極防禦護城河！
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 第九單元：早期使用者在席保健品不在資料庫之因應策略 ==================== -->
+    <section id="sec-early-adopter" class="section-card">
+      <h2><span class="sec-num">9</span> 早期使用者（Early Adopter）現有保健品不在資料庫之解法：手動新增 ＋ Google Cloud Vertex AI 拍照辨識</h2>
+
+      <div class="qa-box">
+        <div class="qa-q">Q1：這個平台的 Early Adopter 必然是已經有在使用保健品的人，如果手邊正在吃的產品不在目前資料庫怎麼辦？</div>
+        <div class="qa-a">
+          <p>早期使用者（尤其是已長期服用 3~5 款保健品的人群）是平台最關鍵的種子受測者。我們採取<strong>「短期零摩擦＋中期智慧化」的雙軌應對策略</strong>：</p>
+          <ul class="step-list">
+            <li><strong>現行 MVP 機制（即刻建檔零等待）：</strong> 系統在主功能底部導覽列正中央設有<strong>「＋（新增商品）」獨立功能鍵</strong>，使用者（或測試團隊組員）可在 10 秒內手動鍵入產品名稱、購買價格與核心營養成分劑量，一鍵儲存後立即納入其個人專屬的日曆排程與成分重複檢查庫。</li>
+            <li><strong>智慧化落地推進（Google Cloud Vertex AI 拍照多模態辨識）：</strong> 針對無時間逐筆手打的主流商品，團隊運用所持有的 <strong>Google Cloud Platform (GCP) Vertex AI 雲端抵免額（有效至 2027/1/1）</strong>，無縫介接次世代多模態大模型（Gemini 1.5 Multimodal）。使用者只需用手機拍下保健食品的外包裝正面與背面「成分與營養標示表」，AI 即刻自動解析並建立結構化資料！</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q2：為什麼選擇 Google Cloud Vertex AI 多模態模型，而不是傳統的開源 OCR（如 Tesseract）？</div>
+        <div class="qa-a">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:25%;">比較維度</th>
+                <th style="width:37%;">傳統開源 OCR (如 Tesseract)</th>
+                <th style="width:38%;">Google Cloud Vertex AI (Gemini 1.5)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>排版理解與雜訊容忍</strong></td>
+                <td>僅能辨識文字，遇到曲面瓶身反光、折角或雙欄排版時文字錯位混亂。</td>
+                <td><strong>端到端視覺理解</strong>，能準確識別反光圓弧瓶身與傾斜表格，抗雜訊能力極高。</td>
+              </tr>
+              <tr>
+                <td><strong>語意推理與單位換算</strong></td>
+                <td>無法分辨「每份 2 粒」與「每份含 EPA 500mg」，常將百分比 (%) 誤判為劑量。</td>
+                <td><strong>具備醫學常識推理</strong>，能自動換算單粒真實劑量，並精確區分有效成分與副賦形劑。</td>
+              </tr>
+              <tr>
+                <td><strong>結構化 JSON 輸出</strong></td>
+                <td>需撰寫大量正則表達式 (Regex) 後處理，極易因廠商標示格式不同而崩潰。</td>
+                <td>原生支援 <strong>Structured Outputs (JSON Schema)</strong>，直接輸出規格化商品資料。</td>
+              </tr>
+              <tr>
+                <td><strong>初期營運成本</strong></td>
+                <td>需自行架設運算伺服器 (Server) 跑模型，產生固定主機租金負擔。</td>
+                <td><strong>團隊持有至 2027 年之 GCP 抵免額度</strong>，呼叫 Vertex AI 享完整補貼，初期成本趨近於零！</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pitch-script">
+            <strong>口試標準應對話術：</strong><br />
+            「報告評審，保健食品的外包裝標示極為複雜，包含每份粒數、每日參考值百分比、專利原料商標等。傳統 OCR 往往抓出一堆無意義亂碼。我們利用手上的 Google Cloud Vertex AI 抵免額，導入 Gemini 多模態視覺推理，讓受測者隨手拍照就能精準萃取有效毫克數，徹底瓦解冷門自備商品的建檔摩擦力！」
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 第十單元：智能用藥提醒與 LINE 官方帳號時段推播架構 ==================== -->
+    <section id="sec-line-reminder" class="section-card">
+      <h2><span class="sec-num">10</span> 智能用藥提醒與 LINE 官方帳號時段推播架構 (非騷擾式推播)</h2>
+
+      <div class="qa-box">
+        <div class="qa-q">Q1：市面上許多吃藥提醒 App 最後都被使用者刪除或關閉通知，PurePick 的 LINE 推播有何本質差別？</div>
+        <div class="qa-a">
+          <p>傳統用藥提醒失敗的三大主因是：<strong>「必須額外下載不常用的 App」</strong>、<strong>「無差別定時響鬧造成干擾」</strong>以及<strong>「時段混亂缺乏邏輯」</strong>。PurePick 從第一天起就顛覆此設計：</p>
+          <ul class="step-list">
+            <li><strong>零下載摩擦（原生 LINE 官方帳號）：</strong> 台灣民眾每日開啟 LINE 頻率最高，我們直接透過 LINE 官方帳號推播，使用者無須在手機額外下載專用 App 即可接收訊息。</li>
+            <li><strong>分時段智能精準推播（按成分特性提醒）：</strong>
+              每款保健品本來就有適合的服用時段。早晨 7:00 僅推播適合早餐前/後服用的品項（如 B 群、魚油、維生素 C）；午間 11:50 提醒午餐時段品項；夜間 21:30 才推播睡前品項（如鈣片、鎂、睡眠益生菌）。<strong>絕不在早上七點無效打擾睡前要吃的商品</strong>，真正做到「在對的時間提醒對的事」。
+            </li>
+            <li><strong>即時動態連動：</strong> 使用者在日曆開啟「生病休養暫停」或完成打卡後，系統自動智慧靜音對應時段的提醒，避免多重訊息打擾。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Q2：這套 LINE 提醒背後的技術架構如何以極致精實成本（Lean Cost）實現？</div>
+        <div class="qa-a">
+          <p>新創團隊不應在前期耗費預算維護昂貴的 24 小時長駐雲端主機。我們設計了<strong>「Serverless 雲端排程自動化架構」</strong>：</p>
+          <ul class="step-list">
+            <li><strong>LINE Messaging API：</strong> 透過 PurePick 官方帳號 Push Message 管道，將客製化健康提醒與每日看診大字卡精準送達受測者手機。</li>
+            <li><strong>GitHub Actions 定時觸發排程：</strong> 運用 GitHub 提供的免費 CI/CD Cron 資源（<code>.github/workflows/line-reminder.yml</code>），在設定時段自動喚醒檢驗腳本，運算當前時段需提醒的用戶與保健食品清單並觸發推播，執行完畢即刻釋放資源。</li>
+            <li><strong>零伺服器維護負擔：</strong> 達成 <strong>100% 雲端自動化、零主機常駐租金（$0 Server Cost）</strong>，展現團隊對工程資源極致優化的架構設計能力。</li>
+          </ul>
         </div>
       </div>
     </section>

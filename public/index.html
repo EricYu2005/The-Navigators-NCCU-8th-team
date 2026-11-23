@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.3.2" />
+  <link rel="stylesheet" href="style.css?v=4.4.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -655,7 +655,7 @@
     </div>
   </nav>
 
-  <!-- ==================== MODAL 1：手動新增市售保健品 ==================== -->
+  <!-- ==================== MODAL 1：新增市售保健品（AI 拍照辨識 + 手動輸入） ==================== -->
   <div id="add-supplement-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -664,6 +664,41 @@
       </div>
       <form id="add-supplement-form" onsubmit="handleAddSupplementSubmit(event)">
         <div class="modal-body">
+          <!-- Google Cloud Vertex AI 拍照 / 上傳成分表自動辨識區 -->
+          <div class="vertex-scan-box" id="vertex-scan-box">
+            <div class="vertex-scan-head">
+              <div class="vertex-scan-title-wrap">
+                <span class="vertex-ai-badge">Vertex AI</span>
+                <strong>拍照或上傳包裝，自動辨識成分填表</strong>
+              </div>
+              <p class="vertex-scan-desc">拍下保健品正面或背面營養標示，AI 自動萃取品牌、劑量與服用時段，省去手動打字。</p>
+            </div>
+
+            <div class="vertex-scan-actions">
+              <button type="button" class="btn-vertex-primary" id="btn-vertex-camera" onclick="triggerVertexPhotoInput('camera')">
+                <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:currentColor;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                <span>拍照辨識</span>
+              </button>
+              <button type="button" class="btn-vertex-outline" id="btn-vertex-gallery" onclick="triggerVertexPhotoInput('gallery')">
+                <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:currentColor;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <span>相簿上傳 / 截圖</span>
+              </button>
+              <input type="file" id="vertex-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleVertexPhotoSelected(event)" />
+              <input type="file" id="vertex-gallery-input" accept="image/*" style="display:none;" onchange="handleVertexPhotoSelected(event)" />
+            </div>
+
+            <div class="vertex-preview-wrap" id="vertex-preview-wrap" style="display:none;">
+              <img id="vertex-preview-img" class="vertex-preview-img" alt="保健食品照片預覽" />
+              <div class="vertex-preview-info">
+                <div id="vertex-scan-status" class="vertex-status-text"></div>
+                <div id="vertex-parsed-badges" class="vertex-nutrient-chips"></div>
+                <button type="button" class="btn-vertex-clear" onclick="resetVertexScanUI()">清除照片</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="vertex-divider"><span>或手動填寫 / 確認下方欄位</span></div>
+
           <div class="form-row-2">
             <div class="form-group">
               <label>品牌名稱 *</label>
@@ -1024,7 +1059,7 @@
               <p>
                 輸入您的生活作息困擾、勾選保養重點並設定每月預算，系統會自動將各品牌商品統一換算為「每日真實花費」與「有效成分含量」。<br />
                 • 看到想比較的商品：點擊<strong>「加入有興趣清單」</strong>。<br />
-                • 家裡正在吃的商品不在資料庫：點擊下方導覽列中間的<strong>「＋」按鈕</strong>手動輸入產品名與劑量加入日曆（團隊正導入 Vertex AI 拍照辨識，未來隨手拍外包裝即可建檔）。
+                • 家裡正在吃的商品不在資料庫：點擊下方導覽列中間的<strong>「＋」按鈕</strong>，可直接使用 <strong>Vertex AI 拍照／上傳包裝自動辨識成分</strong>，或手動輸入產品名與劑量加入日曆。
               </p>
             </div>
           </div>
@@ -1096,6 +1131,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.3.2"></script>
+  <script src="app.js?v=4.4.0"></script>
 </body>
 </html>

@@ -2221,8 +2221,194 @@ function renderPurchasedCabinet() {
 }
 
 // ========================================================
-// 6. 新增市售保健品 Modal、訂閱方案 Modal 與範例清空切換
+// 6. 新增市售保健品 Modal（含 Vertex AI 拍照辨識）、訂閱方案 Modal 與範例清空切換
 // ========================================================
+let aiScannedSupplementMeta = null;
+
+const VERTEX_NUTRIENT_LABELS = {
+  omega3: { label: 'Omega-3', unit: 'mg' },
+  lutein: { label: '葉黃素', unit: 'mg' },
+  zeaxanthin: { label: '玉米黃素', unit: 'mg' },
+  probiotics: { label: '益生菌', unit: '億' },
+  vitamin_b: { label: 'B群', unit: '%' },
+  calcium: { label: '鈣', unit: 'mg' },
+  magnesium: { label: '鎂', unit: 'mg' },
+  vitamin_d: { label: '維生素D3', unit: 'IU' },
+  vitamin_c: { label: '維生素C', unit: 'mg' },
+  zinc: { label: '鋅', unit: 'mg' },
+  iron: { label: '鐵', unit: 'mg' },
+  collagen: { label: '膠原蛋白', unit: 'mg' },
+  gaba: { label: 'GABA', unit: 'mg' },
+  uc2: { label: 'UC-II', unit: 'mg' }
+};
+
+function triggerVertexPhotoInput(mode) {
+  const inputId = mode === 'camera' ? 'vertex-camera-input' : 'vertex-gallery-input';
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.value = '';
+    input.click();
+  }
+}
+window.triggerVertexPhotoInput = triggerVertexPhotoInput;
+
+function resetVertexScanUI() {
+  aiScannedSupplementMeta = null;
+  const previewWrap = document.getElementById('vertex-preview-wrap');
+  const previewImg = document.getElementById('vertex-preview-img');
+  const statusEl = document.getElementById('vertex-scan-status');
+  const chipsEl = document.getElementById('vertex-parsed-badges');
+  const camInput = document.getElementById('vertex-camera-input');
+  const galInput = document.getElementById('vertex-gallery-input');
+  if (previewWrap) previewWrap.style.display = 'none';
+  if (previewImg) previewImg.src = '';
+  if (statusEl) {
+    statusEl.textContent = '';
+    statusEl.className = 'vertex-status-text';
+  }
+  if (chipsEl) chipsEl.innerHTML = '';
+  if (camInput) camInput.value = '';
+  if (galInput) galInput.value = '';
+}
+window.resetVertexScanUI = resetVertexScanUI;
+
+function compressImageFileToDataUrl(file, maxDimension = 1280, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('無法讀取圖片檔案'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => resolve({ dataUrl: reader.result, mimeType: file.type || 'image/jpeg' });
+      img.onload = () => {
+        try {
+          let { width, height } = img;
+          if (width > maxDimension || height > maxDimension) {
+            if (width >= height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve({ dataUrl, mimeType: 'image/jpeg' });
+        } catch (_) {
+          resolve({ dataUrl: reader.result, mimeType: file.type || 'image/jpeg' });
+        }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function flashAiFilledField(el) {
+  if (!el) return;
+  el.classList.remove('ai-filled-flash');
+  void el.offsetWidth;
+  el.classList.add('ai-filled-flash');
+}
+
+async function handleVertexPhotoSelected(event) {
+  const file = event?.target?.files?.[0];
+  if (!file) return;
+
+  const previewWrap = document.getElementById('vertex-preview-wrap');
+  const previewImg = document.getElementById('vertex-preview-img');
+  const statusEl = document.getElementById('vertex-scan-status');
+  const chipsEl = document.getElementById('vertex-parsed-badges');
+  const btnCamera = document.getElementById('btn-vertex-camera');
+  const btnGallery = document.getElementById('btn-vertex-gallery');
+
+  if (btnCamera) btnCamera.disabled = true;
+  if (btnGallery) btnGallery.disabled = true;
+
+  try {
+    const { dataUrl } = await compressImageFileToDataUrl(file);
+    if (previewImg) previewImg.src = dataUrl;
+    if (previewWrap) previewWrap.style.display = 'flex';
+    if (chipsEl) chipsEl.innerHTML = '';
+    if (statusEl) {
+      statusEl.className = 'vertex-status-text';
+      statusEl.innerHTML = '<span class="vertex-spinner"></span><span>Vertex AI 正在辨識包裝與營養成分表，請稍候...</span>';
+    }
+
+    const res = await fetch('/api/ai/analyze-supplement-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dataUrl })
+    });
+    const json = await res.json();
+
+    if (!res.ok || !json.success || !json.data) {
+      throw new Error(json.message || '辨識失敗，請換一張更清晰的照片或改為手動輸入');
+    }
+
+    const d = json.data;
+    aiScannedSupplementMeta = {
+      nutrients: d.nutrients || {},
+      dosage_form: d.dosage_form || '',
+      absorption_form: d.absorption_form || '',
+      additives_note: d.additives_note || '',
+      source_channel: 'Vertex AI 拍照辨識'
+    };
+
+    const setVal = (id, val) => {
+      if (val === null || val === undefined || val === '') return;
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = val;
+        flashAiFilledField(el);
+      }
+    };
+
+    setVal('new-supp-brand', d.brand);
+    setVal('new-supp-name', d.name);
+    setVal('new-supp-category', d.category);
+    setVal('new-supp-timing', d.recommended_timing);
+    if (d.price) setVal('new-supp-price', d.price);
+    if (d.total_units) setVal('new-supp-total', d.total_units);
+    if (d.daily_units) setVal('new-supp-daily', d.daily_units);
+    setVal('new-supp-summary', d.active_summary);
+
+    const hasRecognizedText = !!(d.brand || d.name || d.active_summary || Object.keys(d.nutrients || {}).length);
+    if (statusEl) {
+      statusEl.className = hasRecognizedText ? 'vertex-status-text is-success' : 'vertex-status-text is-error';
+      const note = d.confidence_note || '已自動填入辨識結果，請確認單盒售價與欄位後按「儲存並自動換算」。';
+      statusEl.textContent = hasRecognizedText ? `辨識完成！${note}` : note;
+    }
+
+    if (chipsEl && d.nutrients && Object.keys(d.nutrients).length > 0) {
+      chipsEl.innerHTML = Object.entries(d.nutrients)
+        .map(([k, v]) => {
+          const meta = VERTEX_NUTRIENT_LABELS[k] || { label: k, unit: '' };
+          return `<span class="vertex-nutrient-chip">${escapeHtml(meta.label)} ${escapeHtml(String(v))}${escapeHtml(meta.unit)}</span>`;
+        })
+        .join('');
+    }
+
+    if (hasRecognizedText) {
+      showToast('Vertex AI 已自動填入保健品資訊，請確認售價後按儲存！');
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.className = 'vertex-status-text is-error';
+      statusEl.textContent = err.message || 'AI 辨識發生錯誤，請改為手動輸入';
+    }
+    showToast(err.message || 'AI 辨識失敗，請稍後再試');
+  } finally {
+    if (btnCamera) btnCamera.disabled = false;
+    if (btnGallery) btnGallery.disabled = false;
+  }
+}
+window.handleVertexPhotoSelected = handleVertexPhotoSelected;
+
 function openAddSupplementModal(defaultList = 'purchased') {
   const modal = document.getElementById('add-supplement-modal');
   const selectEl = document.getElementById('new-supp-target-list');
@@ -2251,28 +2437,41 @@ async function handleAddSupplementSubmit(e) {
   const active_summary = document.getElementById('new-supp-summary')?.value || '';
   const add_to_status = document.getElementById('new-supp-target-list')?.value || 'purchased';
 
+  const payload = {
+    brand,
+    name,
+    category,
+    recommended_timing,
+    price,
+    total_units,
+    daily_units,
+    active_summary,
+    add_to_status,
+    user_name: state.currentUser?.displayName || '消費者',
+    line_user_id: getActiveLineUserId()
+  };
+
+  if (aiScannedSupplementMeta) {
+    if (aiScannedSupplementMeta.nutrients && Object.keys(aiScannedSupplementMeta.nutrients).length > 0) {
+      payload.nutrients = aiScannedSupplementMeta.nutrients;
+    }
+    if (aiScannedSupplementMeta.dosage_form) payload.dosage_form = aiScannedSupplementMeta.dosage_form;
+    if (aiScannedSupplementMeta.absorption_form) payload.absorption_form = aiScannedSupplementMeta.absorption_form;
+    if (aiScannedSupplementMeta.additives_note) payload.additives_note = aiScannedSupplementMeta.additives_note;
+    if (aiScannedSupplementMeta.source_channel) payload.source_channel = aiScannedSupplementMeta.source_channel;
+  }
+
   try {
     const res = await fetch('/api/supplements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        brand,
-        name,
-        category,
-        recommended_timing,
-        price,
-        total_units,
-        daily_units,
-        active_summary,
-        add_to_status,
-        user_name: state.currentUser?.displayName || '消費者',
-        line_user_id: getActiveLineUserId()
-      })
+      body: JSON.stringify(payload)
     });
     const json = await res.json();
     if (json.success) {
       closeAddSupplementModal();
       document.getElementById('add-supplement-form')?.reset();
+      resetVertexScanUI();
       await loadBootstrapData(true);
       showToast(`已新增【${brand} ${name}】並完成每日花費與成分建檔！`);
       if (add_to_status === 'wishlist') {

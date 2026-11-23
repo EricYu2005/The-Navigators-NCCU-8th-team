@@ -73,7 +73,10 @@ console.log('[伺服器] 預設瀏覽器將自動開啟： http://localhost:3000
 console.log('\n【提示】若要停止伺服器，請直接關閉此視窗或按下 Ctrl + C。');
 console.log('==========================================================\n');
 
-const serverProcess = spawn('node', ['server.js'], { cwd: ROOT_DIR, stdio: 'inherit' });
+const nodeArgs = process.allowedNodeEnvironmentFlags && process.allowedNodeEnvironmentFlags.has('--use-system-ca')
+  ? ['--use-system-ca', 'server.js']
+  : ['server.js'];
+const serverProcess = spawn('node', nodeArgs, { cwd: ROOT_DIR, stdio: 'inherit' });
 serverProcess.on('exit', (code) => {
   console.log(`\n好選保健 PurePick 伺服器已結束 (代碼: ${code})。`);
 });

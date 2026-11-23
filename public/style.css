@@ -4046,6 +4046,219 @@ body {
   }
 }
 
+/* ==================== Vertex AI 拍照 / 上傳辨識區塊（+ 按鈕選單內） ==================== */
+.vertex-scan-box {
+  background: linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%);
+  border: 1.5px solid #c4b5fd;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.vertex-scan-head {
+  margin-bottom: 0.7rem;
+}
+
+.vertex-scan-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+  color: #1e1b4b;
+  margin-bottom: 0.25rem;
+}
+
+.vertex-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.vertex-scan-desc {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.vertex-scan-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.btn-vertex-primary,
+.btn-vertex-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.58rem 0.75rem;
+  border-radius: 9px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s ease;
+}
+
+.btn-vertex-primary {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+  color: #ffffff;
+  border: 1.5px solid #5b21b6;
+  box-shadow: 0 3px 10px rgba(109, 40, 217, 0.2);
+}
+
+.btn-vertex-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.btn-vertex-outline {
+  background: #ffffff;
+  color: #5b21b6;
+  border: 1.5px solid #c4b5fd;
+}
+
+.btn-vertex-outline:hover:not(:disabled) {
+  background: #f5f3ff;
+  border-color: #8b5cf6;
+}
+
+.btn-vertex-primary:disabled,
+.btn-vertex-outline:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.vertex-preview-wrap {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #c4b5fd;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.vertex-preview-img {
+  width: 68px;
+  height: 68px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1.5px solid #ddd6fe;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.vertex-preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vertex-status-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #312e81;
+  line-height: 1.45;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.vertex-status-text.is-success {
+  color: #065f46;
+}
+
+.vertex-status-text.is-error {
+  color: #b91c1c;
+}
+
+.vertex-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #c4b5fd;
+  border-top-color: #6d28d9;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-top: 2px;
+  animation: vertexSpin 0.8s linear infinite;
+}
+
+@keyframes vertexSpin {
+  to { transform: rotate(360deg); }
+}
+
+.vertex-nutrient-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.vertex-nutrient-chip {
+  display: inline-block;
+  padding: 0.14rem 0.48rem;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #c4b5fd;
+  color: #4c1d95;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.btn-vertex-clear {
+  margin-top: 0.45rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-vertex-clear:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+.vertex-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.25rem 0 0.8rem 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.vertex-divider::before,
+.vertex-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.ai-filled-flash {
+  animation: aiFieldFlash 1.4s ease;
+}
+
+@keyframes aiFieldFlash {
+  0% { background-color: #ede9fe; border-color: #7c3aed; }
+  100% { background-color: #ffffff; }
+}
+
 
 
 

@@ -9,6 +9,7 @@ const cors = require('cors');
 const path = require('path');
 const { dbQuery, clearUserPersonalData, restoreDemoData } = require('./database');
 const { evaluateFinderSolution, evaluateWishlistPortfolio } = require('./supplementEngine');
+const { isVertexAiConfigured, analyzeSupplementImage } = require('./vertexAiService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -486,6 +487,78 @@ app.post('/api/finder/analyze', async (req, res) => {
 });
 
 // ========================================================
+// 2.5 Google Cloud Vertex AI 保健食品拍照辨識 API
+// ========================================================
+app.get('/api/ai/vertex-status', (req, res) => {
+  res.json({
+    success: true,
+    configured: isVertexAiConfigured()
+  });
+});
+
+app.post('/api/ai/analyze-supplement-image', async (req, res) => {
+  try {
+    if (!isVertexAiConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message: '伺服器尚未設定 Google Cloud Vertex AI 憑證，目前請先手動填寫欄位。'
+      });
+    }
+
+    let { imageBase64, mimeType, dataUrl } = req.body || {};
+    if (dataUrl && typeof dataUrl === 'string') {
+      const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        imageBase64 = match[2];
+      }
+    }
+
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: '請先拍攝或選擇一張保健食品包裝或營養標示照片'
+      });
+    }
+
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    const cleanMime = String(mimeType || 'image/jpeg').toLowerCase();
+    if (!allowedMimes.includes(cleanMime)) {
+      return res.status(400).json({
+        success: false,
+        message: '不支援的圖片格式，請上傳 JPG、PNG 或 WebP 圖片'
+      });
+    }
+
+    // 限制 base64 長度約 7.5MB 以內（前端也會先壓縮）
+    if (imageBase64.length > 10 * 1024 * 1024) {
+      return res.status(413).json({
+        success: false,
+        message: '圖片檔案過大，請重新拍攝或選擇較小的照片'
+      });
+    }
+
+    const analysis = await analyzeSupplementImage({
+      imageBase64,
+      mimeType: cleanMime === 'image/jpg' ? 'image/jpeg' : cleanMime
+    });
+
+    res.json({
+      success: true,
+      model: analysis.model,
+      location: analysis.location,
+      data: analysis.result
+    });
+  } catch (err) {
+    console.error('[Vertex AI] 保健品圖片辨識失敗:', err);
+    res.status(500).json({
+      success: false,
+      message: err.message || 'AI 辨識過程發生錯誤，請確認照片清晰或改為手動輸入'
+    });
+  }
+});
+
+// ========================================================
 // 3. 新增自訂或爬取的保健食品至比價庫
 // ========================================================
 app.post('/api/supplements', async (req, res) => {
@@ -502,9 +575,11 @@ app.post('/api/supplements', async (req, res) => {
       active_summary,
       nutrient_key,
       nutrient_amount,
+      nutrients: parsedNutrients,
       additives_note,
       recommended_timing,
       add_to_status,
+      source_channel,
       user_name,
       line_user_id
     } = req.body;
@@ -520,11 +595,20 @@ app.post('/api/supplements', async (req, res) => {
     const dailyCost = Math.round((numPrice / daysSupply) * 10) / 10;
     const monthlyCost = Math.round(dailyCost * 30);
 
-    // 自動推算營養素結構
+    // 自動推算營養素結構（優先採用 AI 辨識出的多項成分，其次單一欄位，最後依類別預設）
     const nutrients = {};
-    if (nutrient_key && nutrient_amount) {
+    if (parsedNutrients && typeof parsedNutrients === 'object' && !Array.isArray(parsedNutrients)) {
+      for (const [k, v] of Object.entries(parsedNutrients)) {
+        const num = parseFloat(v);
+        if (Number.isFinite(num) && num > 0) {
+          nutrients[k] = num;
+        }
+      }
+    }
+    if (Object.keys(nutrients).length === 0 && nutrient_key && nutrient_amount) {
       nutrients[nutrient_key] = parseFloat(nutrient_amount) || 0;
-    } else {
+    }
+    if (Object.keys(nutrients).length === 0) {
       const catMap = {
         '魚油': { omega3: 900 },
         '葉黃素': { lutein: 10, zeaxanthin: 2 },
@@ -561,7 +645,7 @@ app.post('/api/supplements', async (req, res) => {
       `換算每日花費約 NT$ ${Math.round(dailyCost)}，每月約 NT$ ${monthlyCost}`,
       '建議與同類別高規商品對照有效成分濃度與添加物',
       recommended_timing || '隨餐/飯後',
-      '消費者新增'
+      source_channel || '消費者新增'
     ]);
 
     const newSuppId = result.id;

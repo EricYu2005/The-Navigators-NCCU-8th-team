@@ -9,8 +9,10 @@ secrets.vault
 
 # GCP / 雲端金鑰 JSON 檔案（機密憑證，嚴禁上傳）
 gcp-key.json
+service_account.json
 *credentials*.json
 *service-account*.json
+*service_account*.json
 *.pem
 *.key
 

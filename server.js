@@ -149,9 +149,9 @@ async function getUserReminderSettings(lineUserId = '') {
   const uid = normalizeLineUserId(lineUserId);
   const defaults = {
     enabled: false,
-    morning_time: '08:30',
-    noon_time: '12:30',
-    evening_time: '',
+    morning_time: '07:00',
+    noon_time: '11:50',
+    evening_time: '17:50',
     bedtime_time: '22:00',
     botBasicId: LINE_BOT_BASIC_ID,
     lineMessagingConfigured: !!process.env.LINE_MESSAGING_ACCESS_TOKEN
@@ -173,6 +173,74 @@ async function getUserReminderSettings(lineUserId = '') {
     botBasicId: LINE_BOT_BASIC_ID,
     lineMessagingConfigured: !!process.env.LINE_MESSAGING_ACCESS_TOKEN
   };
+}
+
+function buildSlotSupplementLines(slotKey, pendingItems = []) {
+  if (!Array.isArray(pendingItems) || pendingItems.length === 0) {
+    return ['記得檢視今日保健品並至日曆完成打卡'];
+  }
+
+  const isBeforeMeal = (p) => {
+    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
+    return /空腹|餐前|益生菌|膠原蛋白/i.test(t);
+  };
+  const isAfterMeal = (p) => {
+    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
+    return /飯後|隨餐|早餐|午餐|晚餐|魚油|葉黃素|B群/i.test(t);
+  };
+  const isBedtime = (p) => {
+    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
+    return /睡前|鈣|鎂|益生菌|膠原蛋白|芝麻素/i.test(t);
+  };
+
+  const lines = [];
+
+  if (slotKey === 'bedtime') {
+    const bedItems = pendingItems.filter(isBedtime);
+    const chosen = bedItems.length > 0 ? bedItems : pendingItems;
+    for (const p of chosen.slice(0, 6)) {
+      lines.push(`【睡前】${p.brand} ${p.name}`);
+    }
+    return lines;
+  }
+
+  // 早／午／晚餐前／後：清楚拆成「餐前／空腹」與「餐後／隨餐」
+  const beforeItems = pendingItems.filter(p => {
+    if (slotKey === 'morning') return isBeforeMeal(p);
+    // 午／晚餐前只挑明確寫餐前／空腹者
+    return /空腹|餐前/i.test(p.recommended_timing || '');
+  });
+
+  const afterItems = pendingItems.filter(p => {
+    if (beforeItems.includes(p)) return false;
+    const t = `${p.recommended_timing || ''} ${p.category || ''}`;
+    if (slotKey === 'morning') {
+      return /早餐|飯後|隨餐|B群|魚油|葉黃素/i.test(t) && !/僅限睡前|睡前/i.test(p.recommended_timing || '');
+    }
+    if (slotKey === 'noon') {
+      return /午餐|飯後|隨餐|魚油|葉黃素|B群/i.test(t) && !/睡前/i.test(p.recommended_timing || '');
+    }
+    if (slotKey === 'evening') {
+      return /晚餐|飯後|隨餐|魚油|葉黃素/i.test(t) && !/睡前|B群/i.test(t);
+    }
+    return isAfterMeal(p);
+  });
+
+  const mealLabel = slotKey === 'morning' ? '早餐' : (slotKey === 'noon' ? '午餐' : '晚餐');
+  for (const p of beforeItems.slice(0, 3)) {
+    lines.push(`【${mealLabel}前／空腹】${p.brand} ${p.name}`);
+  }
+  for (const p of afterItems.slice(0, 4)) {
+    lines.push(`【${mealLabel}後／隨餐】${p.brand} ${p.name}`);
+  }
+
+  // 若該時段沒命中特定關鍵字，仍列出剩餘未服用的保健品，確保提醒有實質內容
+  if (lines.length === 0) {
+    for (const p of pendingItems.slice(0, 6)) {
+      lines.push(`${p.brand} ${p.name}（${p.recommended_timing || '依包裝建議'}）`);
+    }
+  }
+  return lines;
 }
 
 async function sendLinePushCard({ to, title, slotLabel, supplementLines, appUrl }) {
@@ -1269,9 +1337,9 @@ app.post('/api/cron/send-reminders', async (req, res) => {
     );
 
     const slotDefs = [
-      { key: 'morning', col: 'morning_time', label: '早餐後' },
-      { key: 'noon', col: 'noon_time', label: '午餐後' },
-      { key: 'evening', col: 'evening_time', label: '晚餐後' },
+      { key: 'morning', col: 'morning_time', label: '早餐前／後' },
+      { key: 'noon', col: 'noon_time', label: '午餐前／後' },
+      { key: 'evening', col: 'evening_time', label: '晚餐前／後' },
       { key: 'bedtime', col: 'bedtime_time', label: '睡前' }
     ];
 
@@ -1324,9 +1392,9 @@ app.post('/api/cron/send-reminders', async (req, res) => {
         const sentKey = `${tw.dateStr}_${slot.key}`;
         if (cleanedSent[sentKey]) continue;
 
-        // 允許 GitHub Actions 排程延遲 0 ~ 35 分鐘內皆能可靠觸發，絕不漏發也不重發
+        // 配合每 10 分鐘 GitHub Actions 排程，允許 0 ~ 25 分鐘容錯視窗，準時觸發且絕不重複發送
         const diff = tw.totalMinutes - slotMin;
-        if (diff >= 0 && diff <= 35) {
+        if (diff >= 0 && diff <= 25) {
           if (purchased.length > 0 && pendingItems.length === 0) {
             // 今日全部保健品皆已吃完打卡，不打擾使用者
             cleanedSent[sentKey] = 'all_taken';
@@ -1336,13 +1404,11 @@ app.post('/api/cron/send-reminders', async (req, res) => {
             continue;
           }
 
-          const lines = pendingItems.length > 0
-            ? pendingItems.slice(0, 6).map(p => `${p.brand} ${p.name}（${p.recommended_timing || '依包裝建議'}）`)
-            : ['記得檢視今日保健品並至日曆完成打卡'];
+          const lines = buildSlotSupplementLines(slot.key, pendingItems);
 
           const pushRes = await sendLinePushCard({
             to: uid,
-            title: `該吃保健品囉（${slot.label} ${slotTime}）`,
+            title: `${slot.label}提醒（${slotTime}）`,
             slotLabel: `${slot.label} ${slotTime}`,
             supplementLines: lines,
             appUrl

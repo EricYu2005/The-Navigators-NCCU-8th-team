@@ -705,9 +705,9 @@ function initDatabase() {
         line_user_id TEXT PRIMARY KEY,
         display_name TEXT DEFAULT '',
         enabled INTEGER DEFAULT 0,
-        morning_time TEXT DEFAULT '08:30',
-        noon_time TEXT DEFAULT '12:30',
-        evening_time TEXT DEFAULT '',
+        morning_time TEXT DEFAULT '07:00',
+        noon_time TEXT DEFAULT '11:50',
+        evening_time TEXT DEFAULT '17:50',
         bedtime_time TEXT DEFAULT '22:00',
         last_sent_slots TEXT DEFAULT '{}',
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

@@ -28,9 +28,9 @@ const state = {
   reminderCardOpen: false,
   reminderSettings: {
     enabled: false,
-    morning_time: '08:30',
-    noon_time: '12:30',
-    evening_time: '',
+    morning_time: '07:00',
+    noon_time: '11:50',
+    evening_time: '17:50',
     bedtime_time: '22:00',
     botBasicId: '@044ihumq',
     lineMessagingConfigured: false
@@ -1301,8 +1301,8 @@ function renderLineReminderCard() {
     <label class="reminder-master-toggle">
       <input type="checkbox" id="rem-enabled-chk" ${rs.enabled ? 'checked' : ''} />
       <div>
-        <strong>步驟 2：啟用每日 LINE 定時提醒</strong>
-        <span>若當日保健品皆已打卡，或開啟「生病休養暫停」，系統會自動跳過不打擾。</span>
+        <strong>步驟 2：啟用每日 LINE 定時提醒（支援餐前／餐後分類提示）</strong>
+        <span>到點推播時會依保健品特性區分「餐前／空腹」與「餐後／隨餐」；若今日已全數打卡或生病暫停則自動跳過。</span>
       </div>
     </label>
 
@@ -1310,31 +1310,25 @@ function renderLineReminderCard() {
       <div class="reminder-slot-item">
         <label class="slot-chk-label">
           <input type="checkbox" id="rem-chk-morning" ${rs.morning_time ? 'checked' : ''} />
-          <span>早餐後</span>
+          <span>早餐前／後</span>
         </label>
-        <select id="rem-time-morning" class="form-select form-select-sm">
-          ${buildHalfHourTimeOptions(6, 11, rs.morning_time || '08:30')}
-        </select>
+        <input type="time" id="rem-time-morning" class="form-input form-select-sm" value="${rs.morning_time || '07:00'}" />
       </div>
 
       <div class="reminder-slot-item">
         <label class="slot-chk-label">
           <input type="checkbox" id="rem-chk-noon" ${rs.noon_time ? 'checked' : ''} />
-          <span>午餐後</span>
+          <span>午餐前／後</span>
         </label>
-        <select id="rem-time-noon" class="form-select form-select-sm">
-          ${buildHalfHourTimeOptions(11, 15, rs.noon_time || '12:30')}
-        </select>
+        <input type="time" id="rem-time-noon" class="form-input form-select-sm" value="${rs.noon_time || '11:50'}" />
       </div>
 
       <div class="reminder-slot-item">
         <label class="slot-chk-label">
           <input type="checkbox" id="rem-chk-evening" ${rs.evening_time ? 'checked' : ''} />
-          <span>晚餐後</span>
+          <span>晚餐前／後</span>
         </label>
-        <select id="rem-time-evening" class="form-select form-select-sm">
-          ${buildHalfHourTimeOptions(17, 21, rs.evening_time || '18:30')}
-        </select>
+        <input type="time" id="rem-time-evening" class="form-input form-select-sm" value="${rs.evening_time || '17:50'}" />
       </div>
 
       <div class="reminder-slot-item">
@@ -1342,9 +1336,7 @@ function renderLineReminderCard() {
           <input type="checkbox" id="rem-chk-bedtime" ${rs.bedtime_time ? 'checked' : ''} />
           <span>睡前</span>
         </label>
-        <select id="rem-time-bedtime" class="form-select form-select-sm">
-          ${buildHalfHourTimeOptions(21, 24, rs.bedtime_time || '22:00')}
-        </select>
+        <input type="time" id="rem-time-bedtime" class="form-input form-select-sm" value="${rs.bedtime_time || '22:00'}" />
       </div>
     </div>
 
@@ -1368,11 +1360,11 @@ async function saveLineReminderSettings() {
 
   const enabled = !!document.getElementById('rem-enabled-chk')?.checked;
   const morning_time = document.getElementById('rem-chk-morning')?.checked
-    ? (document.getElementById('rem-time-morning')?.value || '08:30') : '';
+    ? (document.getElementById('rem-time-morning')?.value || '07:00') : '';
   const noon_time = document.getElementById('rem-chk-noon')?.checked
-    ? (document.getElementById('rem-time-noon')?.value || '12:30') : '';
+    ? (document.getElementById('rem-time-noon')?.value || '11:50') : '';
   const evening_time = document.getElementById('rem-chk-evening')?.checked
-    ? (document.getElementById('rem-time-evening')?.value || '18:30') : '';
+    ? (document.getElementById('rem-time-evening')?.value || '17:50') : '';
   const bedtime_time = document.getElementById('rem-chk-bedtime')?.checked
     ? (document.getElementById('rem-time-bedtime')?.value || '22:00') : '';
 

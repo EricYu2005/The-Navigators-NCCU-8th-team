@@ -2,8 +2,8 @@ name: LINE Daily Supplement Reminder
 
 on:
   schedule:
-    # 每 30 分鐘執行一次，配合後端台灣時區（Asia/Taipei）0~35 分鐘防漏發視窗與防重發紀錄
-    - cron: '*/30 * * * *'
+    # 每 10 分鐘執行一次，精準涵蓋 07:00、11:50、17:50、22:00 等餐前／餐後／睡前提醒時間
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:

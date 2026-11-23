@@ -2162,6 +2162,46 @@ body {
   animation: fadeIn 0.2s ease;
 }
 
+.toast-msg.toast-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.65rem 0.85rem 0.65rem 1.05rem;
+}
+
+.toast-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.toast-action-btn {
+  flex-shrink: 0;
+  padding: 0.32rem 0.78rem;
+  border-radius: 7px;
+  border: 1.5px solid #fef08a;
+  background: #fef08a;
+  color: #3b0764;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background-color 0.15s ease, transform 0.12s ease;
+}
+
+.toast-action-btn:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.toast-action-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 /* ==================== 手機與平板響應式設計 ==================== */
 @media (max-width: 960px) {
   .header-inner {

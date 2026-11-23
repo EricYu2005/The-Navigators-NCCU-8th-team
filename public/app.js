@@ -112,16 +112,45 @@ function formatDateStr(dateObj) {
   return `${y}-${m}-${d}`;
 }
 
-function showToast(message) {
+function showToast(message, options = {}) {
   const container = document.getElementById('toast-container');
   if (!container) return;
+  const { actionLabel, onAction, duration } = options || {};
   const el = document.createElement('div');
-  el.className = 'toast-msg';
-  el.textContent = message;
-  container.appendChild(el);
-  setTimeout(() => {
+  el.className = actionLabel ? 'toast-msg toast-with-action' : 'toast-msg';
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'toast-text';
+  textSpan.textContent = message;
+  el.appendChild(textSpan);
+
+  let timerId = null;
+  const dismiss = () => {
+    if (timerId) clearTimeout(timerId);
     el.remove();
-  }, 3200);
+  };
+
+  if (actionLabel && typeof onAction === 'function') {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toast-action-btn';
+    btn.textContent = actionLabel;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = '復原中...';
+      if (timerId) clearTimeout(timerId);
+      try {
+        await onAction();
+      } finally {
+        el.remove();
+      }
+    });
+    el.appendChild(btn);
+  }
+
+  container.appendChild(el);
+  const timeoutMs = typeof duration === 'number' ? duration : (actionLabel ? 6000 : 3200);
+  timerId = setTimeout(dismiss, timeoutMs);
 }
 
 function getActiveLineUserId() {
@@ -743,6 +772,10 @@ window.addToUserList = addToUserList;
 
 async function removeFromUserList(supplementId, status) {
   try {
+    const sourceList = status === 'purchased' ? (state.purchased || []) : (state.wishlist || []);
+    const targetItem = sourceList.find(x => Number(x.id) === Number(supplementId));
+    const itemLabel = targetItem ? `${targetItem.brand}｜${targetItem.name}` : '該項保健品';
+
     const uid = getActiveLineUserId();
     const qs = new URLSearchParams({ status });
     if (uid) qs.set('lineUserId', uid);
@@ -761,7 +794,15 @@ async function removeFromUserList(supplementId, status) {
       if (state.finderResult) renderFinderResult(state.finderResult);
       renderWishlistView();
       renderCalendarView();
-      showToast('已從清單移除並重新計算費用與效益');
+
+      showToast(`已移除「${itemLabel}」`, {
+        actionLabel: '復原',
+        duration: 6000,
+        onAction: async () => {
+          await addToUserList(supplementId, status, true);
+          showToast(`已復原「${itemLabel}」`);
+        }
+      });
     }
   } catch (err) {
     console.error(err);

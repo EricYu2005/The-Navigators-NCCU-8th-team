@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.2.9" />
+  <link rel="stylesheet" href="style.css?v=4.3.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -432,6 +432,10 @@
             <span class="legend-item"><svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg> 含筆記日誌</span>
           </div>
 
+          <div class="mobile-cal-tap-hint">
+            點選下方任一日期，即可從右側滑出當日服用打卡與狀態日誌
+          </div>
+
           <!-- 星期標頭 -->
           <div class="calendar-weekdays">
             <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
@@ -441,8 +445,15 @@
           <div class="calendar-days-grid" id="calendar-days-grid"></div>
         </div>
 
-        <!-- 右側：選取日期的服用打卡 ＆ 身體狀態日誌 -->
-        <div class="card daily-tracker-card">
+        <!-- 手機版右滑抽屜背景遮罩 -->
+        <div class="daily-drawer-backdrop" id="daily-drawer-backdrop" onclick="closeMobileDailyDrawer()"></div>
+
+        <!-- 右側：選取日期的服用打卡 ＆ 身體狀態日誌（電腦版固定右欄，手機版點日期從右側滑出） -->
+        <div class="card daily-tracker-card" id="daily-tracker-card">
+          <div class="mobile-drawer-close-bar">
+            <span class="mobile-drawer-bar-title">當日打卡與狀態日誌</span>
+            <button type="button" class="btn-drawer-close" onclick="closeMobileDailyDrawer()">關閉 &times;</button>
+          </div>
           <div class="daily-header">
             <div>
               <span class="daily-tag">當日紀錄</span>
@@ -577,23 +588,9 @@
                 帶入身體現況至「尋找」重新評估配方
               </button>
             </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- 下方：目前已購買正在服用的保健品清單 -->
-      <div class="card purchased-cabinet-card">
-        <div class="card-title-bar">
-          <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-            <h3>目前已購買正在服用的保健品</h3>
-            <span class="pill-count" id="purchased-cabinet-count">0 款服用中</span>
-          </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="openDoctorFullscreenModal()">
-            <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            <span>告知醫生目前使用的保健品</span>
-          </button>
-        </div>
-        <div id="purchased-cabinet-grid" class="purchased-cabinet-grid"></div>
       </div>
     </section>
 
@@ -1087,6 +1084,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.2.9"></script>
+  <script src="app.js?v=4.3.0"></script>
 </body>
 </html>

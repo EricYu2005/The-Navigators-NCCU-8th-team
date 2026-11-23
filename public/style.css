@@ -498,8 +498,8 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .section-banner {
@@ -1401,7 +1401,7 @@ body {
 
 .calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   text-align: center;
   font-size: 0.8rem;
   font-weight: 800;
@@ -1411,11 +1411,13 @@ body {
 
 .calendar-days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.45rem;
 }
 
 .cal-day-cell {
+  min-width: 0;
+  overflow: hidden;
   min-height: 76px;
   border: 1.5px solid var(--border);
   border-radius: 10px;
@@ -3813,6 +3815,197 @@ body {
     min-height: 40px;
   }
 }
+
+/* ========================================================
+   今日服用清單項目內建移除按鈕 ＆ 電腦版預設隱藏手機右滑選單元素
+   ======================================================== */
+.btn-intake-remove {
+  padding: 0.16rem 0.48rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #be123c;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-intake-remove:hover {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #e11d48;
+}
+
+.mobile-cal-tap-hint,
+.daily-drawer-backdrop,
+.mobile-drawer-close-bar {
+  display: none;
+}
+
+/* ========================================================
+   手機版（<= 768px）：
+   1. 分析與日曆頁上方三項統整資訊合併為一體式橫向三欄看板
+   2. 日曆頁點選日期後，當日紀錄從右側滑出選單（電腦版維持左右雙欄）
+   ======================================================== */
+@media (max-width: 768px) {
+  .wishlist-kpi-grid,
+  .calendar-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    background: #ffffff;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .wishlist-kpi-grid .kpi-stat-card,
+  .calendar-kpi-row .kpi-stat-card {
+    border: none;
+    border-right: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0.72rem 0.45rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .wishlist-kpi-grid .kpi-stat-card:last-child,
+  .calendar-kpi-row .kpi-stat-card:last-child {
+    border-right: none;
+  }
+
+  .wishlist-kpi-grid .kpi-label,
+  .calendar-kpi-row .kpi-label {
+    font-size: 0.72rem;
+    line-height: 1.25;
+    margin-bottom: 0.25rem;
+  }
+
+  .wishlist-kpi-grid .kpi-number,
+  .calendar-kpi-row .kpi-number {
+    font-size: 1rem;
+    line-height: 1.2;
+    margin-bottom: 0.2rem;
+    word-break: break-word;
+  }
+
+  .wishlist-kpi-grid .kpi-number span,
+  .calendar-kpi-row .kpi-number span {
+    font-size: 0.7rem !important;
+  }
+
+  .wishlist-kpi-grid .kpi-sub,
+  .calendar-kpi-row .kpi-sub {
+    font-size: 0.65rem;
+    line-height: 1.25;
+  }
+
+  /* 手機版日曆提示條與 7 欄緊湊適配 */
+  .calendar-workspace,
+  .calendar-main-card {
+    min-width: 0;
+  }
+
+  .calendar-days-grid {
+    gap: 0.25rem;
+  }
+
+  .mobile-cal-tap-hint {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #5b21b6;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    padding: 0.42rem 0.7rem;
+    margin-bottom: 0.65rem;
+    text-align: center;
+  }
+
+  /* 手機版右滑抽屜背景遮罩 */
+  .daily-drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.46);
+    z-index: 2050;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.26s ease;
+  }
+
+  .daily-drawer-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 手機版當日紀錄改為右側滑出抽屜 */
+  .calendar-workspace .daily-tracker-card {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(88vw, 370px);
+    max-width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    z-index: 2100;
+    border-radius: 18px 0 0 18px;
+    border-right: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.95rem 0.95rem 5.5rem 0.95rem;
+    box-shadow: -8px 0 28px rgba(15, 23, 42, 0.22);
+    transform: translateX(105%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .calendar-workspace .daily-tracker-card.is-drawer-open {
+    transform: translateX(0);
+  }
+
+  .mobile-drawer-close-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.65rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .mobile-drawer-bar-title {
+    font-size: 0.84rem;
+    font-weight: 800;
+    color: #475569;
+  }
+
+  .btn-drawer-close {
+    padding: 0.28rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #1e293b;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-drawer-close:hover {
+    background: #e2e8f0;
+  }
+}
+
 
 
 

@@ -364,6 +364,9 @@ function switchView(viewId) {
     btn.classList.toggle('active', btn.dataset.target === viewId);
   });
 
+  if (typeof closeMobileDailyDrawer === 'function') {
+    closeMobileDailyDrawer();
+  }
   if (viewId === 'view-wishlist') {
     renderWishlistView();
   } else if (viewId === 'view-calendar') {
@@ -1720,12 +1723,30 @@ function changeCalendarMonth(delta) {
 }
 window.changeCalendarMonth = changeCalendarMonth;
 
+function openMobileDailyDrawer() {
+  if (window.innerWidth > 768) return;
+  const drawer = document.getElementById('daily-tracker-card');
+  const backdrop = document.getElementById('daily-drawer-backdrop');
+  if (drawer) drawer.classList.add('is-drawer-open');
+  if (backdrop) backdrop.classList.add('is-open');
+}
+window.openMobileDailyDrawer = openMobileDailyDrawer;
+
+function closeMobileDailyDrawer() {
+  const drawer = document.getElementById('daily-tracker-card');
+  const backdrop = document.getElementById('daily-drawer-backdrop');
+  if (drawer) drawer.classList.remove('is-drawer-open');
+  if (backdrop) backdrop.classList.remove('is-open');
+}
+window.closeMobileDailyDrawer = closeMobileDailyDrawer;
+
 function jumpToToday() {
   const now = new Date();
   state.calendarYear = now.getFullYear();
   state.calendarMonth = now.getMonth() + 1;
   state.selectedDateStr = formatDateStr(now);
   renderCalendarView();
+  openMobileDailyDrawer();
 }
 window.jumpToToday = jumpToToday;
 
@@ -1733,6 +1754,7 @@ function selectCalendarDate(dateStr) {
   state.selectedDateStr = dateStr;
   renderCalendarGrid();
   renderDailyTrackerPanel();
+  openMobileDailyDrawer();
 }
 window.selectCalendarDate = selectCalendarDate;
 
@@ -1926,7 +1948,10 @@ function renderDailyTrackerPanel() {
               <div style="font-size:0.75rem; color:#64748b;">建議份量：每日 ${item.daily_units} 份（${item.dosage_form}）</div>
             </div>
           </div>
-          <span class="timing-tag">${timing}</span>
+          <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+            <span class="timing-tag">${timing}</span>
+            <button type="button" class="btn-intake-remove" title="從已購買清單移除此商品" onclick="event.preventDefault(); event.stopPropagation(); removeFromUserList(${item.id}, 'purchased')">移除</button>
+          </div>
         </label>
       `;
     }).join('');

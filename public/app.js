@@ -1553,6 +1553,7 @@ function renderWeeklySummary() {
   let goodCount = 0;
   let takenTotal = 0;
   let weeklyFullDays = 0;
+  let weeklyPartialDays = 0;
 
   past7Days.forEach(dateStr => {
     const log = state.calendarLogs[dateStr] || {};
@@ -1566,9 +1567,15 @@ function renderWeeklySummary() {
       takenTotal += validTakenCount;
       if (totalPurchased > 0 && validTakenCount >= totalPurchased) {
         weeklyFullDays++;
+      } else if (validTakenCount > 0) {
+        weeklyPartialDays++;
       }
     }
   });
+
+  const weeklyCompliancePillText = weeklyPartialDays > 0
+    ? `近 7 日完整服用：${weeklyFullDays} 天（另 ${weeklyPartialDays} 天部分服用）`
+    : `近 7 日完整服用：${weeklyFullDays} 天`;
 
   // 診斷是否有顯著痛點
   let diagnosisType = 'balanced';
@@ -1592,7 +1599,7 @@ function renderWeeklySummary() {
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
           眼睛乾酸高頻：過去 7 天累計 ${eyeDryCount} 日乾酸
         </span>
-        <span class="weekly-trend-pill">常態服藥記錄：${takenTotal} 次</span>
+        <span class="weekly-trend-pill">${weeklyCompliancePillText}</span>
       </div>
 
       <div class="weekly-upgrade-box">
@@ -1619,7 +1626,7 @@ function renderWeeklySummary() {
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           體力疲倦高頻：過去 7 天累計 ${fatigueCount} 日疲憊
         </span>
-        <span class="weekly-trend-pill">常態服藥記錄：${takenTotal} 次</span>
+        <span class="weekly-trend-pill">${weeklyCompliancePillText}</span>
       </div>
 
       <div class="weekly-upgrade-box">
@@ -1645,7 +1652,7 @@ function renderWeeklySummary() {
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
           消化排便異常：過去 7 天累計 ${digestionBadCount} 日脹氣或不順
         </span>
-        <span class="weekly-trend-pill">常態服藥記錄：${takenTotal} 次</span>
+        <span class="weekly-trend-pill">${weeklyCompliancePillText}</span>
       </div>
 
       <div class="weekly-upgrade-box">
@@ -1688,7 +1695,7 @@ function renderWeeklySummary() {
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
           本週身心狀態維持優良
         </span>
-        <span class="weekly-trend-pill">規律達標：${weeklyFullDays} 天（共 ${takenTotal} 次）</span>
+        <span class="weekly-trend-pill">${weeklyCompliancePillText}</span>
       </div>
       <div style="font-size:0.84rem; color:#475569; line-height:1.5;">
         診斷總結：過去 7 日您記錄的良好體感達標，無顯著疲倦或酸澀異常。您目前服用的保健品組合性價比均衡、無多餘成分超標，請繼續維持目前的服藥節奏！
@@ -2181,6 +2188,7 @@ async function persistCalendarLog(log, silent = false) {
       renderCalendarGrid();
       renderDailyTrackerPanel();
       renderCalendarKpis();
+      renderWeeklySummary();
       if (!silent) {
         showToast(`已儲存 ${log.dateStr} 的服用打卡與身體日誌！`);
       }

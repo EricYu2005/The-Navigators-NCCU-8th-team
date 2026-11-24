@@ -931,7 +931,7 @@ app.post('/api/calendar/log', async (req, res) => {
     }
 
     const uid = normalizeLineUserId(lineUserId);
-    const cleanTaken = Array.isArray(takenIds) ? takenIds.map(x => Number(x)) : [];
+    const cleanTaken = Array.isArray(takenIds) ? [...new Set(takenIds.map(x => Number(x)).filter(Boolean))] : [];
 
     await dbQuery.run(`
       INSERT INTO user_calendar_logs (line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by, updated_at)

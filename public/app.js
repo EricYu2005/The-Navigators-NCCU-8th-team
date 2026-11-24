@@ -1543,12 +1543,16 @@ function renderWeeklySummary() {
     dateRangeEl.textContent = `${past7Days[0]} 至 ${past7Days[6]}（過去 7 日體感趨勢）`;
   }
 
+  const purchasedIds = new Set(state.purchased.map(p => Number(p.id)));
+  const totalPurchased = purchasedIds.size;
+
   let eyeDryCount = 0;
   let fatigueCount = 0;
   let digestionBadCount = 0;
   let sickCount = 0;
   let goodCount = 0;
   let takenTotal = 0;
+  let weeklyFullDays = 0;
 
   past7Days.forEach(dateStr => {
     const log = state.calendarLogs[dateStr] || {};
@@ -1557,7 +1561,13 @@ function renderWeeklySummary() {
     if (log.digestionStatus === '排便不順' || log.digestionStatus === '稍微脹氣') digestionBadCount++;
     if (log.isSickMode) sickCount++;
     if (log.energyLevel === '精神飽滿' || log.sleepEyeStatus === '睡眠深沉' || log.sleepEyeStatus === '晶亮舒適') goodCount++;
-    if (Array.isArray(log.takenIds)) takenTotal += log.takenIds.length;
+    if (!log.isSickMode && Array.isArray(log.takenIds)) {
+      const validTakenCount = new Set(log.takenIds.map(Number).filter(id => purchasedIds.has(id))).size;
+      takenTotal += validTakenCount;
+      if (totalPurchased > 0 && validTakenCount >= totalPurchased) {
+        weeklyFullDays++;
+      }
+    }
   });
 
   // 診斷是否有顯著痛點
@@ -1678,7 +1688,7 @@ function renderWeeklySummary() {
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
           本週身心狀態維持優良
         </span>
-        <span class="weekly-trend-pill">服藥規律達成：${takenTotal} 次</span>
+        <span class="weekly-trend-pill">規律達標：${weeklyFullDays} 天（共 ${takenTotal} 次）</span>
       </div>
       <div style="font-size:0.84rem; color:#475569; line-height:1.5;">
         診斷總結：過去 7 日您記錄的良好體感達標，無顯著疲倦或酸澀異常。您目前服用的保健品組合性價比均衡、無多餘成分超標，請繼續維持目前的服藥節奏！
@@ -1713,26 +1723,48 @@ function renderCalendarKpis() {
   if (!kpiRow) return;
 
   const monthlyCost = state.purchased.reduce((acc, x) => acc + Number(x.monthly_cost || 0), 0);
-  const pCount = state.purchased.length;
+  const purchasedIds = new Set(state.purchased.map(p => Number(p.id)));
+  const pCount = purchasedIds.size;
 
-  // 計算當月打卡規律率與連續天數
+  // 計算當月規律達標天數（僅計算「目前在清單中的保健品」且「當日全數皆已服用」的天數，排除已移除商品殘留與未來日期）
   const ymPrefix = `${state.calendarYear}-${String(state.calendarMonth).padStart(2, '0')}`;
-  const monthLogs = Object.values(state.calendarLogs).filter(l => l.dateStr && l.dateStr.startsWith(ymPrefix));
-  let completedDays = 0;
-  for (const log of monthLogs) {
-    if ((log.takenIds || []).length > 0) completedDays++;
-  }
   const today = new Date();
-  const elapsedDays = (state.calendarYear === today.getFullYear() && state.calendarMonth === today.getMonth() + 1)
-    ? Math.max(1, today.getDate())
-    : 30;
-  const complianceRate = Math.min(100, Math.round((completedDays / elapsedDays) * 100));
+  const todayStr = formatDateStr(today);
+  const isCurrentMonth = state.calendarYear === today.getFullYear() && state.calendarMonth === today.getMonth() + 1;
+  const monthLogs = Object.values(state.calendarLogs).filter(l => {
+    if (!l || !l.dateStr || !l.dateStr.startsWith(ymPrefix)) return false;
+    if (isCurrentMonth && l.dateStr > todayStr) return false;
+    return true;
+  });
+
+  let fullCompletedDays = 0;
+  let partialDays = 0;
+  for (const log of monthLogs) {
+    if (log.isSickMode) continue;
+    const validTakenCount = new Set(
+      (log.takenIds || []).map(Number).filter(id => purchasedIds.has(id))
+    ).size;
+    if (pCount > 0 && validTakenCount >= pCount) {
+      fullCompletedDays++;
+    } else if (validTakenCount > 0) {
+      partialDays++;
+    }
+  }
+
+  const daysInMonth = new Date(state.calendarYear, state.calendarMonth, 0).getDate();
+  const elapsedDays = isCurrentMonth ? Math.max(1, today.getDate()) : daysInMonth;
+  const complianceRate = pCount > 0
+    ? Math.min(100, Math.round((fullCompletedDays / elapsedDays) * 100))
+    : 0;
+  const complianceSubText = partialDays > 0
+    ? `本月規律達標 ${fullCompletedDays} 天（另 ${partialDays} 天部分服用）`
+    : `本月規律達標 ${fullCompletedDays} 天`;
 
   kpiRow.innerHTML = `
     <div class="kpi-stat-card">
       <div class="kpi-label">本月規律服用率</div>
       <div class="kpi-number" style="color:#059669;">${complianceRate}%</div>
-      <div class="kpi-sub">本月已打卡記錄 ${completedDays} 天</div>
+      <div class="kpi-sub">${complianceSubText}</div>
     </div>
     <div class="kpi-stat-card">
       <div class="kpi-label">目前正在服用保健品</div>
@@ -1838,8 +1870,8 @@ function renderCalendarGrid() {
     const isSelected = dateStr === state.selectedDateStr;
     const log = state.calendarLogs[dateStr];
 
-    const takenCount = log
-      ? (log.takenIds || []).filter(id => purchasedIds.has(Number(id))).length
+    const takenCount = log && !log.isSickMode
+      ? new Set((log.takenIds || []).map(Number).filter(id => purchasedIds.has(id))).size
       : 0;
 
     let intakeBadge = '';
@@ -2051,7 +2083,8 @@ function renderDailyTrackerPanel() {
 
 async function toggleSupplementTaken(supplementId, isChecked) {
   const log = getOrCreateSelectedDateLog();
-  const set = new Set((log.takenIds || []).map(Number));
+  const purchasedIds = new Set(state.purchased.map(p => Number(p.id)));
+  const set = new Set((log.takenIds || []).map(Number).filter(id => purchasedIds.has(id)));
   if (isChecked) {
     set.add(Number(supplementId));
   } else {
@@ -2567,6 +2600,7 @@ async function toggleDemoData() {
       });
       state.isDemoCleared = true;
       await loadBootstrapData(true);
+      saveLoggedInUserStateToLocal();
       showToast('已清空範例清單與日曆，可自由新增保健品。');
     } else {
       await fetch('/api/demo/restore', { method: 'POST' });

@@ -210,6 +210,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+let lastVisibilitySyncAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && getActiveLineUserId()) {
+    const now = Date.now();
+    if (now - lastVisibilitySyncAt > 8000) {
+      lastVisibilitySyncAt = now;
+      loadBootstrapData(true);
+    }
+  }
+});
+
 async function loadBootstrapData(skipLocalSync = false) {
   try {
     const uid = getActiveLineUserId();
@@ -222,31 +233,41 @@ async function loadBootstrapData(skipLocalSync = false) {
     if (json.success && json.data) {
       let data = json.data;
 
-      // 已登入會員：若本機已有最新操作紀錄（包含剛刪除過的清單與提醒設定），自動與伺服器同步，避免伺服器重啟或快取導致資料遺失
+      // 已登入會員：僅在伺服器因重啟重置為空時，才由本機還原遺失資料；絕不用舊本機快取覆蓋伺服器上其他裝置的最新紀錄
       if (uid && !skipLocalSync) {
         const localState = readLoggedInUserStateFromLocal();
         if (localState) {
-          const srvW = (data.wishlist || []).map(x => Number(x.id)).sort((a, b) => a - b).join(',');
-          const srvP = (data.purchased || []).map(x => Number(x.id)).sort((a, b) => a - b).join(',');
-          const locW = (localState.wishlistIds || []).map(Number).sort((a, b) => a - b).join(',');
-          const locP = (localState.purchasedIds || []).map(Number).sort((a, b) => a - b).join(',');
+          const srvListEmpty = (data.wishlist || []).length === 0 && (data.purchased || []).length === 0;
+          const locHasLists = (localState.wishlistIds || []).length > 0 || (localState.purchasedIds || []).length > 0;
           const srvLogKeys = Object.keys(data.calendarLogs || {}).length;
-          const locLogKeys = Object.keys(localState.calendarLogs || {}).length;
+          const locLogEntries = Object.entries(localState.calendarLogs || {}).filter(([, l]) => {
+            if (!l) return false;
+            return (Array.isArray(l.takenIds) && l.takenIds.length > 0) || !!(l.energyLevel || l.digestionStatus || l.sleepEyeStatus || l.note || l.isSickMode);
+          });
+          const needListRestore = srvListEmpty && locHasLists;
+          const needLogsRestore = srvLogKeys === 0 && locLogEntries.length > 0;
           const needReminderRestore = !!(localState.reminderSettings && localState.reminderSettings.enabled && (!data.reminderSettings || !data.reminderSettings.enabled));
 
-          if (srvW !== locW || srvP !== locP || (srvLogKeys === 0 && locLogKeys > 0) || needReminderRestore) {
+          if (needListRestore || needLogsRestore || needReminderRestore) {
+            const syncBody = {
+              lineUserId: uid,
+              userName: state.currentUser?.displayName || '消費者'
+            };
+            if (needListRestore) {
+              syncBody.wishlistIds = localState.wishlistIds || [];
+              syncBody.purchasedIds = localState.purchasedIds || [];
+              syncBody.customSupplements = localState.customSupplements || [];
+            }
+            if (needLogsRestore) {
+              syncBody.calendarLogs = Object.fromEntries(locLogEntries);
+            }
+            if (needReminderRestore) {
+              syncBody.reminderSettings = localState.reminderSettings;
+            }
             const syncRes = await fetch('/api/user-state/sync', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                lineUserId: uid,
-                userName: state.currentUser?.displayName || '消費者',
-                wishlistIds: localState.wishlistIds || [],
-                purchasedIds: localState.purchasedIds || [],
-                customSupplements: localState.customSupplements || [],
-                calendarLogs: localState.calendarLogs || {},
-                reminderSettings: needReminderRestore ? localState.reminderSettings : undefined
-              })
+              body: JSON.stringify(syncBody)
             });
             const syncJson = await syncRes.json();
             if (syncJson.success && syncJson.data) {
@@ -265,6 +286,9 @@ async function loadBootstrapData(skipLocalSync = false) {
         state.reminderSettings = { ...state.reminderSettings, ...data.reminderSettings };
       }
       state.isDemoCleared = state.wishlist.length === 0 && state.purchased.length === 0;
+      if (uid) {
+        saveLoggedInUserStateToLocal();
+      }
 
       // 依伺服器資料庫確認 Pro 資格（若 Render 重啟清空 SQLite，自動以本機實際填表憑證回寫）
       if (uid) {

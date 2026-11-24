@@ -814,41 +814,46 @@ app.post('/api/user-state/sync', async (req, res) => {
       }
     }
 
-    await dbQuery.run('DELETE FROM user_supplements WHERE line_user_id = ?', [uid]);
-
     const resolveId = (rawId) => Number(idMap[rawId] || rawId);
-    const wIds = Array.isArray(wishlistIds) ? [...new Set(wishlistIds.map(resolveId).filter(Boolean))] : [];
-    const pIds = Array.isArray(purchasedIds) ? [...new Set(purchasedIds.map(resolveId).filter(Boolean))] : [];
+    if (Array.isArray(wishlistIds) || Array.isArray(purchasedIds)) {
+      await dbQuery.run('DELETE FROM user_supplements WHERE line_user_id = ?', [uid]);
 
-    for (const sid of wIds) {
-      const supp = await dbQuery.get('SELECT id, recommended_timing, days_supply FROM supplements WHERE id = ?', [sid]);
-      if (supp) {
-        await dbQuery.run(`
-          INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
-          VALUES (?, 'wishlist', ?, date('now'), ?, ?, ?)
-        `, [sid, supp.recommended_timing || '隨餐/飯後', supp.days_supply || 30, userName || '消費者', uid]);
+      const wIds = Array.isArray(wishlistIds) ? [...new Set(wishlistIds.map(resolveId).filter(Boolean))] : [];
+      const pIds = Array.isArray(purchasedIds) ? [...new Set(purchasedIds.map(resolveId).filter(Boolean))] : [];
+
+      for (const sid of wIds) {
+        const supp = await dbQuery.get('SELECT id, recommended_timing, days_supply FROM supplements WHERE id = ?', [sid]);
+        if (supp) {
+          await dbQuery.run(`
+            INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
+            VALUES (?, 'wishlist', ?, date('now'), ?, ?, ?)
+          `, [sid, supp.recommended_timing || '隨餐/飯後', supp.days_supply || 30, userName || '消費者', uid]);
+        }
       }
-    }
 
-    for (const sid of pIds) {
-      const supp = await dbQuery.get('SELECT id, recommended_timing, days_supply FROM supplements WHERE id = ?', [sid]);
-      if (supp) {
-        await dbQuery.run(`
-          INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
-          VALUES (?, 'purchased', ?, date('now'), ?, ?, ?)
-        `, [sid, supp.recommended_timing || '隨餐/飯後', supp.days_supply || 30, userName || '消費者', uid]);
+      for (const sid of pIds) {
+        const supp = await dbQuery.get('SELECT id, recommended_timing, days_supply FROM supplements WHERE id = ?', [sid]);
+        if (supp) {
+          await dbQuery.run(`
+            INSERT INTO user_supplements (supplement_id, status, intake_time, started_date, remaining_days, user_name, line_user_id)
+            VALUES (?, 'purchased', ?, date('now'), ?, ?, ?)
+          `, [sid, supp.recommended_timing || '隨餐/飯後', supp.days_supply || 30, userName || '消費者', uid]);
+        }
       }
     }
 
     if (calendarLogs && typeof calendarLogs === 'object') {
-      await dbQuery.run('DELETE FROM user_calendar_logs WHERE line_user_id = ?', [uid]);
+      // 僅補齊伺服器端缺少的日期紀錄，絕不刪除或覆蓋伺服器既有的跨裝置最新紀錄
       for (const [dateStr, log] of Object.entries(calendarLogs)) {
         if (!dateStr || !log) continue;
-        const cleanTaken = Array.isArray(log.takenIds) ? log.takenIds.map(resolveId).filter(Boolean) : [];
+        const cleanTaken = Array.isArray(log.takenIds) ? [...new Set(log.takenIds.map(resolveId).filter(Boolean))] : [];
+        const hasAnyContent = cleanTaken.length > 0 || !!(log.energyLevel || log.digestionStatus || log.sleepEyeStatus || log.note || log.isSickMode);
+        if (!hasAnyContent) continue;
         await dbQuery.run(`
-          INSERT OR REPLACE INTO user_calendar_logs (
+          INSERT INTO user_calendar_logs (
             line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(line_user_id, date_str) DO NOTHING
         `, [
           uid,
           dateStr,

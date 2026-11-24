@@ -1,9 +1,13 @@
-const CACHE_NAME = 'purepick-webapp-v39';
+const CACHE_NAME = 'purepick-webapp-v40';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/style.css',
   '/app.js',
+  '/onboarding.js',
+  '/onboarding.css',
+  '/popular-supplements.js',
+  '/popular-supplements.css',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

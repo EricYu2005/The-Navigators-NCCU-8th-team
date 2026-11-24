@@ -17,6 +17,8 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
   <link rel="stylesheet" href="style.css?v=4.4.0" />
+  <link rel="stylesheet" href="onboarding.css?v=1.0.0" />
+  <link rel="stylesheet" href="popular-supplements.css?v=1.0.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -91,6 +93,9 @@
           <h1>尋找適合您的保健品方案</h1>
         </div>
       </div>
+
+      <!-- 新手引導結果：依第 1 題把最想用的功能排在最前面（由 onboarding.js 渲染） -->
+      <div class="home-quickstart" id="home-quickstart"></div>
 
       <!-- 互動式需求表單收合入口按鈕（預設收起，點擊流暢動畫展開） -->
       <button type="button" class="finder-toggle-card" id="finder-toggle-btn" aria-expanded="false" aria-controls="finder-drawer" onclick="toggleFinderDrawer()">
@@ -277,6 +282,9 @@
 
       <!-- 分析結果區塊 -->
       <div id="finder-result-area" class="finder-result-area" style="display:none;"></div>
+
+      <!-- 最多人吃的熱門營養品（靜態示範資料，由 popular-supplements.js 渲染） -->
+      <section class="popular-supplements-section" id="popular-supplements-section" aria-label="最多人吃的熱門營養品"></section>
 
       <!-- 全站跨品牌保健品比價資料庫 -->
       <div class="card catalog-section-card" id="catalog-section-card">
@@ -1132,5 +1140,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script src="app.js?v=4.4.3"></script>
+  <script src="onboarding.js?v=1.0.0"></script>
+  <script src="popular-supplements.js?v=1.0.0"></script>
 </body>
 </html>

@@ -1,0 +1,569 @@
+/**
+ * onboarding.css
+ * 好選保健 PurePick — Duolingo 風格新手引導 ＋ 首頁「為你推薦」快速入口
+ * 所有 class 皆以 onb- / qs- 為前綴，避免影響既有 style.css
+ */
+
+:root {
+  --onb-green: #58cc02;
+  --onb-green-dark: #46a302;
+  --onb-green-soft: #eaf8dc;
+  --onb-green-border: #9fdc6b;
+  --onb-bg: #fcfbf7;
+  --onb-ink: #1f2937;
+  --onb-muted: #6b7280;
+  --onb-line: #e5e1d8;
+}
+
+/* ==================== 全螢幕引導層 ==================== */
+.onb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: var(--onb-bg);
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans TC', system-ui, sans-serif;
+  color: var(--onb-ink);
+}
+.onb-overlay.is-open { opacity: 1; }
+.onb-overlay.is-closing { opacity: 0; pointer-events: none; }
+
+.onb-shell {
+  width: 100%;
+  max-width: 460px;
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: max(14px, env(safe-area-inset-top)) 20px max(14px, env(safe-area-inset-bottom));
+}
+
+/* 頂部：品牌 + 略過 */
+.onb-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+.onb-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+.onb-brand-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fde68a 0 50%, #a7f3d0 50% 100%);
+  border: 2.5px solid var(--onb-ink);
+  transform: rotate(-18deg);
+}
+.onb-skip {
+  border: none;
+  background: transparent;
+  color: var(--onb-muted);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.onb-skip:hover { background: #f1eee6; color: var(--onb-ink); }
+
+/* 進度條 */
+.onb-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 6px;
+}
+.onb-progress {
+  flex: 1;
+  height: 14px;
+  border-radius: 999px;
+  background: #ebe7dd;
+  overflow: hidden;
+}
+.onb-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--onb-green);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+  position: relative;
+  transition: width 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.onb-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 8px;
+  right: 8px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}
+.onb-step-num {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--onb-muted);
+  min-width: 2.6em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 題目區（可捲動） */
+.onb-stage {
+  position: relative;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 2px 8px;
+}
+.onb-panel { width: 100%; }
+.onb-panel.leave-forward,
+.onb-panel.leave-back {
+  position: absolute;
+  top: 14px;
+  left: 2px;
+  right: 2px;
+  pointer-events: none;
+}
+.onb-panel.enter-forward { animation: onbInRight 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.onb-panel.enter-back { animation: onbInLeft 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.onb-panel.leave-forward { animation: onbOutLeft 0.28s ease both; }
+.onb-panel.leave-back { animation: onbOutRight 0.28s ease both; }
+
+@keyframes onbInRight { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+@keyframes onbInLeft { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+@keyframes onbOutLeft { to { opacity: 0; transform: translateX(-36px); } }
+@keyframes onbOutRight { to { opacity: 0; transform: translateX(36px); } }
+
+.onb-question {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.onb-mascot {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  animation: onbBob 2.6s ease-in-out infinite;
+}
+.onb-mascot-svg { width: 100%; height: 100%; display: block; }
+@keyframes onbBob {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+.onb-question-text h2 {
+  font-size: 1.42rem;
+  line-height: 1.3;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+  color: var(--onb-ink);
+}
+.onb-question-text p {
+  margin: 0;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  color: var(--onb-muted);
+}
+
+/* 選項卡片 */
+.onb-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.onb-option {
+  background: #fff;
+  border: 2px solid var(--onb-line);
+  border-bottom-width: 4px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.12s ease;
+  outline: none;
+}
+.onb-option:hover { border-color: #d6d0c3; }
+.onb-option:active { transform: translateY(2px); border-bottom-width: 2px; margin-bottom: 2px; }
+.onb-option:focus-visible { box-shadow: 0 0 0 3px rgba(88, 204, 2, 0.35); }
+.onb-option.is-selected {
+  border-color: var(--onb-green-border);
+  border-bottom-color: var(--onb-green);
+  background: var(--onb-green-soft);
+}
+.onb-option.pop { animation: onbPop 0.28s ease; }
+@keyframes onbPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+.onb-option-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.onb-radio {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2.5px solid #cfc9bc;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.onb-radio-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #fff;
+  transform: scale(0);
+  transition: transform 0.22s cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+.onb-option.is-selected .onb-radio {
+  border-color: var(--onb-green);
+  background: var(--onb-green);
+}
+.onb-option.is-selected .onb-radio-dot { transform: scale(1); }
+
+.onb-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.onb-option-text strong {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--onb-ink);
+  line-height: 1.35;
+}
+.onb-option-text span {
+  font-size: 0.84rem;
+  color: var(--onb-muted);
+  line-height: 1.4;
+}
+
+/* 自己填寫：卡片內展開輸入框 */
+.onb-custom-wrap {
+  margin: 12px 0 2px 40px;
+  animation: onbExpand 0.24s ease both;
+  cursor: default;
+}
+.onb-custom-wrap[hidden] { display: none; }
+@keyframes onbExpand { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.onb-custom-field {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 2px solid var(--onb-green-border);
+  border-radius: 14px;
+  padding: 0 14px;
+  max-width: 240px;
+}
+.onb-custom-field:focus-within { border-color: var(--onb-green); box-shadow: 0 0 0 3px rgba(88, 204, 2, 0.2); }
+.onb-custom-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--onb-ink);
+  padding: 11px 0;
+}
+.onb-custom-input.is-invalid { color: #dc2626; }
+.onb-custom-field:has(.is-invalid) { border-color: #fca5a5; }
+.onb-custom-unit {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--onb-muted);
+  font-size: 0.92rem;
+  padding-left: 8px;
+}
+.onb-custom-error {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+.onb-custom-error[hidden] { display: none; }
+
+/* 底部：上一步 / 下一步 + 隱私小字 */
+.onb-bottom {
+  border-top: 2px solid #efebe2;
+  padding-top: 14px;
+}
+.onb-nav {
+  display: flex;
+  gap: 12px;
+}
+.onb-btn {
+  flex: 1;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 14px 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.18s ease, opacity 0.18s ease;
+}
+.onb-btn:active:not(:disabled) { transform: translateY(3px); }
+.onb-btn-back {
+  flex: 0 0 34%;
+  background: #fff;
+  color: var(--onb-muted);
+  border: 2px solid var(--onb-line);
+  box-shadow: 0 4px 0 var(--onb-line);
+}
+.onb-btn-back:active:not(:disabled) { box-shadow: 0 1px 0 var(--onb-line); }
+.onb-btn-back.is-hidden { visibility: hidden; }
+.onb-btn-next {
+  background: var(--onb-green);
+  color: #fff;
+  border: 2px solid var(--onb-green);
+  box-shadow: 0 4px 0 var(--onb-green-dark);
+}
+.onb-btn-next:active:not(:disabled) { box-shadow: 0 1px 0 var(--onb-green-dark); }
+.onb-btn-next:disabled {
+  background: #e5e2da;
+  border-color: #e5e2da;
+  color: #a8a29e;
+  box-shadow: 0 4px 0 #d6d2c8;
+  cursor: not-allowed;
+}
+.onb-privacy {
+  margin: 12px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #9a948a;
+}
+.onb-privacy svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 360px) {
+  .onb-mascot { width: 68px; height: 68px; }
+  .onb-question-text h2 { font-size: 1.22rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onb-overlay *, .onb-overlay { animation: none !important; transition: none !important; }
+}
+
+/* ==================== 首頁「為你推薦」快速入口 ==================== */
+.home-quickstart {
+  background: #fff;
+  border: 2px solid var(--border, #e5e7eb);
+  border-radius: var(--radius-md, 16px);
+  padding: 1.1rem 1.15rem 1.15rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+.home-quickstart:empty { display: none; }
+.home-quickstart.qs-flash { animation: qsFlash 1.4s ease; }
+@keyframes qsFlash {
+  0% { box-shadow: 0 0 0 0 rgba(88, 204, 2, 0.55); }
+  60% { box-shadow: 0 0 0 10px rgba(88, 204, 2, 0); }
+  100% { box-shadow: var(--shadow-sm); }
+}
+.qs-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+.qs-head h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-dark, #111827);
+  margin: 0;
+}
+.qs-head p {
+  font-size: 0.84rem;
+  color: var(--text-muted, #4b5563);
+  margin: 0.2rem 0 0;
+  line-height: 1.45;
+}
+.qs-reset {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1.5px solid var(--border, #e5e7eb);
+  background: #fff;
+  color: var(--text-muted, #4b5563);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.qs-reset:hover { border-color: var(--border-strong, #cbd5e1); color: var(--text-dark, #111827); }
+.qs-reset svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.qs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.qs-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  text-align: left;
+  font: inherit;
+  background: #fff;
+  border: 2px solid var(--border, #e5e7eb);
+  border-bottom-width: 4px;
+  border-radius: 16px;
+  padding: 0.95rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.18s ease, transform 0.12s ease, background-color 0.18s ease;
+}
+.qs-card:hover { border-color: var(--border-strong, #cbd5e1); transform: translateY(-1px); }
+.qs-card:active { transform: translateY(1px); }
+.qs-card.is-recommended {
+  background: var(--onb-green-soft);
+  border-color: var(--onb-green-border);
+  border-bottom-color: var(--onb-green);
+}
+.qs-badge {
+  position: absolute;
+  top: -10px;
+  right: 12px;
+  background: var(--onb-green);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  box-shadow: 0 2px 0 var(--onb-green-dark);
+}
+.qs-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #f5f3ee;
+  display: grid;
+  place-items: center;
+}
+.qs-card.is-recommended .qs-icon { background: #fff; }
+.qs-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: #52525b;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.qs-card.is-recommended .qs-icon svg { stroke: var(--onb-green-dark); }
+.qs-text { display: flex; flex-direction: column; gap: 0.2rem; }
+.qs-text strong { font-size: 0.98rem; font-weight: 800; color: var(--text-dark, #111827); }
+.qs-text span { font-size: 0.8rem; color: var(--text-muted, #4b5563); line-height: 1.45; }
+.qs-cta {
+  margin-top: auto;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--primary, #7c3aed);
+}
+.qs-card.is-recommended .qs-cta { color: var(--onb-green-dark); }
+
+@media (max-width: 768px) {
+  .qs-grid { grid-template-columns: 1fr; gap: 0.6rem; }
+  .qs-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: 'icon text' 'icon cta';
+    column-gap: 0.8rem;
+    row-gap: 0.25rem;
+    padding: 0.85rem 0.9rem;
+  }
+  .qs-icon { grid-area: icon; align-self: center; }
+  .qs-text { grid-area: text; }
+  .qs-cta { grid-area: cta; }
+  /* 手機上非推薦卡片精簡為一行，避免把主要內容推太遠 */
+  .qs-grid:has(.is-recommended) .qs-card:not(.is-recommended) {
+    grid-template-areas: 'icon text' 'icon cta';
+    padding: 0.65rem 0.9rem;
+  }
+  .qs-grid:has(.is-recommended) .qs-card:not(.is-recommended) .qs-text span { display: none; }
+  .qs-grid:has(.is-recommended) .qs-card:not(.is-recommended) .qs-icon { width: 32px; height: 32px; }
+}
+
+/* 底部導覽列對應分頁的小亮點 */
+.b-tab-item.onb-tab-highlight .b-tab-icon-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 999px;
+  background: var(--onb-green);
+}
+.b-tab-item.onb-tab-highlight .b-tab-icon-wrap { position: relative; }
+
+/* 完成提示 */
+.onb-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 12px);
+  background: var(--onb-ink);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 100001;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.onb-toast.is-show { opacity: 1; transform: translate(-50%, 0); }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>好選保健 PurePick｜保健品比價、重複檢查與看診清單</title>
   <meta name="description" content="幫您跨品牌比對保健食品每日花費、抓出重複購買，並整理「告知醫生目前使用的保健品」看診清單與服用日曆。" />
-  <meta name="theme-color" content="#fcfbf7" />
+  <meta name="theme-color" content="#FFFFFF" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -16,26 +16,53 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.5.0" />
+  <link rel="stylesheet" href="style.css?v=4.6.0" />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <!-- ==================== 頂部狀態標題列 ==================== -->
+  <!-- ==================== 頂部臨床雙層狀態搜尋標題列 (STICKY HEADER) ==================== -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand-group" onclick="switchView('view-finder')">
         <div class="brand-logo-box" title="好選保健 PurePick">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <!-- PurePick 營養膠囊與智慧精選打勾 -->
             <path d="M10.5 20.5 3.5 13.5a4.95 4.95 0 1 1 7-7l7 7a4.95 4.95 0 1 1-7 7Z"/>
             <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/>
-            <path d="m15 11 2.5 2.5 4.5-4.5" stroke="#34d399" stroke-width="2.4"/>
+            <path d="m15 11 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.4"/>
           </svg>
         </div>
         <div class="brand-titles">
           <span class="brand-name">好選保健 PurePick</span>
+          <span class="brand-sub-tag">Clinical Supplement Intelligence</span>
+        </div>
+      </div>
+
+      <!-- 桌面版置中雙欄整合搜尋列 (180px 品類選擇器 + 1px 分隔線 + 品牌/成分搜尋) -->
+      <div class="clinical-dual-search" role="search">
+        <div class="dual-search-cat">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <select id="header-cat-select" class="dual-search-select" aria-label="篩選保健品分類" onchange="handleHeaderCategoryChange(this.value)">
+            <option value="all">全部保養分類</option>
+            <option value="魚油">魚油 Omega-3</option>
+            <option value="葉黃素">晶亮葉黃素</option>
+            <option value="益生菌">順暢益生菌</option>
+            <option value="B群">精神 B 群</option>
+            <option value="鈣鎂D">鈣鎂D / 關節</option>
+            <option value="膠原蛋白">美妍膠原蛋白</option>
+          </select>
+        </div>
+        <div class="dual-search-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            type="search"
+            id="header-search-input"
+            class="dual-search-input"
+            placeholder="快速搜尋品牌、品名或關鍵有效成分 (如 rTG、游離型)..."
+            oninput="handleHeaderSearchInput(this.value)"
+          />
         </div>
       </div>
 
@@ -75,6 +102,18 @@
             <span class="logout-text-short">登出</span>
           </button>
         </div>
+      </div>
+    </div>
+    <!-- 手機版獨立全寬搜尋列 (Height 44px, Background #F9FAFB) -->
+    <div class="mobile-search-row">
+      <div class="mobile-search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input
+          type="search"
+          id="mobile-header-search-input"
+          placeholder="搜尋品牌、品名或有效成分..."
+          oninput="handleHeaderSearchInput(this.value)"
+        />
       </div>
     </div>
   </header>
@@ -300,15 +339,50 @@
           </div>
         </div>
 
-        <!-- 品類篩選膠囊列 -->
+        <!-- Health Conditions Category Grid (粉彩圓標健康分類網格) -->
         <div class="category-filter-pills" id="category-filter-pills">
-          <button type="button" class="cat-pill active" data-cat="all" onclick="setCatalogCategory('all')">全部</button>
-          <button type="button" class="cat-pill" data-cat="魚油" onclick="setCatalogCategory('魚油')">魚油 (Omega-3)</button>
-          <button type="button" class="cat-pill" data-cat="葉黃素" onclick="setCatalogCategory('葉黃素')">葉黃素</button>
-          <button type="button" class="cat-pill" data-cat="益生菌" onclick="setCatalogCategory('益生菌')">益生菌</button>
-          <button type="button" class="cat-pill" data-cat="B群" onclick="setCatalogCategory('B群')">維生素 B 群</button>
-          <button type="button" class="cat-pill" data-cat="鈣鎂D" onclick="setCatalogCategory('鈣鎂D')">鈣鎂D / 關節</button>
-          <button type="button" class="cat-pill" data-cat="膠原蛋白" onclick="setCatalogCategory('膠原蛋白')">膠原蛋白</button>
+          <button type="button" class="cat-pill active" data-cat="all" onclick="setCatalogCategory('all')">
+            <span class="cat-pill-icon-circle" style="background:#E8F8F5; color:#1ABC9C;">
+              <svg viewBox="0 0 24 24" stroke="currentColor"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+            </span>
+            <span class="cat-pill-label">全部品項</span>
+          </button>
+          <button type="button" class="cat-pill" data-cat="魚油" onclick="setCatalogCategory('魚油')">
+            <span class="cat-pill-icon-circle" style="background:#FEF2F2; color:#EF4444;">
+              <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </span>
+            <span class="cat-pill-label">魚油循環</span>
+          </button>
+          <button type="button" class="cat-pill" data-cat="葉黃素" onclick="setCatalogCategory('葉黃素')">
+            <span class="cat-pill-icon-circle" style="background:#EFF6FF; color:#3498DB;">
+              <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            <span class="cat-pill-label">晶亮葉黃素</span>
+          </button>
+          <button type="button" class="cat-pill" data-cat="益生菌" onclick="setCatalogCategory('益生菌')">
+            <span class="cat-pill-icon-circle" style="background:#ECFDF5; color:#10B981;">
+              <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </span>
+            <span class="cat-pill-label">消化益生菌</span>
+          </button>
+          <button type="button" class="cat-pill" data-cat="B群" onclick="setCatalogCategory('B群')">
+            <span class="cat-pill-icon-circle" style="background:#FFFBEB; color:#F59E0B;">
+              <svg viewBox="0 0 24 24" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </span>
+            <span class="cat-pill-label">精神 B 群</span>
+          </button>
+          <button type="button" class="cat-pill" data-cat="鈣鎂D" onclick="setCatalogCategory('鈣鎂D')">
+            <span class="cat-pill-icon-circle" style="background:#F5F3FF; color:#6366F1;">
+              <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </span>
+            <span class="cat-pill-label">鈣鎂D・舒眠</span>
+          </button>
+          <button type="button" class="cat-pill" data-cat="膠原蛋白" onclick="setCatalogCategory('膠原蛋白')">
+            <span class="cat-pill-icon-circle" style="background:#FDF2F8; color:#EC4899;">
+              <svg viewBox="0 0 24 24" stroke="currentColor"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
+            </span>
+            <span class="cat-pill-label">美妍膠原</span>
+          </button>
         </div>
 
         <div class="catalog-grid" id="catalog-grid"></div>
@@ -600,18 +674,69 @@
       </div>
     </section>
 
-    <!-- ==================== 課程專題免責聲明 ==================== -->
-    <footer class="legal-disclaimer-footer">
-      <div class="legal-disclaimer-card">
-        <p class="legal-statement-core">
-          本網頁僅供政治大學創創入門課程使用，非正式平台。
-        </p>
-        <p class="legal-statement-desc">
-          本平台（好選保健 PurePick）係專為國立政治大學「創新創業入門」第八組團隊專案所研發之學術教學展示模型，全線上營運且未設立實體營業處所，非屬我國《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之正式醫療診斷軟體或藥事諮詢機構。網頁所載之各品牌保健食品價格、成分含量換算、重複購買檢查與服用日曆紀錄，均僅供課堂教學演練與小組專題報告展示用途，不具備任何臨床醫療診斷、處方指示或疾病治療效力。若真實生活中有身體不適、慢性疾病服藥疑問或醫療需求，請務必諮詢合格執業醫師、藥師或營養師。
-        </p>
-        <div class="legal-footer-meta">
-          <span>國立政治大學 創新創業入門 第八組團隊（The Navigators）教學展示專用</span>
-          <span>版權所有 © 2026 Academic Project • All Rights Reserved.</span>
+    <!-- ==================== Modern Clinical 4-Column Footer & 學術專題聲明 ==================== -->
+    <footer class="clinical-footer">
+      <div class="clinical-footer-inner">
+        <div class="clinical-footer-grid">
+          <div>
+            <div class="brand-group" onclick="switchView('view-finder')" style="margin-bottom:0.4rem;">
+              <div class="brand-logo-box" style="width:34px;height:34px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.5 20.5 3.5 13.5a4.95 4.95 0 1 1 7-7l7 7a4.95 4.95 0 1 1-7 7Z"/>
+                  <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/>
+                  <path d="m15 11 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.4"/>
+                </svg>
+              </div>
+              <span class="brand-name">好選保健 PurePick</span>
+            </div>
+            <p class="footer-brand-desc">
+              獨立第三方跨品牌保健品比價、成分去冗試算與門診看診溝通平台。100% 不收受保健品廠商銷售抽成，依據衛福部 DRIs 第八版為您的健康與荷包把關。
+            </p>
+          </div>
+
+          <div>
+            <div class="footer-col-heading">PUREPICK 平台導覽</div>
+            <ul class="footer-link-list">
+              <li><button type="button" class="footer-link-btn" onclick="switchView('view-finder')">跨品牌透明比價庫</button></li>
+              <li><button type="button" class="footer-link-btn" onclick="switchView('view-wishlist')">考慮清單與去冗分析</button></li>
+              <li><button type="button" class="footer-link-btn" onclick="switchView('view-calendar')">已購買保健櫃與日曆</button></li>
+              <li><button type="button" class="footer-link-btn" onclick="openSubscriptionModal()">免費版與 Pro 方案說明</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="footer-col-heading">CLINICAL 智慧工具</div>
+            <ul class="footer-link-list">
+              <li><button type="button" class="footer-link-btn" onclick="openAddSupplementModal()">Vertex AI 拍照辨識建檔</button></li>
+              <li><button type="button" class="footer-link-btn" onclick="switchView('view-wishlist'); openA4ReportPromptModal();">單頁 A4 訪談健檢報告</button></li>
+              <li><button type="button" class="footer-link-btn" onclick="openDoctorFullscreenModal()">全螢幕門診大字看診卡</button></li>
+              <li><button type="button" class="footer-link-btn" onclick="openWebAppModal()">安裝手機桌面 Web App</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="footer-col-heading">LEGAL &amp; STANDARDS</div>
+            <ul class="footer-link-list">
+              <li><button type="button" class="footer-link-btn" onclick="openUserGuideModal()">平台操作與合規說明</button></li>
+              <li><span style="font-size:13px; color:#4B5563;">衛福部國健署 DRIs 第八版基準</span></li>
+              <li><span style="font-size:13px; color:#4B5563;">LINE OAuth 2.0 實名驗證保護</span></li>
+              <li><span style="font-size:13px; color:#4B5563;">國立政治大學 創新創業入門第八組</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="clinical-legal-note">
+          <strong>學術專案免責聲明（本網頁僅供政治大學創創入門課程使用，非正式平台）：</strong>
+          本平台係國立政治大學「創新創業入門」第八組（The Navigators）研發之教學展示模型，全線上運作無實體營業處所，非屬《食品安全衛生管理法》、《醫療法》或《醫療器材管理法》規範之醫療診斷軟體或藥事諮詢機構。所載價格、成分換算、去冗檢查與日曆紀錄僅供教學展示，不具臨床診斷、處方或治療效力。若有身體不適或慢性病用藥疑問，請諮詢合格醫師、藥師或營養師。
+        </div>
+
+        <div class="clinical-footer-bottom">
+          <span>© 2026 好選保健 PurePick • NCCU Entrepreneurship Team 8 (The Navigators)</span>
+          <div class="footer-social-icons">
+            <span>LINE Official @044ihumq</span>
+            <span>•</span>
+            <span>Vertex AI Powered</span>
+          </div>
         </div>
       </div>
     </footer>
@@ -1205,6 +1330,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.5.0"></script>
+  <script src="app.js?v=4.6.0"></script>
 </body>
 </html>

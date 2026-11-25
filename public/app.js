@@ -559,8 +559,8 @@ function renderFinderResult(result) {
 
   const bundleIds = (result.recommendedBundle || []).map(x => x.id);
   const reasonsHtml = (result.matchedReasons || []).map(r => `
-    <div style="margin-top:0.55rem; padding:0.65rem 0.85rem; background:#fffbeb; border-radius:8px; border:1.5px solid #c4b5fd; font-size:0.85rem;">
-      <strong style="color:#7c3aed;">【${r.category}｜${r.label}】挑選標準：</strong>
+    <div style="margin-top:0.55rem; padding:0.7rem 0.95rem; background:#F9FAFB; border-radius:12px; border:1px solid #E5E7EB; border-left:3.5px solid #1ABC9C; font-size:0.85rem;">
+      <strong style="color:#0E6251;">【${r.category}｜${r.label}】挑選標準：</strong>
       <span>${r.buyingAdvice}</span>
     </div>
   `).join('');
@@ -568,8 +568,8 @@ function renderFinderResult(result) {
   const comparisonsHtml = (result.categoryComparisons || []).map(group => {
     const cardsHtml = (group.products || []).slice(0, 3).map(item => renderSupplementCardHtml(item, item.id === group.topPickId)).join('');
     return `
-      <div style="margin-top: 1.35rem;">
-        <h3 style="font-size: 1.05rem; font-weight: 800; color: #2e1065; margin-bottom: 0.75rem;">
+      <div style="margin-top: 1.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #1C1C1C; margin-bottom: 0.85rem;">
           【${group.category}】效益與花費比較
         </h3>
         <div class="catalog-grid">
@@ -635,9 +635,81 @@ function setCatalogCategory(cat) {
   document.querySelectorAll('#category-filter-pills .cat-pill').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.cat === cat);
   });
+  const headerCatSelect = document.getElementById('header-cat-select');
+  if (headerCatSelect && headerCatSelect.value !== cat) {
+    headerCatSelect.value = cat;
+  }
   renderCatalog();
 }
 window.setCatalogCategory = setCatalogCategory;
+
+function handleHeaderCategoryChange(cat) {
+  if (state.activeView !== 'view-finder') {
+    switchView('view-finder');
+  }
+  setCatalogCategory(cat);
+  const catalogSection = document.getElementById('catalog-section-card');
+  if (catalogSection) {
+    catalogSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+window.handleHeaderCategoryChange = handleHeaderCategoryChange;
+
+function handleHeaderSearchInput(val) {
+  if (state.activeView !== 'view-finder') {
+    switchView('view-finder');
+  }
+  const desktopInput = document.getElementById('header-search-input');
+  const mobileInput = document.getElementById('mobile-header-search-input');
+  const catalogInput = document.getElementById('catalog-search-input');
+  if (desktopInput && desktopInput.value !== val) desktopInput.value = val;
+  if (mobileInput && mobileInput.value !== val) mobileInput.value = val;
+  if (catalogInput && catalogInput.value !== val) catalogInput.value = val;
+  renderCatalog();
+}
+window.handleHeaderSearchInput = handleHeaderSearchInput;
+
+function getCategoryVisualTheme(category) {
+  const map = {
+    '魚油': {
+      bg: 'linear-gradient(135deg, #FEF2F2 0%, #FFE4E6 100%)',
+      accent: '#E11D48',
+      en: 'OMEGA-3 EPA / DHA',
+      svg: '<svg viewBox="0 0 24 24" stroke="#E11D48"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>'
+    },
+    '葉黃素': {
+      bg: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+      accent: '#3498DB',
+      en: 'LUTEIN & ZEAXANTHIN',
+      svg: '<svg viewBox="0 0 24 24" stroke="#3498DB"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+    },
+    '益生菌': {
+      bg: 'linear-gradient(135deg, #E8F8F5 0%, #D1FAE5 100%)',
+      accent: '#1ABC9C',
+      en: 'PROBIOTICS MICROBIOME',
+      svg: '<svg viewBox="0 0 24 24" stroke="#1ABC9C"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>'
+    },
+    'B群': {
+      bg: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+      accent: '#D97706',
+      en: 'VITAMIN B COMPLEX',
+      svg: '<svg viewBox="0 0 24 24" stroke="#D97706"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+    },
+    '鈣鎂D': {
+      bg: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)',
+      accent: '#6366F1',
+      en: 'CALCIUM • MAGNESIUM • D3',
+      svg: '<svg viewBox="0 0 24 24" stroke="#6366F1"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
+    },
+    '膠原蛋白': {
+      bg: 'linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)',
+      accent: '#EC4899',
+      en: 'BIOACTIVE COLLAGEN',
+      svg: '<svg viewBox="0 0 24 24" stroke="#EC4899"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>'
+    }
+  };
+  return map[category] || map['益生菌'];
+}
 
 function renderCatalog() {
   const grid = document.getElementById('catalog-grid');
@@ -664,7 +736,7 @@ function renderCatalog() {
   });
 
   if (list.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2rem; color:#64748b;">找不到符合條件的保健食品，可嘗試切換分類或點選右上角手動新增。</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2.5rem; color:#6B7280; background:#F9FAFB; border-radius:1rem;">找不到符合條件的保健食品，可嘗試切換分類或點選下方「＋」新增建檔。</div>`;
     return;
   }
 
@@ -675,53 +747,72 @@ window.renderCatalog = renderCatalog;
 function renderSupplementCardHtml(item, isTopPick) {
   const inWishlist = state.wishlist.some(x => Number(x.id) === Number(item.id));
   const inPurchased = state.purchased.some(x => Number(x.id) === Number(item.id));
+  const theme = getCategoryVisualTheme(item.category);
+  const score = Math.round(Number(item.value_score || 84));
 
   return `
     <div class="supp-card ${isTopPick ? 'top-recommended' : ''}">
       <div>
-        <div class="supp-top-row">
-          <div>
-            <span class="supp-cat-badge">${item.category}</span>
-            ${isTopPick ? '<span class="supp-cat-badge" style="background:#7c3aed;color:#fff;margin-left:4px;">預算推薦</span>' : ''}
-            ${item.is_vegan ? '<span class="supp-cat-badge" style="background:#dcfce7;color:#15803d;margin-left:4px;">素食</span>' : ''}
+        <!-- 16:9 Clinical Visual Stage with Hover Gradient Overlay & Scale 1.05 -->
+        <div class="supp-visual-stage" style="background:${theme.bg};">
+          <span class="supp-badge-topleft">
+            ${isTopPick ? '預算首選・' : ''}綜合效益 ${score} 分
+          </span>
+          <div class="supp-visual-inner">
+            <div class="supp-visual-copy">
+              <span class="supp-visual-en" style="color:${theme.accent};">${theme.en}</span>
+              <span class="supp-visual-form">${escapeHtml(item.absorption_form || '標準配方')}</span>
+            </div>
+            <div class="supp-visual-icon-orb">
+              ${theme.svg}
+            </div>
           </div>
+          <span class="supp-badge-bottomright">
+            NT$ ${Math.round(item.daily_cost)} / 日・${item.days_supply}天份
+          </span>
+          <div class="hover-gradient-overlay"></div>
         </div>
 
-        <div class="supp-brand-title">${item.brand}｜${item.name}</div>
+        <div class="supp-body-pad">
+          <div class="supp-sub-cat-row">
+            <span>${escapeHtml(item.category)}</span>
+            <span>•</span>
+            <span>${escapeHtml(item.recommended_timing || '隨餐/飯後')}</span>
+            ${item.is_vegan ? '<span style="color:#10B981; font-weight:800;">• 全素可食</span>' : ''}
+          </div>
 
-        <div class="supp-price-metrics">
-          <div class="metric-item">
-            <span class="metric-label">每日真實花費</span>
-            <span class="metric-val highlight-daily">NT$ ${Math.round(item.daily_cost)} / 日</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">每月換算花費</span>
-            <span class="metric-val">NT$ ${item.monthly_cost}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">單盒售價 (${item.days_supply}天份)</span>
-            <span class="metric-val">$${item.price}</span>
-          </div>
-        </div>
+          <h3 class="supp-brand-title">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</h3>
 
-        <div class="supp-spec-list">
-          <div class="spec-row">
-            <span class="spec-tag">有效成分：</span>
-            <span>${item.active_summary}</span>
+          <div class="supp-price-metrics">
+            <div class="metric-item">
+              <span class="metric-label">每日真實花費</span>
+              <span class="metric-val highlight-daily">NT$ ${Math.round(item.daily_cost)}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">每月換算</span>
+              <span class="metric-val">NT$ ${item.monthly_cost}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">單盒總價</span>
+              <span class="metric-val">$${item.price}</span>
+            </div>
           </div>
-          <div class="spec-row">
-            <span class="spec-tag">吸收型態：</span>
-            <span>${item.absorption_form}（${item.dosage_form}，每日 ${item.daily_units} 份）</span>
-          </div>
-          <div class="spec-row">
-            <span class="spec-tag">純淨檢視：</span>
-            <span>${item.additives_note || '一般標準配方'}</span>
-          </div>
-        </div>
 
-        <div class="pros-cons-box">
-          <div class="pro-line"><strong>優勢：</strong>${item.pros}</div>
-          <div class="con-line"><strong>注意：</strong>${item.cons}</div>
+          <div class="supp-spec-list">
+            <div class="spec-row">
+              <span class="spec-tag">有效成分：</span>
+              <span>${escapeHtml(item.active_summary)}</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-tag">劑型用量：</span>
+              <span>${escapeHtml(item.dosage_form)}（每日 ${item.daily_units} 份）</span>
+            </div>
+          </div>
+
+          <div class="pros-cons-box">
+            <div class="pro-line"><strong>臨床優勢：</strong>${escapeHtml(item.pros)}</div>
+            <div class="con-line"><strong>選購注意：</strong>${escapeHtml(item.cons)}</div>
+          </div>
         </div>
       </div>
 
@@ -731,7 +822,7 @@ function renderSupplementCardHtml(item, isTopPick) {
           class="btn btn-sm ${inWishlist ? 'btn-primary' : 'btn-outline'}"
           onclick="toggleUserListItem(${item.id}, 'wishlist')"
         >
-          ${inWishlist ? '已關注' : '加入分析'}
+          ${inWishlist ? '已加入分析' : '加入分析'}
         </button>
         <button
           type="button"
@@ -739,7 +830,7 @@ function renderSupplementCardHtml(item, isTopPick) {
           onclick="toggleUserListItem(${item.id}, 'purchased')"
           title="加入已購買服用日曆櫃"
         >
-          ${inPurchased ? '已在日曆櫃' : '已在外部購買（加入日曆）'}
+          ${inPurchased ? '已在日曆櫃' : '加入服用日曆'}
         </button>
       </div>
     </div>
@@ -1532,8 +1623,8 @@ function renderWeeklySummary() {
       dateRangeEl.textContent = 'Pro 專屬體感大數據診斷';
     }
     container.innerHTML = `
-      <div style="padding:1.25rem; text-align:center; background:#faf5ff; border:1.5px dashed #c084fc; border-radius:10px;">
-        <div style="display:inline-flex; align-items:center; gap:0.4rem; color:#6b21a8; font-weight:800; font-size:0.95rem; margin-bottom:0.35rem;">
+      <div style="padding:1.25rem; text-align:center; background:linear-gradient(135deg,#E8F8F5 0%,#EBF5FB 100%); border:1px solid #B7EFE4; border-radius:12px;">
+        <div style="display:inline-flex; align-items:center; gap:0.4rem; color:#0E6251; font-weight:800; font-size:0.95rem; margin-bottom:0.35rem;">
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <span>每週身體健康總結與 1-to-1 配方升級建議（Pro 專屬）</span>
         </div>
@@ -3371,7 +3462,13 @@ function renderA4ReportSheet(reportData) {
 
   const dateStr = formatDateStr(generatedAt ? new Date(generatedAt) : new Date());
   const grade = ['A', 'B', 'C'].includes(narrative.overallGrade) ? narrative.overallGrade : 'B';
-  const gradeLabelMap = { A: '精準優異', B: '尚可微調', C: '建議去冗' };
+  const gradeLabelMap = { A: '精準優異', B: '可再精簡', C: '建議去冗' };
+  const gradeColorMap = { A: '#1ABC9C', B: '#3498DB', C: '#E11D48' };
+  const gradePctMap = { A: 92, B: 76, C: 58 };
+  const gaugeColor = gradeColorMap[grade];
+  const radius = 27;
+  const circumference = Math.round(2 * Math.PI * radius);
+  const dashOffset = Math.round(circumference * (1 - gradePctMap[grade] / 100));
 
   const currentTotalMonthly = Math.round(Number(analysis.purchasedMonthlyCost || 0) + Number(analysis.wishlistMonthlyCost || 0));
   const monthlySavings = Math.round(Number(analysis.potentialMonthlySavings || 0));
@@ -3386,12 +3483,12 @@ function renderA4ReportSheet(reportData) {
     card1VisualHtml = alerts.slice(0, 3).map(a => `
       <div style="display:flex; flex-direction:column; gap:3px;">
         <div class="a4-vs-item a4-vs-keep">
-          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">保留：<strong>${escapeHtml(a.keepProductName)}</strong></span>
-          <span class="a4-pill-mini" style="background:#059669; color:#fff;">高CP主力</span>
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">保留主力：<strong>${escapeHtml(a.keepProductName)}</strong></span>
+          <span class="a4-pill-mini" style="background:#1ABC9C; color:#fff;">高CP首選</span>
         </div>
         <div class="a4-vs-item a4-vs-drop">
-          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">剔除：${escapeHtml(a.dropProductName)}</span>
-          <span class="a4-pill-mini" style="background:#e11d48; color:#fff;">月省 NT$${a.savedMonthly}</span>
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">建議剔除：${escapeHtml(a.dropProductName)}</span>
+          <span class="a4-pill-mini" style="background:#E11D48; color:#fff;">-NT$ ${a.savedMonthly}/月</span>
         </div>
       </div>
     `).join('');
@@ -3402,38 +3499,38 @@ function renderA4ReportSheet(reportData) {
         ${allItems.slice(0, 4).map(it => `
           <div class="a4-vs-item a4-vs-keep">
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong>[${escapeHtml(it.category)}]</strong> ${escapeHtml(it.brand)} ${escapeHtml(it.name)}</span>
-            <span class="a4-pill-mini" style="background:#0d9488; color:#fff;">NT$${Math.round(Number(it.monthly_cost || 0))}/月</span>
+            <span class="a4-pill-mini" style="background:#1ABC9C; color:#fff;">NT$ ${Math.round(Number(it.monthly_cost || 0))}/月</span>
           </div>
         `).join('')}
       </div>
     `;
   }
 
-  // 卡片 2 視覺：衛福部 DRIs 劑量與安全上限 (UL) 橫條圖（優先排超標/重疊項目，最多顯示 5 項）
+  // 卡片 2 視覺：醫院抽血報告式 DRIs 參考區間尺（優先排超標/重疊項目，最多顯示 5 項）
   const priorityOrder = { exceed_ul: 0, duplicate_high: 1, optimal: 2, low: 3 };
   const sortedDosage = [...(analysis.dosageChecks || [])]
     .sort((a, b) => (priorityOrder[a.status] ?? 9) - (priorityOrder[b.status] ?? 9))
     .slice(0, 5);
 
   const card2VisualHtml = sortedDosage.length > 0 ? sortedDosage.map(d => {
-    const ulDenom = d.ul ? d.ul * 1.14 : d.recommended * 2;
+    const ulDenom = d.ul ? d.ul / 0.85 : d.recommended * 2;
     const fillPct = Math.min(100, Math.max(12, Math.round((d.totalAmount / ulDenom) * 100)));
-    let barColor = '#10b981';
-    let statusColor = '#047857';
+    let barColor = '#1ABC9C';
+    let statusColor = '#0E6251';
     if (d.status === 'exceed_ul') {
-      barColor = '#e11d48';
-      statusColor = '#be123c';
+      barColor = '#E11D48';
+      statusColor = '#BE123C';
     } else if (d.status === 'duplicate_high') {
-      barColor = '#f59e0b';
-      statusColor = '#b45309';
+      barColor = '#F59E0B';
+      statusColor = '#B45309';
     } else if (d.status === 'low') {
-      barColor = '#94a3b8';
-      statusColor = '#475569';
+      barColor = '#3498DB';
+      statusColor = '#1F618D';
     }
     return `
       <div class="a4-dri-row">
         <div class="a4-dri-meta">
-          <span><strong>${escapeHtml(d.name)}</strong> ${d.totalAmount}${escapeHtml(d.unit)} <span style="color:#64748b;">(建議 ${d.recommended} / 上限 ${d.ul}${escapeHtml(d.unit)})</span></span>
+          <span><strong>${escapeHtml(d.name)}</strong> ${d.totalAmount} ${escapeHtml(d.unit)} <span style="color:#6B7280;">(建議 ${d.recommended} / UL ${d.ul}${escapeHtml(d.unit)})</span></span>
           <span style="font-weight:800; color:${statusColor};">${escapeHtml(d.statusLabel)}</span>
         </div>
         <div class="a4-dri-track">
@@ -3442,7 +3539,7 @@ function renderA4ReportSheet(reportData) {
         </div>
       </div>
     `;
-  }).join('') : '<div style="font-size:0.72rem; color:#64748b;">目前品項尚無可量化之微量營養素標示</div>';
+  }).join('') : '<div style="font-size:0.72rem; color:#6B7280;">目前品項尚無可量化之微量營養素標示</div>';
 
   // 卡片 3 視覺：早・中・晚最佳吸收時序表（僅列入保留與服用品項）
   const activeStack = [...purchased, ...wishlist.filter(w => !droppedIdSet.has(Number(w.id)))];
@@ -3459,20 +3556,20 @@ function renderA4ReportSheet(reportData) {
 
   const renderSlotItems = (arr) => arr.length > 0
     ? arr.slice(0, 4).map(s => `<span class="a4-slot-chip">• ${escapeHtml(s)}</span>`).join('')
-    : '<span class="a4-slot-chip" style="color:#94a3b8;">（無排程品項）</span>';
+    : '<span class="a4-slot-chip" style="color:#9CA3AF;">— 無排程品項 —</span>';
 
   const card3VisualHtml = `
     <div class="a4-slot-grid">
       <div class="a4-slot-col">
-        <div class="a4-slot-head" style="color:#0284c7;">早上空腹 (07:00)</div>
+        <div class="a4-slot-head" style="color:#3498DB;">07:00 早上空腹</div>
         ${renderSlotItems(morningSlot)}
       </div>
       <div class="a4-slot-col">
-        <div class="a4-slot-head" style="color:#059669;">隨餐/飯後 (午晚餐)</div>
+        <div class="a4-slot-head" style="color:#1ABC9C;">午晚餐 隨餐飯後</div>
         ${renderSlotItems(mealSlot)}
       </div>
       <div class="a4-slot-col">
-        <div class="a4-slot-head" style="color:#6d28d9;">睡前時段 (22:00)</div>
+        <div class="a4-slot-head" style="color:#1F618D;">22:00 睡前放鬆</div>
         ${renderSlotItems(bedSlot)}
       </div>
     </div>
@@ -3496,85 +3593,92 @@ function renderA4ReportSheet(reportData) {
     <div class="a4-doc-badges">
       ${Array.from(docRemindSet).slice(0, 4).map(b => `<span class="a4-doc-badge">${escapeHtml(b)}</span>`).join('')}
     </div>
-    <div style="font-size:0.67rem; color:#475569; margin-top:2px;">
-      <strong>目前盤點總覽：</strong>已購服用中 ${purchased.length} 款 ／ 考慮購入 ${wishlist.length} 款（精簡後建議保留 ${activeStack.length} 款）
+    <div style="font-size:0.68rem; color:#4B5563; margin-top:3px;">
+      <strong>臨床盤點摘要：</strong>目前服用 ${purchased.length} 款 ＋ 考慮購入 ${wishlist.length} 款 → <strong>優化後建議保留 ${activeStack.length} 款</strong>
     </div>
   `;
 
   const questions = Array.isArray(narrative.interviewQuestions) ? narrative.interviewQuestions : [];
   const interviewHtml = questions.length > 0 ? `
     <div class="a4-interview-box">
-      <strong>訪談互動追問引導：</strong>
-      ${questions.map((q, idx) => `<span style="margin-right:0.8rem;">Q${idx + 1}. ${escapeHtml(q)}</span>`).join('')}
+      <strong>CLINICAL INTERVIEW PROMPTS｜使用者訪談追問：</strong>
+      ${questions.map((q, idx) => `<span style="margin-right:0.85rem;">Q${idx + 1}. ${escapeHtml(q)}</span>`).join('')}
     </div>
   ` : '';
 
   const exceedCount = (analysis.dosageChecks || []).filter(d => d.status === 'exceed_ul').length;
 
   sheet.innerHTML = `
-    <!-- 1. 頂部深色品牌與總評標題橫幅 -->
+    <!-- 1. 極簡臨床頂部標題列 ＋ SVG Donut Gauge 評分儀表環 -->
     <header class="a4-header-banner">
       <div class="a4-header-main">
         <div class="a4-brand-row">
-          <span>好選保健 PurePick｜個人化跨品牌保健品去冗與安全劑量健檢報告</span>
-          <span>• 評估日期：${escapeHtml(dateStr)}</span>
+          <span>PUREPICK CLINICAL LAB REPORT｜跨品牌保健品去冗與安全劑量健檢</span>
+          <span>• ${escapeHtml(dateStr)}</span>
         </div>
         <h2 class="a4-headline">${escapeHtml(narrative.headline || '跨品牌保健品配置與劑量安全健檢')}</h2>
         <div class="a4-subject-meta">
-          <strong>訪談對象：</strong>${escapeHtml(subjectName)}
+          <strong>受測對象：</strong>${escapeHtml(subjectName)}
           ${subjectNote ? ` ｜ <strong>生活與用藥背景：</strong>${escapeHtml(subjectNote)}` : ''}
         </div>
       </div>
-      <div class="a4-grade-ring grade-${grade}">
-        <span class="a4-grade-letter">${grade}</span>
-        <span class="a4-grade-caption">${gradeLabelMap[grade]}</span>
+      <div class="a4-donut-gauge" title="綜合配置評級 ${grade}">
+        <svg viewBox="0 0 68 68">
+          <circle cx="34" cy="34" r="${radius}" fill="none" stroke="#F3F4F6" stroke-width="5.5"></circle>
+          <circle cx="34" cy="34" r="${radius}" fill="none" stroke="${gaugeColor}" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"></circle>
+        </svg>
+        <div class="a4-donut-center">
+          <span class="a4-grade-letter" style="color:${gaugeColor};">${grade}</span>
+          <span class="a4-grade-caption">${gradeLabelMap[grade]}</span>
+        </div>
       </div>
     </header>
 
-    <!-- 2. 整體診斷摘要 ＋ 前後費用視覺對比橫條圖 -->
+    <!-- 2. AI 顧問執行摘要 ＋ Satoshi 前後月支出對比圖 -->
     <section class="a4-exec-strip">
       <div class="a4-exec-box">
-        <strong>AI 營養顧問整體配置診斷</strong>
+        <strong>EXECUTIVE SUMMARY・AI 營養顧問總評</strong><br/>
         <span>${escapeHtml(narrative.executiveSummary || '')}</span>
       </div>
       <div class="a4-cost-compare-box">
         <div class="a4-cost-bar-row">
-          <span class="a4-cost-bar-label">原本月支出</span>
+          <span class="a4-cost-bar-label">原月總支出</span>
           <div class="a4-cost-bar-track">
-            <div class="a4-cost-bar-fill" style="width:100%; background:#94a3b8;"></div>
+            <div class="a4-cost-bar-fill" style="width:100%; background:#9CA3AF;"></div>
           </div>
-          <span class="a4-cost-val" style="color:#475569;">NT$ ${currentTotalMonthly}</span>
+          <span class="a4-cost-val" style="color:#4B5563;">NT$ ${currentTotalMonthly}</span>
         </div>
         <div class="a4-cost-bar-row">
-          <span class="a4-cost-bar-label" style="color:#047857;">去冗後支出</span>
+          <span class="a4-cost-bar-label" style="color:#0E6251;">優化後支出</span>
           <div class="a4-cost-bar-track">
-            <div class="a4-cost-bar-fill" style="width:${optRatioPct}%; background:#10b981;"></div>
+            <div class="a4-cost-bar-fill" style="width:${optRatioPct}%; background:#1ABC9C;"></div>
           </div>
-          <span class="a4-cost-val" style="color:#047857;">NT$ ${optimizedTotalMonthly}</span>
+          <span class="a4-cost-val" style="color:#0E6251;">NT$ ${optimizedTotalMonthly}</span>
         </div>
-        <div style="font-size:0.68rem; font-weight:800; color:#065f46; text-align:right; margin-top:1px;">
-          ${monthlySavings > 0 ? `預計每月立省 NT$ ${monthlySavings}（年省 NT$ ${monthlySavings * 12}）` : '目前無重複瓶罐浪費，預算效益極佳'}
+        <div style="font-size:0.68rem; font-weight:800; color:#0E6251; text-align:right; margin-top:2px;">
+          ${monthlySavings > 0 ? `每月精簡 NT$ ${monthlySavings}（預估年省 NT$ ${monthlySavings * 12}）` : '0 重複瓶罐浪費・預算配置精準'}
         </div>
       </div>
     </section>
 
-    <!-- 3. 中央 2x2 圖文分析卡片（上方圖表視覺 ＋ 下方 AI 客製解說文字） -->
+    <!-- 3. 中央 2x2 臨床資訊圖表卡片（上方視覺圖表 ＋ 下方客製解說） -->
     <section class="a4-cards-grid">
       <!-- 卡片 1：重複購買與省錢去冗 -->
       <article class="a4-card">
         <div class="a4-card-head">
           <div class="a4-card-title">
-            <span>1. 跨品牌重複購買與省錢去冗</span>
+            <span class="a4-card-num">01</span>
+            <span>跨品牌重複購買與去冗比對</span>
           </div>
           <span class="a4-card-tag ${alerts.length > 0 ? 'tag-rose' : 'tag-teal'}">
-            ${alerts.length > 0 ? `抓出 ${alerts.length} 組重複` : '0 重複浪費'}
+            ${alerts.length > 0 ? `偵測到 ${alerts.length} 組重疊` : '無重複浪費'}
           </span>
         </div>
         <div class="a4-card-visual">
           ${card1VisualHtml}
         </div>
         <div class="a4-card-caption">
-          <strong>分析說明：</strong>${escapeHtml(narrative.redundancyNarrative || '')}
+          <strong>去冗解析：</strong>${escapeHtml(narrative.redundancyNarrative || '')}
         </div>
       </article>
 
@@ -3582,17 +3686,18 @@ function renderA4ReportSheet(reportData) {
       <article class="a4-card">
         <div class="a4-card-head">
           <div class="a4-card-title">
-            <span>2. 衛福部 DRIs 劑量與 UL 安全線</span>
+            <span class="a4-card-num">02</span>
+            <span>衛福部 DRIs 劑量與 UL 安全區間</span>
           </div>
-          <span class="a4-card-tag ${exceedCount > 0 ? 'tag-rose' : 'tag-amber'}">
-            ${exceedCount > 0 ? `${exceedCount} 項超上限` : '紅線代表 UL 上限'}
+          <span class="a4-card-tag ${exceedCount > 0 ? 'tag-rose' : 'tag-teal'}">
+            ${exceedCount > 0 ? `${exceedCount} 項突破 UL` : '紅線為 UL 上限'}
           </span>
         </div>
         <div class="a4-card-visual">
           ${card2VisualHtml}
         </div>
         <div class="a4-card-caption">
-          <strong>劑量解讀：</strong>${escapeHtml(narrative.dosageSafetyNarrative || '')}
+          <strong>安全評估：</strong>${escapeHtml(narrative.dosageSafetyNarrative || '')}
         </div>
       </article>
 
@@ -3600,15 +3705,16 @@ function renderA4ReportSheet(reportData) {
       <article class="a4-card">
         <div class="a4-card-head">
           <div class="a4-card-title">
-            <span>3. 早・中・晚最佳吸收時序分流</span>
+            <span class="a4-card-num">03</span>
+            <span>早・中・晚最佳生物吸收時序</span>
           </div>
-          <span class="a4-card-tag tag-blue">提升吸收・避開拮抗</span>
+          <span class="a4-card-tag tag-blue">協同吸收・錯開拮抗</span>
         </div>
         <div class="a4-card-visual">
           ${card3VisualHtml}
         </div>
         <div class="a4-card-caption">
-          <strong>時序建議：</strong>${escapeHtml(narrative.timingNarrative || '')}
+          <strong>服用建議：</strong>${escapeHtml(narrative.timingNarrative || '')}
         </div>
       </article>
 
@@ -3616,15 +3722,16 @@ function renderA4ReportSheet(reportData) {
       <article class="a4-card">
         <div class="a4-card-head">
           <div class="a4-card-title">
-            <span>4. 門診看診提醒與下一步行動</span>
+            <span class="a4-card-num">04</span>
+            <span>門診看診提醒與優先調整行動</span>
           </div>
-          <span class="a4-card-tag tag-teal">醫病安全溝通</span>
+          <span class="a4-card-tag tag-teal">醫病安全對照</span>
         </div>
         <div class="a4-card-visual">
           ${card4VisualHtml}
         </div>
         <div class="a4-card-caption">
-          <strong>行動指引：</strong>${escapeHtml(narrative.doctorAndActionNarrative || '')}
+          <strong>行動方案：</strong>${escapeHtml(narrative.doctorAndActionNarrative || '')}
         </div>
       </article>
     </section>
@@ -3632,8 +3739,8 @@ function renderA4ReportSheet(reportData) {
     <!-- 4. 訪談追問引導與底部免責聲明 -->
     ${interviewHtml}
     <footer class="a4-footer">
-      <span>資料基準：衛生福利部國民健康署《國人膳食營養素參考攝取量 (DRIs) 第八版》每日建議量與上限攝取量 (UL)</span>
-      <span>國立政治大學創創入門專案訪談專用報告・僅供消費決策參考，非醫療診斷處方</span>
+      <span>STANDARDS: 衛福部國健署《國人膳食營養素參考攝取量 (DRIs) 第八版》每日建議量與上限攝取量 (UL)</span>
+      <span>政大創創入門專案使用者訪談專用報告・僅供消費決策參考，非醫療診斷處方</span>
     </footer>
   `;
 }

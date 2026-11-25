@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.4.0" />
+  <link rel="stylesheet" href="style.css?v=4.5.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
@@ -322,6 +322,12 @@
       <div class="section-banner">
         <div>
           <h1>考慮購買清單比對 ＆ 重複去冗分析</h1>
+        </div>
+        <div class="banner-btns">
+          <button type="button" class="btn btn-a4-report" onclick="openA4ReportPromptModal()">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+            <span>一鍵生成 A4 訪談報告</span>
+          </button>
         </div>
       </div>
 
@@ -1128,9 +1134,77 @@
     </div>
   </div>
 
+  <!-- A4 訪談評估報告：受測者背景輸入彈窗 -->
+  <div id="a4-report-input-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-dialog modal-md">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#0f766e;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+          <h3>生成單頁 A4 使用者訪談評估報告</h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeA4InputModal()" aria-label="關閉">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="a4-input-summary-pill" id="a4-modal-list-summary">
+          系統將自動帶入目前清單商品並進行衛福部 DRIs 交叉試算
+        </div>
+        <div class="form-group" style="margin-top:0.85rem;">
+          <label for="a4-subject-name" style="display:block; font-weight:700; font-size:0.88rem; margin-bottom:0.35rem; color:#1e293b;">
+            受測者稱呼／訪談編號
+          </label>
+          <input type="text" id="a4-subject-name" class="form-control" placeholder="例如：受測者 #01 陳主管" maxlength="40" />
+        </div>
+        <div class="form-group" style="margin-top:0.85rem;">
+          <label for="a4-subject-note" style="display:block; font-weight:700; font-size:0.88rem; margin-bottom:0.35rem; color:#1e293b;">
+            受測者生活型態、健康困擾或目前服用西藥（選填，供 AI 客製解讀）
+          </label>
+          <textarea id="a4-subject-note" class="form-control" rows="3" maxlength="200" placeholder="例如：42歲金融業主管，每天盯螢幕超過9小時眼睛乾澀、常外食熬夜；目前有服用降血脂西藥..."></textarea>
+          <div class="a4-preset-chips">
+            <span style="font-size:0.75rem; color:#64748b;">快速帶入情境：</span>
+            <button type="button" class="a4-preset-chip" onclick="fillA4PresetNote('38歲工程師，每天看電腦螢幕10小時眼睛乾酸、常熬夜外食，無慢性病西藥')">工程師護眼熬夜族</button>
+            <button type="button" class="a4-preset-chip" onclick="fillA4PresetNote('52歲企業主管，健檢三高前期、偶有吃阿斯匹靈/降血壓藥，注重CP值不想多吞膠囊')">三高前期慢籤族</button>
+            <button type="button" class="a4-preset-chip" onclick="fillA4PresetNote('35歲上班族女性，淺眠多夢、排便較不順暢，常在電商與藥妝店跨品牌購買')">淺眠腸胃調理族</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.6rem;">
+        <button type="button" class="btn btn-outline" onclick="closeA4InputModal()">取消</button>
+        <button type="button" class="btn btn-a4-report" id="btn-submit-a4-generate" onclick="generateAndOpenA4Report()">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span id="btn-submit-a4-label">呼叫 AI 生成單頁 A4 報告</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- A4 訪談評估報告：全螢幕 1:1 單頁預覽與列印視窗 -->
+  <div id="a4-report-preview-modal" class="a4-preview-backdrop" style="display:none;">
+    <div class="a4-preview-toolbar no-print">
+      <div class="a4-toolbar-left">
+        <strong>單頁 A4 訪談評估報告預覽</strong>
+        <span class="a4-model-badge" id="a4-model-badge">Vertex AI 生成</span>
+      </div>
+      <div class="a4-toolbar-actions">
+        <button type="button" class="btn btn-sm btn-outline" style="background:#fff;" onclick="reopenA4InputModal()">
+          修改背景重算
+        </button>
+        <button type="button" class="btn btn-sm btn-a4-report" onclick="printA4Report()">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+          <span>列印 / 另存單頁 PDF</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline" style="background:#fff;" onclick="closeA4PreviewModal()">
+          關閉
+        </button>
+      </div>
+    </div>
+    <div class="a4-preview-scroll">
+      <div id="a4-printable-sheet" class="a4-sheet"></div>
+    </div>
+  </div>
+
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.4.3"></script>
+  <script src="app.js?v=4.5.0"></script>
 </body>
 </html>

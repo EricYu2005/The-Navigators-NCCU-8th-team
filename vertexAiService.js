@@ -485,8 +485,258 @@ JSON 欄位規格如下：
   throw lastError || new Error('Vertex AI 無法找到可用的 Gemini 模型');
 }
 
+/**
+ * 當 Vertex AI 未設定或網路異常時，依據精算數據組裝高質感結構化備援文案，確保訪談現場 100% 不開天窗
+ */
+function buildFallbackA4Narrative({ subjectName, subjectNote, purchased = [], wishlist = [], analysis = {} }) {
+  const alerts = analysis.redundancyAlerts || [];
+  const dosageChecks = analysis.dosageChecks || [];
+  const exceedItems = dosageChecks.filter((d) => d.status === 'exceed_ul');
+  const highItems = dosageChecks.filter((d) => d.status === 'duplicate_high');
+  const lowItems = dosageChecks.filter((d) => d.status === 'low');
+  const saved = Math.round(Number(analysis.potentialMonthlySavings || 0));
+  const totalBottles = purchased.length + wishlist.length;
+
+  let overallGrade = 'A';
+  if (exceedItems.length > 0 || alerts.length >= 2) overallGrade = 'C';
+  else if (alerts.length === 1 || highItems.length > 0) overallGrade = 'B';
+
+  const headline = alerts.length > 0
+    ? `偵測到 ${alerts.length} 組重複配方，精簡後月省 NT$ ${saved}`
+    : (exceedItems.length > 0 ? '部分營養素超過每日上限，建議調整劑量' : '跨品牌營養配置均衡，無明顯重複浪費');
+
+  const executiveSummary = `${subjectName || '受測者'}目前共評估 ${totalBottles} 款保健品${subjectNote ? `（背景：${subjectNote.slice(0, 22)}）` : ''}。系統交叉比對衛福部 DRIs 標準後，${alerts.length > 0 ? `發現可剔除重複品項，每年約省 NT$ ${saved * 12}。` : '各品類互補性良好，按建議時段服用即可發揮最佳效益。'}`;
+
+  const redundancyNarrative = alerts.length > 0
+    ? `清單中出現同成分重疊（如${alerts.slice(0, 2).map((a) => a.dropProductName).join('、')}），單罐雖皆合法，但同時購買造成基礎微量元素重複花費。建議優先保留高吸收率與高性價比主力款，每月立省 NT$ ${saved}。`
+    : '目前「正在服用」與「考慮購買」品項之核心機能互不重疊，無須刪減瓶罐，預算配置相當精明，每一分錢皆花在刀口上。';
+
+  let dosageSafetyNarrative = '各主要營養素總和皆落在衛福部國健署建議攝取範圍內，無超過每日上限（UL）之虞，可安心維持目前每日建議份數。';
+  if (exceedItems.length > 0) {
+    dosageSafetyNarrative = `注意：【${exceedItems.map((d) => d.name).join('、')}】跨瓶加總已突破衛福部每日上限（UL），長期超量恐增加身體代謝負擔，建議立即減半份數或停用重複來源。`;
+  } else if (highItems.length > 0) {
+    dosageSafetyNarrative = `【${highItems.map((d) => d.name).join('、')}】來自多瓶複方疊加，總量偏高但尚未破 UL 紅線；日常飲食若有攝取相關食物，建議擇一主力補充即可。`;
+  } else if (lowItems.length > 0) {
+    dosageSafetyNarrative = `安全性良好無超標，惟【${lowItems.map((d) => d.name).join('、')}】屬於日常基礎打底劑量，若追求顯著體感可於下次補貨時挑選足量配方。`;
+  }
+
+  const timingNarrative = (analysis.timingWarnings && analysis.timingWarnings.length > 0)
+    ? '脂溶性成分（魚油、葉黃素、維生素D）務必隨餐或飯後吃以提升吸收率；益生菌宜早空腹或睡前；含鈣與含鐵品項請錯開 2 小時以上避免腸道競爭吸收。'
+    : '建議依上方早空腹、隨餐飯後、睡前分流表固定作息服用，可大幅減少腸胃刺激並維持穩定吸收率。';
+
+  const hasOmegaOrHerb = [...purchased, ...wishlist].some((x) => /(魚油|藻油|紅麴|銀杏|納豆)/i.test(`${x.category || ''} ${x.name || ''}`));
+  const doctorAndActionNarrative = hasOmegaOrHerb
+    ? '清單含魚油等影響凝血或代謝成分，門診開立慢性病西藥（如抗凝血劑、降血脂藥）或拔牙手術前，請務必出示看診清單告知醫師，並優先剔除重複品項。'
+    : '就醫領取處方西藥（如抗生素、胃藥）時，請主動告知醫師目前保健品清單並與西藥間隔 2 小時服用；下月補貨前建議持續記錄身體體感變化。';
+
+  return {
+    overallGrade,
+    headline,
+    executiveSummary,
+    redundancyNarrative,
+    dosageSafetyNarrative,
+    timingNarrative,
+    doctorAndActionNarrative,
+    interviewQuestions: [
+      '看到這份跨品牌重疊與每月花費試算後，哪一項發現最讓您意外？',
+      '過去選購時是否曾注意過不同品牌複方裡的重複微量元素（如鋅、維生素C/E）？'
+    ]
+  };
+}
+
+/**
+ * 統一 Prompt 呼叫 Vertex AI (Gemini) 產出「單頁 A4 使用者訪談專屬評估報告」結構化文案
+ */
+async function generateA4InterviewReport({ subjectName = '受測消費者', subjectNote = '', purchased = [], wishlist = [], analysis = {} }) {
+  const cleanName = String(subjectName || '受測消費者').trim().slice(0, 40) || '受測消費者';
+  const cleanNote = String(subjectNote || '').trim().slice(0, 200);
+
+  if (!isVertexAiConfigured()) {
+    return {
+      model: 'local-rule-fallback',
+      location: 'local',
+      narrative: buildFallbackA4Narrative({ subjectName: cleanName, subjectNote: cleanNote, purchased, wishlist, analysis })
+    };
+  }
+
+  try {
+    const creds = loadGcpCredentials();
+    const projectId = resolveGcpProject(creds);
+    const location = (process.env.GCP_LOCATION || 'global').trim();
+    const preferredModel = (process.env.VERTEX_AI_MODEL || 'gemini-3.5-flash').trim();
+    if (!projectId) throw new Error('缺少 GCP Project ID');
+
+    const accessToken = await getAccessToken();
+
+    const formatItemBrief = (item) => ({
+      brandAndName: `${item.brand || ''} ${item.name || ''}`.trim(),
+      category: item.category,
+      monthlyCost: Math.round(Number(item.monthly_cost || 0)),
+      dailyCost: Math.round(Number(item.daily_cost || 0)),
+      timing: item.intake_time || item.recommended_timing || '隨餐/飯後',
+      absorptionForm: item.absorption_form || '',
+      activeSummary: item.active_summary || '',
+      valueScore: item.value_score || 80
+    });
+
+    const structuredInput = {
+      interviewee: {
+        name: cleanName,
+        backgroundAndMedications: cleanNote || '未特別填寫（一般日常保養）'
+      },
+      currentlyTaking: purchased.map(formatItemBrief),
+      consideringBuying: wishlist.map(formatItemBrief),
+      engineMetrics: {
+        currentMonthlyCost: analysis.purchasedMonthlyCost || 0,
+        wishlistMonthlyCost: analysis.wishlistMonthlyCost || 0,
+        potentialMonthlySavings: analysis.potentialMonthlySavings || 0,
+        redundancyAlerts: (analysis.redundancyAlerts || []).map((a) => ({
+          keep: a.keepProductName,
+          drop: a.dropProductName,
+          savedMonthly: a.savedMonthly,
+          reason: a.reason
+        })),
+        dosageChecks: (analysis.dosageChecks || []).map((d) => ({
+          nutrient: d.name,
+          total: `${d.totalAmount}${d.unit}`,
+          recommended: `${d.recommended}${d.unit}`,
+          ul: `${d.ul}${d.unit}`,
+          status: d.statusLabel,
+          sources: d.sources
+        })),
+        timingWarnings: analysis.timingWarnings || []
+      }
+    };
+
+    // 統一制定的訪談報告 System + User Prompt
+    const unifiedPrompt = `你是「好選保健 PurePick」的獨立第三方營養科學分析顧問（100% 中立、不推銷特定品牌、不宣稱醫療療效，嚴格依據台灣衛福部國健署《DRIs 第八版》每日建議量與上限攝取量 UL）。
+我們正在進行一對一使用者訪談，請根據以下「受測者現況與系統確定性精算數據」，生成一份能完美排版於「單頁直式 A4 圖文卡片報告」的專業解說 JSON。
+
+【受測者與系統精算輸入資料】：
+${JSON.stringify(structuredInput, null, 2)}
+
+【嚴格輸出規則】：
+1. 必須只回傳一個合法 JSON 物件，不要任何 Markdown 語法或額外前後綴文字。
+2. 所有數字（金額、毫克數、省下金額）必須 100% 忠於輸入資料中的 engineMetrics，絕對不可自行捏造數字或虛構不存在的研調數據。
+3. 因為版面嚴格鎖定在「單頁 A4」，每個欄位的繁體中文字數必須精煉、直擊痛點、溫暖好讀，嚴格遵守下方字數上限：
+
+請回傳以下 JSON 結構：
+{
+  "overallGrade": "必須為 A、B 或 C 三選一（無重複且無超標給 A；有輕微重疊或偏高給 B；有超過 UL 上限或多項嚴重重複浪費給 C）",
+  "headline": "24字以內的一句話精準總評標題（例如：精簡 1 款重複葉黃素複方，月省 NT$ 680 更安全）",
+  "executiveSummary": "55~85字：結合受測者背景與目前瓶數，總結這套保健組合的整體配置優缺點與預算效益",
+  "redundancyNarrative": "60~95字（對應卡片1：重複購買與省錢去冗卡下方說明）：清楚點出哪幾款產品成分重疊、為何建議保留主力款並剔除重複款；若無重複則肯定其跨品類互補配置",
+  "dosageSafetyNarrative": "60~95字（對應卡片2：衛福部 DRIs 劑量水位圖卡下方說明）：解讀各營養素總和是否超過或逼近衛福部 UL 安全上限（如脂溶性維生素或鋅），或哪些僅達日常打底劑量",
+  "timingNarrative": "55~85字（對應卡片3：早中晚最佳吸收時序卡下方說明）：說明為何依空腹、隨餐飯後、睡前分流服用（例如脂溶性隨餐提升吸收、鈣鐵錯開避免競爭）",
+  "doctorAndActionNarrative": "60~95字（對應卡片4：門診溝通與行動建議卡下方說明）：結合受測者背景與成分（如魚油與抗凝血/手術、礦物質與抗生素間隔），給出看診提醒與最優先的 1~2 個具體行動",
+  "interviewQuestions": [
+    "35字以內：給訪談員現場詢問這位受測者的第 1 個深度追問問題（聚焦重複購買或劑量認知）",
+    "35字以內：給訪談員現場詢問這位受測者的第 2 個深度追問問題（聚焦日常執行或看診溝通習慣）"
+  ]
+}`;
+
+    const modelCandidates = [...new Set([
+      preferredModel,
+      'gemini-3.5-flash',
+      'gemini-3-flash-preview',
+      'gemini-2.5-flash-lite'
+    ])];
+
+    const apiHost = location === 'global'
+      ? 'aiplatform.googleapis.com'
+      : `${location}-aiplatform.googleapis.com`;
+
+    let lastError = null;
+    for (const model of modelCandidates) {
+      const endpoint = `https://${apiHost}/v1/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/publishers/google/models/${encodeURIComponent(model)}:generateContent`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: unifiedPrompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.25,
+            maxOutputTokens: 4096,
+            responseMimeType: 'application/json',
+            thinkingConfig: {
+              thinkingBudget: 256
+            }
+          }
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        const parts = data?.candidates?.[0]?.content?.parts || [];
+        const text = parts
+          .filter((p) => !p.thought && typeof p.text === 'string')
+          .map((p) => p.text)
+          .join('')
+          .trim();
+        if (!text) {
+          throw new Error('Vertex AI 回傳空白報告內容');
+        }
+        const parsed = parseModelJson(text);
+        const fallback = buildFallbackA4Narrative({ subjectName: cleanName, subjectNote: cleanNote, purchased, wishlist, analysis });
+        const validGrade = ['A', 'B', 'C'].includes(String(parsed.overallGrade || '').toUpperCase())
+          ? String(parsed.overallGrade).toUpperCase()
+          : fallback.overallGrade;
+
+        return {
+          model,
+          location,
+          narrative: {
+            overallGrade: validGrade,
+            headline: String(parsed.headline || fallback.headline).trim(),
+            executiveSummary: String(parsed.executiveSummary || fallback.executiveSummary).trim(),
+            redundancyNarrative: String(parsed.redundancyNarrative || fallback.redundancyNarrative).trim(),
+            dosageSafetyNarrative: String(parsed.dosageSafetyNarrative || fallback.dosageSafetyNarrative).trim(),
+            timingNarrative: String(parsed.timingNarrative || fallback.timingNarrative).trim(),
+            doctorAndActionNarrative: String(parsed.doctorAndActionNarrative || fallback.doctorAndActionNarrative).trim(),
+            interviewQuestions: Array.isArray(parsed.interviewQuestions) && parsed.interviewQuestions.length > 0
+              ? parsed.interviewQuestions.slice(0, 2).map((q) => String(q || '').trim()).filter(Boolean)
+              : fallback.interviewQuestions
+          }
+        };
+      }
+
+      const errMsg = data?.error?.message || `HTTP ${response.status}`;
+      lastError = new Error(`Vertex AI (${model}) 報告生成失敗：${errMsg}`);
+      if (response.status !== 404) {
+        break;
+      }
+    }
+
+    console.warn('Vertex AI 報告生成降級使用規則備援:', lastError?.message);
+    return {
+      model: 'local-rule-fallback',
+      location: 'local',
+      warning: lastError?.message || '',
+      narrative: buildFallbackA4Narrative({ subjectName: cleanName, subjectNote: cleanNote, purchased, wishlist, analysis })
+    };
+  } catch (err) {
+    console.warn('Vertex AI 報告生成異常，啟用規則備援:', err.message);
+    return {
+      model: 'local-rule-fallback',
+      location: 'local',
+      warning: err.message,
+      narrative: buildFallbackA4Narrative({ subjectName: cleanName, subjectNote: cleanNote, purchased, wishlist, analysis })
+    };
+  }
+}
+
 module.exports = {
   isVertexAiConfigured,
   getAccessToken,
-  analyzeSupplementImage
+  analyzeSupplementImage,
+  generateA4InterviewReport
 };

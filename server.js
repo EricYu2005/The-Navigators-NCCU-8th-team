@@ -9,7 +9,7 @@ const cors = require('cors');
 const path = require('path');
 const { dbQuery, clearUserPersonalData, restoreDemoData } = require('./database');
 const { evaluateFinderSolution, evaluateWishlistPortfolio } = require('./supplementEngine');
-const { isVertexAiConfigured, analyzeSupplementImage } = require('./vertexAiService');
+const { isVertexAiConfigured, analyzeSupplementImage, generateA4InterviewReport } = require('./vertexAiService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -922,6 +922,56 @@ app.get('/api/wishlist/analyze', async (req, res) => {
     res.json({ success: true, data: wishlistAnalysis });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 一鍵生成「單頁 A4 使用者訪談專屬評估報告」（確定性去冗引擎數據 ＋ Vertex AI 結構化專業解讀）
+app.post('/api/analysis/a4-report', async (req, res) => {
+  try {
+    const { lineUserId, subjectName, subjectNote, clientWishlist, clientPurchased } = req.body || {};
+    const uid = normalizeLineUserId(lineUserId);
+    let { wishlist, purchased } = await getUserLists(uid);
+
+    // 若訪談當下前端狀態清單比後端更即時（或未登入臨時填入），允許以前端傳入的清單保底計算
+    if (wishlist.length === 0 && Array.isArray(clientWishlist) && clientWishlist.length > 0) {
+      wishlist = clientWishlist;
+    }
+    if (purchased.length === 0 && Array.isArray(clientPurchased) && clientPurchased.length > 0) {
+      purchased = clientPurchased;
+    }
+
+    if (wishlist.length + purchased.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '目前「考慮購買」與「正在服用」清單皆為空白，請先加入受測者的保健品後再生成報告！'
+      });
+    }
+
+    const analysis = await evaluateWishlistPortfolio({ wishlist, purchased });
+    const aiOutput = await generateA4InterviewReport({
+      subjectName,
+      subjectNote,
+      purchased,
+      wishlist,
+      analysis
+    });
+
+    res.json({
+      success: true,
+      data: {
+        generatedAt: new Date().toISOString(),
+        model: aiOutput.model,
+        subjectName: String(subjectName || '').trim() || '受測消費者',
+        subjectNote: String(subjectNote || '').trim(),
+        purchased,
+        wishlist,
+        analysis,
+        narrative: aiOutput.narrative
+      }
+    });
+  } catch (error) {
+    console.error('生成 A4 訪談報告失敗:', error);
+    res.status(500).json({ success: false, message: error.message || '生成報告時發生錯誤' });
   }
 });
 

@@ -3,6 +3,8 @@
  * 好選保健 PurePick - 跨品牌保健食品比較、去冗評估與服用日曆管理前端互動邏輯
  */
 
+const SURVEYCAKE_URL = 'https://www.surveycake.com/s/8rpwQ';
+
 const state = {
   supplements: [],
   wishlist: [],
@@ -64,37 +66,47 @@ function saveLeadReceiptToLocal(uid, receipt) {
   } catch (e) {}
 }
 
+function getRealLineUserId() {
+  return (state.currentUser && state.currentUser.userId) ? String(state.currentUser.userId).trim() : '';
+}
+
+function getOrCreateGuestWorkspaceId() {
+  let gid = localStorage.getItem('purepick_guest_workspace_id');
+  if (!gid) {
+    gid = 'guest_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('purepick_guest_workspace_id', gid);
+  }
+  return gid;
+}
+
 function isUserEntitledToPro() {
-  const uid = getActiveLineUserId();
-  // 嚴格檢驗：未登入 LINE 實名帳號者，絕不可能具備實名 Pro 資格
+  if (localStorage.getItem('purepick_survey_unlocked') === 'true') return true;
+  const uid = getRealLineUserId();
   if (!uid) return false;
-  // 伺服器端資料庫確認：該 LINE 帳號在 leads 表中已有登記紀錄
   if (state.userLead && (state.userLead.id || state.userLead.email)) return true;
-  // 本機已留存該 LINE 帳號實際送出表單的憑證（避免 Render 重啟清空 SQLite 後遺失資格）
   if (readLeadReceiptFromLocal(uid)) return true;
-  // 或前端已同步確認該 LINE 帳號的實名資格
   if (state.hasProEntitlement && localStorage.getItem(`purepick_entitled_${uid}`) === 'true') return true;
   return false;
 }
 window.isUserEntitledToPro = isUserEntitledToPro;
 
 function restoreProStatus() {
-  // 嚴格防呆門檻：未填寫過表單者，絕對禁止一鍵切換至 Pro 版
   if (!isUserEntitledToPro()) {
-    showToast('您尚未填寫過使用回饋，請先登入 LINE 並完成表單登記以開通 Pro 權限');
-    openLeadModal('restore_guard');
+    openSurveyAndUnlockPro('restore_guard');
     return;
   }
 
   state.isPro = true;
   state.hasProEntitlement = true;
   localStorage.setItem('purepick_pro', 'true');
-  const uid = getActiveLineUserId();
+  localStorage.removeItem('purepick_demo_mode_guest');
+  const uid = getRealLineUserId();
   if (uid) {
     localStorage.setItem(`purepick_pro_${uid}`, 'true');
     localStorage.setItem(`purepick_entitled_${uid}`, 'true');
     localStorage.removeItem(`purepick_demo_mode_${uid}`);
   }
+  renderAuthUI();
   if (state.activeView === 'view-wishlist') {
     renderWishlistView();
   }
@@ -158,7 +170,12 @@ function showToast(message, options = {}) {
 }
 
 function getActiveLineUserId() {
-  return (state.currentUser && state.currentUser.userId) ? String(state.currentUser.userId).trim() : '';
+  const realUid = getRealLineUserId();
+  if (realUid) return realUid;
+  if (localStorage.getItem('purepick_guest_isolated') === 'true' && localStorage.getItem('purepick_guest_use_demo') !== 'true') {
+    return getOrCreateGuestWorkspaceId();
+  }
+  return '';
 }
 
 function getUserStateStorageKey() {
@@ -342,15 +359,16 @@ async function loadBootstrapData(skipLocalSync = false) {
         saveLoggedInUserStateToLocal();
       }
 
-      // 依伺服器資料庫確認 Pro 資格（若 Render 重啟清空 SQLite，自動以本機實際填表憑證回寫）
-      if (uid) {
-        let entitled = !!data.hasProEntitlement;
+      // 依 SurveyCake 解鎖狀態或伺服器資料庫確認 Pro 資格
+      const realUid = getRealLineUserId();
+      const surveyUnlocked = localStorage.getItem('purepick_survey_unlocked') === 'true';
+      if (realUid) {
+        let entitled = !!data.hasProEntitlement || surveyUnlocked;
         let leadObj = data.userLead || null;
 
         if (!entitled) {
-          const localReceipt = readLeadReceiptFromLocal(uid);
+          const localReceipt = readLeadReceiptFromLocal(realUid);
           if (localReceipt) {
-            // 此 LINE 帳號先前確實有提交過表單，Render 重新部署導致 SQLite 重置 -> 自動回寫還原
             try {
               const resRestore = await fetch('/api/leads', {
                 method: 'POST',
@@ -362,7 +380,7 @@ async function loadBootstrapData(skipLocalSync = false) {
                   satisfaction_score: localReceipt.satisfaction_score || 5,
                   note: localReceipt.note || '',
                   source: 'auto_restore_after_restart',
-                  line_user_id: uid
+                  line_user_id: realUid
                 })
               });
               const restoreJson = await resRestore.json();
@@ -375,9 +393,8 @@ async function loadBootstrapData(skipLocalSync = false) {
               leadObj = localReceipt;
             }
           }
-        } else if (leadObj && leadObj.name && leadObj.contact_value && !readLeadReceiptFromLocal(uid)) {
-          // 伺服器已有紀錄但本機尚無憑證（例如換裝置登入）-> 補存本機憑證避免下次重啟遺失
-          saveLeadReceiptToLocal(uid, {
+        } else if (leadObj && leadObj.name && leadObj.contact_value && !readLeadReceiptFromLocal(realUid)) {
+          saveLeadReceiptToLocal(realUid, {
             name: leadObj.name,
             age: '',
             email: leadObj.contact_value,
@@ -390,27 +407,31 @@ async function loadBootstrapData(skipLocalSync = false) {
         state.userLead = leadObj;
 
         if (!entitled) {
-          // 既無資料庫紀錄、也無本機實際填表憑證 -> 嚴格鎖定為非 Pro，絕不允許一鍵切換
           state.isPro = false;
-          localStorage.removeItem(`purepick_entitled_${uid}`);
-          localStorage.setItem(`purepick_pro_${uid}`, 'false');
+          localStorage.removeItem(`purepick_entitled_${realUid}`);
+          localStorage.setItem(`purepick_pro_${realUid}`, 'false');
           localStorage.setItem('purepick_pro', 'false');
         } else {
-          localStorage.setItem(`purepick_entitled_${uid}`, 'true');
-          // 已具有資格者：若手動切換為免費展示模式，維持展示；否則自動開通 Pro
-          const manualDemo = localStorage.getItem(`purepick_demo_mode_${uid}`);
+          localStorage.setItem(`purepick_entitled_${realUid}`, 'true');
+          const manualDemo = localStorage.getItem(`purepick_demo_mode_${realUid}`);
           if (manualDemo === 'free') {
             state.isPro = false;
-            localStorage.setItem(`purepick_pro_${uid}`, 'false');
+            localStorage.setItem(`purepick_pro_${realUid}`, 'false');
             localStorage.setItem('purepick_pro', 'false');
           } else {
             state.isPro = true;
-            localStorage.setItem(`purepick_pro_${uid}`, 'true');
+            localStorage.setItem(`purepick_pro_${realUid}`, 'true');
             localStorage.setItem('purepick_pro', 'true');
           }
         }
+      } else if (surveyUnlocked) {
+        state.hasProEntitlement = true;
+        state.userLead = null;
+        const manualDemo = localStorage.getItem('purepick_demo_mode_guest');
+        state.isPro = manualDemo !== 'free';
+        localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
+        localStorage.setItem('purepick_pro_entitled', 'true');
       } else {
-        // 未登入情境：嚴格禁止 Pro 資格
         state.isPro = false;
         state.hasProEntitlement = false;
         state.userLead = null;
@@ -1501,22 +1522,27 @@ function renderWishlistView() {
       <p>免費版僅支援最多 2 款基礎成分比對。想要一次比對多款保健品、省下每年數千元重複購買的冤枉錢嗎？</p>
       <div class="mvp-gate-note">
         <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span><strong>政大創創專題研究說明</strong>：本專案目前為學術研究階段，<strong>不收取任何真實費用</strong>。${isUserEntitledToPro() ? '您的 LINE 帳號已具備 Pro 會員資格，點擊即可一鍵恢復！' : '填寫簡短回饋問卷，即可立刻免費開通 Pro 完整檢查功能！'}</span>
+        <span><strong>政大創創專題研究說明</strong>：本專案目前為學術研究階段，<strong>免收費、免綁定 LINE 登入</strong>。${isUserEntitledToPro() ? '您已具備 Pro 資格，點擊即可一鍵恢復！' : '點擊下方開啟 SurveyCake 問卷（<strong>填完送出抽星巴克咖啡券</strong>），按下即刻開啟完整功能並清空示範案例！'}</span>
       </div>
       ${isUserEntitledToPro() ? `
         <button type="button" class="btn btn-primary" onclick="restoreProStatus()">
           一鍵切換回 Pro 版（免重填立即恢復）
         </button>
       ` : `
-        <button type="button" class="btn btn-primary" onclick="openLeadModal('wishlist_pro_gate')">
-          立即免費填寫回饋（開通 Pro 完整檢查）
+        <button type="button" class="btn btn-primary" onclick="openSurveyAndUnlockPro('wishlist_pro_gate')">
+          填寫問卷抽星巴克（立即開啟完整功能）
         </button>
       `}
     </div>
   ` : `
-    <div class="pro-unlocked-banner">
-      <span class="pro-unlocked-badge">PRO 方案已開通</span>
-      <span>您已享有完整的跨品項重複購買檢查、每日安全劑量把關與服用時段錯開提醒！</span>
+    <div class="pro-unlocked-banner" style="display:flex; align-items:center; justify-content:space-between; gap:0.65rem; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+        <span class="pro-unlocked-badge">PRO 方案已開通</span>
+        <span>您已享有完整的跨品項重複購買檢查、每日安全劑量把關與服用時段錯開提醒！</span>
+      </div>
+      <a href="${SURVEYCAKE_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline" style="white-space:nowrap;">
+        前往填寫問卷抽星巴克 &nearr;
+      </a>
     </div>
   `;
 
@@ -1526,15 +1552,15 @@ function renderWishlistView() {
         ${title}
       </div>
       <p style="font-size:0.79rem; color:#4b5563; max-width:340px; margin-bottom:0.5rem;">
-        ${desc}${isUserEntitledToPro() ? '您已具備 Pro 資格，可一鍵直接恢復！' : '填寫簡短回饋即可免費開通！'}
+        ${desc}${isUserEntitledToPro() ? '您已具備 Pro 資格，可一鍵直接恢復！' : '點擊開啟問卷抽星巴克，按下即開啟完整功能並清空範例！'}
       </p>
       ${isUserEntitledToPro() ? `
         <button type="button" class="btn btn-primary btn-sm" onclick="restoreProStatus()">
           一鍵恢復 Pro 權限（免重填）
         </button>
       ` : `
-        <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('${lockSource}')">
-          填寫回饋免費開通 Pro 權限
+        <button type="button" class="btn btn-primary btn-sm" onclick="openSurveyAndUnlockPro('${lockSource}')">
+          填寫問卷抽星巴克（開啟完整功能）
         </button>
       `}
     </div>
@@ -1996,8 +2022,8 @@ function renderWeeklySummary() {
             一鍵切換回 Pro 版（免重填立即恢復）
           </button>
         ` : `
-          <button type="button" class="btn btn-primary btn-sm" onclick="openLeadModal('weekly_summary_lock')">
-            填寫簡短回饋，免費開通 Pro 權限 (NT$ 99 / 月)
+          <button type="button" class="btn btn-primary btn-sm" onclick="openSurveyAndUnlockPro('weekly_summary_lock')">
+            填寫問卷抽星巴克（立即開啟完整功能）
           </button>
         `}
       </div>
@@ -2474,8 +2500,8 @@ function renderDailyTrackerPanel() {
           teaserBtn.textContent = '一鍵切換回 Pro 版（免重填立即恢復）';
           teaserBtn.onclick = () => restoreProStatus();
         } else {
-          teaserBtn.textContent = '填寫簡短回饋，免費開通 Pro 權限 (NT$ 99/月)';
-          teaserBtn.onclick = () => openLeadModal('daily_log_pro_lock');
+          teaserBtn.textContent = '填寫問卷抽星巴克（立即開啟完整功能）';
+          teaserBtn.onclick = () => openSurveyAndUnlockPro('daily_log_pro_lock');
         }
       }
     }
@@ -3060,26 +3086,32 @@ function openSubscriptionModal() {
   if (actionArea) {
     if (state.isPro) {
       actionArea.innerHTML = `
-        <div style="padding:0.6rem 0.85rem; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; color:#065f46; font-size:0.85rem; font-weight:700; text-align:center;">
-          您已透過體驗回饋免費開通 Pro 權限
+        <div style="padding:0.6rem 0.85rem; background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.4); border-radius:8px; color:#059669; font-size:0.85rem; font-weight:700; text-align:center;">
+          完整 Pro 功能已開啟
         </div>
+        <a href="${SURVEYCAKE_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block" style="text-align:center; text-decoration:none;">
+          前往填寫 SurveyCake 問卷（抽星巴克咖啡券） &nearr;
+        </a>
         <button type="button" class="btn btn-sm btn-outline btn-block" onclick="toggleProStatusForDemo()">
           切換回免費版（展示未開通狀態）
         </button>
       `;
     } else if (isUserEntitledToPro()) {
       actionArea.innerHTML = `
-        <div style="padding:0.6rem 0.85rem; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; color:#334155; font-size:0.85rem; font-weight:700; text-align:center;">
+        <div style="padding:0.6rem 0.85rem; background:rgba(148,163,184,0.14); border:1px solid rgba(148,163,184,0.35); border-radius:8px; color:var(--text-body); font-size:0.85rem; font-weight:700; text-align:center;">
           您已具備 Pro 資格（目前處於免費版展示模式）
         </div>
         <button type="button" class="btn btn-primary btn-block" onclick="restoreProStatus()">
           一鍵切換回 Pro 版（免重填立即恢復）
         </button>
+        <a href="${SURVEYCAKE_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline btn-block" style="text-align:center; text-decoration:none;">
+          前往填寫 SurveyCake 問卷（抽星巴克） &nearr;
+        </a>
       `;
     } else {
       actionArea.innerHTML = `
-        <button type="button" class="btn btn-primary btn-block" onclick="openLeadModal('subscription_modal')">
-          填寫體驗回饋（免費開通 Pro 權限）
+        <button type="button" class="btn btn-primary btn-block" onclick="openSurveyAndUnlockPro('subscription_modal')">
+          填寫問卷抽星巴克（立即開啟完整功能）
         </button>
       `;
     }
@@ -3095,24 +3127,29 @@ function closeSubscriptionModal() {
 window.closeSubscriptionModal = closeSubscriptionModal;
 
 function toggleProStatusForDemo() {
-  // 嚴格檢驗：若目前為免費版且從未填寫過表單，絕對不允許一鍵切換至 Pro 版
   if (!state.isPro && !isUserEntitledToPro()) {
-    showToast('您尚未填寫過使用回饋，請先登入 LINE 並完成表單登記以開通 Pro 權限');
-    openLeadModal('subscription_modal');
+    openSurveyAndUnlockPro('subscription_modal');
     return;
   }
 
   state.isPro = !state.isPro;
-  const uid = getActiveLineUserId();
+  const realUid = getRealLineUserId();
   localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
-  if (uid) {
-    localStorage.setItem(`purepick_pro_${uid}`, state.isPro ? 'true' : 'false');
+  if (realUid) {
+    localStorage.setItem(`purepick_pro_${realUid}`, state.isPro ? 'true' : 'false');
     if (!state.isPro) {
-      localStorage.setItem(`purepick_demo_mode_${uid}`, 'free');
+      localStorage.setItem(`purepick_demo_mode_${realUid}`, 'free');
     } else {
-      localStorage.removeItem(`purepick_demo_mode_${uid}`);
+      localStorage.removeItem(`purepick_demo_mode_${realUid}`);
+    }
+  } else {
+    if (!state.isPro) {
+      localStorage.setItem('purepick_demo_mode_guest', 'free');
+    } else {
+      localStorage.removeItem('purepick_demo_mode_guest');
     }
   }
+  renderAuthUI();
   if (state.activeView === 'view-wishlist') {
     renderWishlistView();
   }
@@ -3126,8 +3163,14 @@ window.toggleProStatusForDemo = toggleProStatusForDemo;
 
 async function toggleDemoData() {
   try {
-    const uid = getActiveLineUserId();
+    const realUid = getRealLineUserId();
     if (!state.isDemoCleared) {
+      if (!realUid) {
+        getOrCreateGuestWorkspaceId();
+        localStorage.setItem('purepick_guest_isolated', 'true');
+        localStorage.removeItem('purepick_guest_use_demo');
+      }
+      const uid = getActiveLineUserId();
       await fetch('/api/demo/clear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3138,6 +3181,9 @@ async function toggleDemoData() {
       saveLoggedInUserStateToLocal();
       showToast('已清空範例清單與日曆，可自由新增保健品。');
     } else {
+      if (!realUid) {
+        localStorage.setItem('purepick_guest_use_demo', 'true');
+      }
       await fetch('/api/demo/restore', { method: 'POST' });
       state.isDemoCleared = false;
       await loadBootstrapData(true);
@@ -3194,7 +3240,7 @@ async function initUserAuth() {
   if (saved) {
     try {
       state.currentUser = JSON.parse(saved);
-      if (state.currentUser?.userId && localStorage.getItem(`purepick_entitled_${state.currentUser.userId}`) === 'true') {
+      if (localStorage.getItem('purepick_survey_unlocked') === 'true' || (state.currentUser?.userId && localStorage.getItem(`purepick_entitled_${state.currentUser.userId}`) === 'true')) {
         state.hasProEntitlement = true;
         const manualDemo = localStorage.getItem(`purepick_demo_mode_${state.currentUser.userId}`);
         state.isPro = manualDemo !== 'free';
@@ -3205,6 +3251,10 @@ async function initUserAuth() {
         localStorage.setItem('purepick_pro', 'false');
       }
     } catch (e) {}
+  } else if (localStorage.getItem('purepick_survey_unlocked') === 'true') {
+    state.hasProEntitlement = true;
+    state.isPro = localStorage.getItem('purepick_demo_mode_guest') !== 'free';
+    localStorage.setItem('purepick_pro', state.isPro ? 'true' : 'false');
   }
   renderAuthUI();
 }
@@ -3375,70 +3425,62 @@ function setLeadScore(score) {
 }
 window.setLeadScore = setLeadScore;
 
-function openLeadModal(source = 'general') {
-  const modal = document.getElementById('lead-capture-modal');
-  if (!modal) return;
+async function openSurveyAndUnlockPro(source = 'general') {
+  // 1. 於使用者點擊手勢內同步開啟 SurveyCake 問卷新分頁（避免行動瀏覽器阻擋視窗）
+  window.open(SURVEYCAKE_URL, '_blank', 'noopener,noreferrer');
 
-  const srcInput = document.getElementById('lead-source');
-  if (srcInput) srcInput.value = source;
+  // 2. 立即開啟完整 Pro 功能（免登入 LINE）
+  localStorage.setItem('purepick_survey_unlocked', 'true');
+  localStorage.setItem('purepick_pro', 'true');
+  localStorage.setItem('purepick_pro_entitled', 'true');
+  localStorage.removeItem('purepick_demo_mode_guest');
+  state.isPro = true;
+  state.hasProEntitlement = true;
 
-  const authGate = document.getElementById('lead-auth-gate');
-  const alreadyProBox = document.getElementById('lead-already-pro-box');
-  const formContent = document.getElementById('lead-capture-form');
-  const verifiedLineName = document.getElementById('lead-verified-line-name');
-  const proUserName = document.getElementById('lead-pro-user-name');
-
-  if (!state.currentUser) {
-    if (authGate) authGate.style.display = 'block';
-    if (alreadyProBox) alreadyProBox.style.display = 'none';
-    if (formContent) formContent.style.display = 'none';
-  } else if (isUserEntitledToPro() || state.isPro) {
-    // 已擁有 Pro 資格（包含先前填過名單但手動切換到免費版者）：
-    // 絕不強迫重填表單，直接提供一鍵開通/恢復按鈕！
-    if (authGate) authGate.style.display = 'none';
-    if (alreadyProBox) alreadyProBox.style.display = 'block';
-    if (formContent) formContent.style.display = 'none';
-    if (proUserName) proUserName.textContent = state.currentUser.displayName || 'LINE 會員';
-
-    const proBadgeText = document.getElementById('lead-already-pro-badge-text');
-    const proTitle = document.getElementById('lead-already-pro-title');
-    const proDesc = document.getElementById('lead-already-pro-desc');
-    const mainBtn = document.getElementById('btn-lead-action-main');
-
-    if (state.isPro) {
-      if (proBadgeText) proBadgeText.textContent = 'LINE 實名認證 Pro 會員資格有效';
-      if (proTitle) proTitle.textContent = '您已享有完整 Pro 權限';
-      if (proDesc) proDesc.innerHTML = `您好，<strong>${state.currentUser.displayName || '會員'}</strong>！您的 LINE 帳號已在資料庫登記過使用回饋，系統已為您永久開通 Pro 資格，<strong>無需重新填寫名單</strong>。`;
-      if (mainBtn) {
-        mainBtn.textContent = '確認並回到專案使用';
-        mainBtn.onclick = () => closeLeadModal();
-      }
-    } else {
-      if (proBadgeText) proBadgeText.textContent = '已具備 Pro 會員資格（免費展示模式）';
-      if (proTitle) proTitle.textContent = '隨時一鍵恢復 Pro 權限';
-      if (proDesc) proDesc.innerHTML = `您好，<strong>${state.currentUser.displayName || '會員'}</strong>！您先前已完成回饋登記，目前處於免費展示模式，點擊下方按鈕即可立即恢復 Pro 完整功能，<strong>免填寫任何表單</strong>。`;
-      if (mainBtn) {
-        mainBtn.textContent = '一鍵切換回 Pro 版（免重填立即恢復）';
-        mainBtn.onclick = () => restoreProStatus();
-      }
-    }
+  const realUid = getRealLineUserId();
+  if (realUid) {
+    localStorage.setItem(`purepick_entitled_${realUid}`, 'true');
+    localStorage.setItem(`purepick_pro_${realUid}`, 'true');
+    localStorage.removeItem(`purepick_demo_mode_${realUid}`);
   } else {
-    if (authGate) authGate.style.display = 'none';
-    if (alreadyProBox) alreadyProBox.style.display = 'none';
-    if (formContent) formContent.style.display = 'block';
-
-    if (verifiedLineName) {
-      verifiedLineName.textContent = state.currentUser.displayName || 'LINE 實名會員';
-    }
-
-    const nameInput = document.getElementById('lead-name');
-    if (nameInput && !nameInput.value) {
-      nameInput.value = state.currentUser.displayName || '';
-    }
+    getOrCreateGuestWorkspaceId();
+    localStorage.setItem('purepick_guest_isolated', 'true');
+    localStorage.removeItem('purepick_guest_use_demo');
   }
 
-  setLeadScore(5);
-  modal.style.display = 'flex';
+  closeSubscriptionModal();
+  closeLeadModal();
+
+  // 3. 洗掉示範案例，切換為乾淨的個人使用空間
+  try {
+    const activeUid = getActiveLineUserId();
+    if (activeUid) {
+      await fetch('/api/demo/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lineUserId: activeUid })
+      });
+    }
+    state.wishlist = [];
+    state.purchased = [];
+    state.calendarLogs = {};
+    state.isDemoCleared = true;
+    await loadBootstrapData(true);
+    saveLoggedInUserStateToLocal();
+  } catch (err) {
+    console.error(err);
+  }
+
+  renderAuthUI();
+  renderCatalog();
+  renderWishlistView();
+  renderCalendarView();
+  showToast('已開啟 SurveyCake 問卷（填完抽星巴克）！完整功能已開啟並清空示範案例！', { duration: 5000 });
+}
+window.openSurveyAndUnlockPro = openSurveyAndUnlockPro;
+
+function openLeadModal(source = 'general') {
+  openSurveyAndUnlockPro(source);
 }
 window.openLeadModal = openLeadModal;
 

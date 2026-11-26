@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.8.5" />
+  <link rel="stylesheet" href="style.css?v=4.8.6" />
   <script>
     (function () {
       try {
@@ -355,10 +355,10 @@
                 <h4 style="margin:0; font-size:0.95rem; color:#1e1b4b;">身體狀態日誌與每週健康複盤</h4>
               </div>
               <p style="margin:0.4rem 0 0.75rem 0; font-size:0.83rem; color:#475569; line-height:1.45;">
-                免費版僅保留「服用打卡（確認有沒有吃）」。升級 Pro 方案（<strong>NT$ 99 / 月</strong>）即可每日記錄精神狀態、消化排便、睡眠品質與眼睛狀況，加上重感冒停藥防護，並自動獲得每週痛點分析與配方升級建議！
+                免費版僅保留「服用打卡（確認有沒有吃）」。點擊下方開啟匿名問卷（<strong>填完送出抽星巴克咖啡券</strong>），無須登入即可<strong>立即開啟完整 Pro 功能並清空示範案例</strong>！
               </p>
-              <button type="button" class="btn btn-primary btn-sm btn-block" onclick="openLeadModal('daily_log_pro_lock')">
-                填寫簡短回饋，免費開通 Pro 權限 (NT$ 99/月)
+              <button type="button" class="btn btn-primary btn-sm btn-block" onclick="openSurveyAndUnlockPro('daily_log_pro_lock')">
+                填寫問卷抽星巴克（立即開啟完整功能）
               </button>
             </div>
           </div>
@@ -672,7 +672,7 @@
             <button type="button" class="settings-list-row" onclick="openSubscriptionModal()">
               <div class="settings-row-left">
                 <strong>免費體驗版 vs. Pro 精明消費者方案比較</strong>
-                <span>查看學術封測回饋免費解鎖 Pro 完整權限說明</span>
+                <span>填寫匿名 SurveyCake 問卷抽星巴克，免登入立即開啟完整功能</span>
               </div>
               <span class="settings-row-chevron">&rsaquo;</span>
             </button>
@@ -950,13 +950,13 @@
                 <span>政大創創課程研究說明（不收取真實費用）</span>
               </div>
               <p class="mvp-notice-text">
-                本平台為政大創創入門專題研究模型，現階段<strong>不收取任何真實費用</strong>。我們透過「使用體驗回饋問卷」了解消費者對重複購買檢查與日常管理的需求。只需完成簡短回饋登記，即可免費開通 Pro 權限（原價 NT$ 99 / 月）！
+                本平台為政大創創入門專題研究模型，現階段<strong>不收取任何真實費用、亦無須綁定 LINE 登入</strong>。點擊下方按鈕將開啟 SurveyCake 匿名回饋問卷（<strong>填完送出可抽星巴克咖啡兌換券</strong>），同時立即為您<strong>開啟完整 Pro 功能並清空示範案例</strong>！
               </p>
             </div>
 
             <div id="sub-pro-action-area" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;">
-              <button type="button" class="btn btn-primary btn-block" onclick="openLeadModal('subscription_modal')">
-                填寫體驗回饋（免費開通 Pro 權限）
+              <button type="button" class="btn btn-primary btn-block" onclick="openSurveyAndUnlockPro('subscription_modal')">
+                填寫問卷抽星巴克（立即開啟完整功能）
               </button>
             </div>
           </div>
@@ -1565,6 +1565,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.8.5"></script>
+  <script src="app.js?v=4.8.6"></script>
 </body>
 </html>

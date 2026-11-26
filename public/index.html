@@ -16,7 +16,18 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.6.0" />
+  <link rel="stylesheet" href="style.css?v=4.7.0" />
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('purepick_theme_mode') || 'light';
+        var effective = saved === 'system'
+          ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : saved;
+        document.documentElement.setAttribute('data-theme', effective === 'dark' ? 'dark' : 'light');
+      } catch (e) {}
+    })();
+  </script>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -66,42 +77,20 @@
         </div>
       </div>
 
-      <!-- 右側輕量帳號與工具按鈕 (無任何 Emoji，高可視度灰色線條圖示) -->
+      <!-- 右側極簡個人與設定頁入口按鈕（所有工具、登入、提醒與深色模式統一收納至獨立設定頁） -->
       <div class="header-actions">
-        <button type="button" class="btn-top-lead" onclick="openUserGuideModal()" title="查看平台使用說明與操作指南">
-          <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span>使用說明</span>
-        </button>
-
-        <button type="button" class="btn-top-webapp" onclick="openWebAppModal()" title="加到手機主畫面，像一般 App 一樣開啟並支援分享">
-          <svg class="icon-svg-sm" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          <span>手機版 App</span>
-        </button>
-
         <button type="button" class="btn-icon-top" id="pwa-install-btn" style="display:none;" onclick="triggerPwaInstall()" title="安裝至手機桌面" aria-label="安裝至手機桌面">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
-        <button type="button" class="btn-icon-top" id="btn-toggle-demo" onclick="toggleDemoData()" title="清空範例 / 恢復預設" aria-label="清空範例 / 恢復預設">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        </button>
 
-        <!-- LINE 登入狀態與示範資料切換 -->
-        <div class="auth-box" id="auth-box">
-          <button type="button" class="btn-line-auth" id="btn-line-login" onclick="startLineLogin()">
-            <svg class="line-svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
-            </svg>
-            <span>LINE 登入</span>
-          </button>
-          <div class="user-chip" id="user-logged-in-chip" style="display:none;">
-            <span class="user-chip-name" id="user-display-name">使用者</span>
-          </div>
-          <button type="button" class="btn-logout-demo" id="btn-logout-demo" style="display:none;" onclick="logoutAndRestoreDemo()" title="登出並載入示範案例">
-            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span class="logout-text-full">登出並載入示範案例</span>
-            <span class="logout-text-short">登出</span>
-          </button>
-        </div>
+        <button type="button" class="btn-header-settings" id="btn-header-settings" onclick="toggleSettingsView()" title="開啟帳號、外觀主題與 LINE 提醒設定">
+          <span class="header-avatar-dot" id="header-avatar-dot" style="display:none;">U</span>
+          <svg class="icon-svg" id="header-gear-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span class="header-settings-label" id="header-settings-label">設定</span>
+        </button>
       </div>
     </div>
     <!-- 手機版獨立全寬搜尋列 (Height 44px, Background #F9FAFB) -->
@@ -451,31 +440,14 @@
       <!-- 日曆頂部統計指標 -->
       <div class="calendar-kpi-row" id="calendar-kpi-row"></div>
 
-      <!-- LINE 每日服用提醒設定卡片（預設收合，展開可設定提醒時段與測試推播） -->
-      <div class="analysis-acc-card acc-tone-neutral line-reminder-acc" id="line-reminder-card">
-        <button type="button" class="analysis-acc-header" id="btn-toggle-line-reminder" aria-expanded="false" onclick="toggleLineReminderCard()">
-          <div class="acc-title-wrap">
-            <span class="acc-icon-box" id="reminder-icon-box">
-              <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </span>
-            <div class="acc-text-group">
-              <strong>
-                <span>LINE 每日服用提醒</span>
-                <span class="reminder-status-pill" id="reminder-status-pill">未開啟</span>
-              </strong>
-              <span id="reminder-summary-sub">設定早、午、晚、睡前時段，透過 LINE 官方帳號定時提醒吃保健品</span>
-            </div>
-          </div>
-          <div class="acc-toggle-right">
-            <span class="acc-toggle-label" id="reminder-toggle-label">設定提醒</span>
-            <svg class="icon-svg-sm acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-          </div>
-        </button>
-        <div class="analysis-acc-body">
-          <div class="analysis-acc-body-inner" id="line-reminder-body">
-            <!-- 由 app.js 動態渲染登入狀態、加好友提示、時段勾選與測試推播 -->
-          </div>
+      <!-- 輕量提醒狀態橫條（點擊跳轉至獨立設定頁管理） -->
+      <div class="cal-reminder-shortcut" onclick="switchView('view-settings')">
+        <div class="cal-rem-shortcut-left">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>LINE 每日服用推播提醒：</span>
+          <strong id="cal-reminder-mini-status">未開啟</strong>
         </div>
+        <span class="cal-rem-shortcut-link">前往設定頁調整 &rarr;</span>
       </div>
 
       <!-- 本週健康總結與配方動態升級建議卡片 (Weekly Health Review & Regimen Evolution) -->
@@ -669,6 +641,199 @@
               </button>
             </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         功能四：【獨立系統設定頁】帳號登入、深/亮色外觀主題、LINE 定時推播提醒與輔助工具
+         ========================================================================= -->
+    <section id="view-settings" class="view-section">
+      <div class="section-banner">
+        <div>
+          <h1>帳號與系統偏好設定</h1>
+          <p>統一管理 LINE 跨裝置雲端帳號、深淺色外觀主題與每日服藥推播提醒</p>
+        </div>
+        <div class="banner-btns">
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeSettingsView()">
+            &larr; 返回上一頁
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-layout-grid">
+        <!-- 區塊 1：帳號登入與會員身分管理 -->
+        <div class="card settings-group-card">
+          <div class="card-title-bar">
+            <div style="display:flex; align-items:center; gap:0.55rem;">
+              <span class="settings-sec-icon" style="background:#E8F8F5; color:#1ABC9C;">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke:currentColor;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <div>
+                <h3>帳號登入與資料同步</h3>
+                <p class="card-sub-hint">使用 LINE 實名登入，跨手機與電腦同步您的清單與日曆紀錄</p>
+              </div>
+            </div>
+            <span class="pill-count" id="settings-pro-badge">免費體驗版</span>
+          </div>
+
+          <div class="settings-account-panel" id="auth-box">
+            <!-- 未登入狀態卡片 -->
+            <div class="settings-guest-box" id="settings-guest-box">
+              <div class="settings-guest-info">
+                <strong>目前為「訪客示範模式」</strong>
+                <p>登入 LINE 後即可儲存個人專屬保健櫃、跨裝置即時同步，並開啟 LINE 定時服藥推播。</p>
+              </div>
+              <div class="settings-guest-actions">
+                <button type="button" class="btn-line-auth" id="btn-line-login" onclick="startLineLogin()">
+                  <svg class="line-svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.365 9.863c.349.008.7.037 1.05.088C19.742 5.068 15.655 1.5 10.75 1.5 5.365 1.5 1 5.253 1 9.883c0 4.148 3.518 7.608 8.274 8.261.322.07.76.216.87.496.1.253.065.65.032.906l-.14 1.144c-.043.344-.2 1.346 1.18.734 1.38-.612 7.457-4.39 10.177-7.518.238-.273.456-.554.654-.84a8.92 8.92 0 0 0-2.682-3.203z"/>
+                  </svg>
+                  <span>使用 LINE 帳號一鍵登入</span>
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-toggle-demo" onclick="toggleDemoData()">
+                  <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  <span id="btn-toggle-demo-label">清空範例 / 恢復預設</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 已登入狀態卡片 -->
+            <div class="settings-member-box" id="user-logged-in-chip" style="display:none;">
+              <div class="settings-member-profile">
+                <div class="settings-avatar-circle" id="settings-avatar-circle">U</div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                    <strong class="user-chip-name" id="user-display-name" style="font-size:1.05rem;">使用者</strong>
+                    <span class="settings-sync-tag">LINE 實名雲端同步中</span>
+                  </div>
+                  <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">您的考慮清單、已購買保健櫃與日曆打卡紀錄已自動跨裝置綁定。</p>
+                </div>
+              </div>
+              <div class="settings-member-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="openSubscriptionModal()">
+                  查看方案權益
+                </button>
+                <button type="button" class="btn-logout-demo" id="btn-logout-demo" onclick="logoutAndRestoreDemo()" title="登出並載入示範案例">
+                  <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  <span>登出帳號</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 區塊 2：深／亮色外觀模式設定 -->
+        <div class="card settings-group-card">
+          <div class="card-title-bar">
+            <div style="display:flex; align-items:center; gap:0.55rem;">
+              <span class="settings-sec-icon" style="background:#EBF5FB; color:#3498DB;">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke:currentColor;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              </span>
+              <div>
+                <h3>外觀主題（深／亮色模式）</h3>
+                <p class="card-sub-hint">日間比價適合明亮臨床風；睡前躺床打卡可切換深色護眼模式（A4 列印報告自動維持白底）</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="theme-selector-grid" id="theme-selector-grid">
+            <button type="button" class="theme-option-card" data-theme-opt="light" onclick="setThemeMode('light')">
+              <div class="theme-preview-swatch swatch-light">
+                <div class="swatch-bar"></div>
+                <div class="swatch-card-mini"></div>
+              </div>
+              <div class="theme-opt-info">
+                <strong>明亮臨床模式</strong>
+                <span>極淨白底・日間高清晰度</span>
+              </div>
+            </button>
+
+            <button type="button" class="theme-option-card" data-theme-opt="dark" onclick="setThemeMode('dark')">
+              <div class="theme-preview-swatch swatch-dark">
+                <div class="swatch-bar"></div>
+                <div class="swatch-card-mini"></div>
+              </div>
+              <div class="theme-opt-info">
+                <strong>深色護眼模式</strong>
+                <span>深石板藍底・夜間低眩光</span>
+              </div>
+            </button>
+
+            <button type="button" class="theme-option-card" data-theme-opt="system" onclick="setThemeMode('system')">
+              <div class="theme-preview-swatch swatch-system">
+                <div class="swatch-bar"></div>
+                <div class="swatch-card-mini"></div>
+              </div>
+              <div class="theme-opt-info">
+                <strong>跟隨系統自動</strong>
+                <span>依手機／電腦設定切換</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 區塊 3：LINE 每日服用定時推播設定（完整獨立面板） -->
+        <div class="card settings-group-card settings-span-full" id="line-reminder-card">
+          <div class="card-title-bar">
+            <div style="display:flex; align-items:center; gap:0.55rem;">
+              <span class="settings-sec-icon" id="reminder-icon-box" style="background:#ECFDF5; color:#10B981;">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke:currentColor;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </span>
+              <div>
+                <h3 style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                  <span>LINE 每日服用定時提醒</span>
+                  <span class="reminder-status-pill" id="reminder-status-pill">未開啟</span>
+                </h3>
+                <p class="card-sub-hint" id="reminder-summary-sub">設定早、午、晚、睡前時段，透過 LINE 官方帳號定時提醒吃保健品</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="line-reminder-body" class="settings-reminder-body">
+            <!-- 由 app.js renderLineReminderCard() 動態渲染 -->
+          </div>
+        </div>
+
+        <!-- 區塊 4：裝置安裝與使用指南 -->
+        <div class="card settings-group-card settings-span-full">
+          <div class="card-title-bar">
+            <div style="display:flex; align-items:center; gap:0.55rem;">
+              <span class="settings-sec-icon" style="background:#F3F4F6; color:#4B5563;">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke:currentColor;"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </span>
+              <div>
+                <h3>應用程式安裝與操作支援</h3>
+                <p class="card-sub-hint">將 PurePick 加到手機桌面像原生 App 一樣秒開，或隨時查閱操作指南</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-action-list">
+            <button type="button" class="settings-list-row" onclick="openWebAppModal()">
+              <div class="settings-row-left">
+                <strong>將「好選保健」加到手機主畫面（Web App）</strong>
+                <span>免逛應用商店下載，桌面一鍵開啟並支援從電商 App 分享匯入商品</span>
+              </div>
+              <span class="settings-row-chevron">&rsaquo;</span>
+            </button>
+
+            <button type="button" class="settings-list-row" onclick="openUserGuideModal()">
+              <div class="settings-row-left">
+                <strong>平台完整功能與五步驟操作教學</strong>
+                <span>了解跨品牌去冗試算、Vertex AI 拍照辨識與門診大字看診卡用法</span>
+              </div>
+              <span class="settings-row-chevron">&rsaquo;</span>
+            </button>
+
+            <button type="button" class="settings-list-row" onclick="openSubscriptionModal()">
+              <div class="settings-row-left">
+                <strong>免費體驗版 vs. Pro 精明消費者方案比較</strong>
+                <span>查看學術封測回饋免費解鎖 Pro 完整權限說明</span>
+              </div>
+              <span class="settings-row-chevron">&rsaquo;</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1330,6 +1495,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.6.0"></script>
+  <script src="app.js?v=4.7.0"></script>
 </body>
 </html>

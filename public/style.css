@@ -5494,6 +5494,635 @@ body {
   }
 }
 
+/* ========================================================
+   獨立系統設定頁 (Settings View) ＆ 頂部極簡個人設定入口
+   ======================================================== */
+.btn-header-settings {
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  color: #1C1C1C;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 300ms var(--ease-clinical);
+}
+
+.btn-header-settings:hover,
+.btn-header-settings.is-active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: #0E6251;
+  transform: translateY(-1px);
+}
+
+.btn-header-settings:hover .icon-svg,
+.btn-header-settings.is-active .icon-svg {
+  stroke: var(--primary);
+}
+
+.header-avatar-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1ABC9C 0%, #3498DB 100%);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 日曆頁輕量提醒跳轉橫條 */
+.cal-reminder-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.15rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  font-size: 0.84rem;
+  transition: all 300ms var(--ease-clinical);
+}
+
+.cal-reminder-shortcut:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.cal-rem-shortcut-left {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-neutral);
+}
+
+.cal-rem-shortcut-left strong {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.cal-rem-shortcut-link {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3498DB;
+}
+
+/* 設定頁雙欄網格 */
+.settings-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.35rem;
+}
+
+.settings-span-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .settings-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-group-card {
+  margin-bottom: 0;
+}
+
+.settings-sec-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-guest-box,
+.settings-member-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settings-guest-info strong {
+  display: block;
+  font-size: 0.96rem;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.settings-guest-info p {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.settings-guest-actions,
+.settings-member-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.settings-member-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.settings-avatar-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1ABC9C 0%, #3498DB 100%);
+  color: #FFFFFF;
+  font-size: 1.2rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(26, 188, 156, 0.28);
+}
+
+.settings-sync-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary-light);
+  color: #1ABC9C;
+  border: 1px solid var(--primary-border);
+}
+
+/* 外觀深／亮色視覺選擇卡片 */
+.theme-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 560px) {
+  .theme-selector-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.theme-option-card {
+  background: var(--bg-page);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 0.85rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: all 300ms var(--ease-clinical);
+}
+
+.theme-option-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.theme-option-card.active {
+  border: 2px solid #1ABC9C;
+  background: var(--primary-light);
+  box-shadow: 0 6px 18px rgba(26, 188, 156, 0.16);
+}
+
+.theme-preview-swatch {
+  height: 52px;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.swatch-light {
+  background: #F9FAFB;
+}
+.swatch-light .swatch-bar {
+  height: 6px;
+  width: 45%;
+  border-radius: 99px;
+  background: #1ABC9C;
+}
+.swatch-light .swatch-card-mini {
+  height: 20px;
+  border-radius: 5px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+}
+
+.swatch-dark {
+  background: #0B1120;
+}
+.swatch-dark .swatch-bar {
+  height: 6px;
+  width: 45%;
+  border-radius: 99px;
+  background: #1ABC9C;
+}
+.swatch-dark .swatch-card-mini {
+  height: 20px;
+  border-radius: 5px;
+  background: #1E293B;
+  border: 1px solid #334155;
+}
+
+.swatch-system {
+  background: linear-gradient(135deg, #F9FAFB 0%, #F9FAFB 50%, #0B1120 50%, #0B1120 100%);
+}
+.swatch-system .swatch-bar {
+  height: 6px;
+  width: 45%;
+  border-radius: 99px;
+  background: #3498DB;
+}
+.swatch-system .swatch-card-mini {
+  height: 20px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid #CBD5E1;
+}
+
+.theme-opt-info strong {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+}
+
+.theme-opt-info span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* 設定頁列表項目 (iOS Settings Rows) */
+.settings-action-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  overflow: hidden;
+}
+
+.settings-list-row {
+  width: 100%;
+  background: var(--bg-page);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0.95rem 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 300ms var(--ease-clinical);
+}
+
+.settings-list-row:last-child {
+  border-bottom: none;
+}
+
+.settings-list-row:hover {
+  background: var(--primary-light);
+}
+
+.settings-row-left strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+}
+
+.settings-row-left span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.settings-row-chevron {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+/* ========================================================
+   Modern Clinical 深色護眼模式 (html[data-theme="dark"])
+   ======================================================== */
+html[data-theme="dark"] {
+  --bg-page: #0B1120;
+  --bg-card: #131C2E;
+  --bg-soft-yellow: rgba(217, 119, 6, 0.15);
+  --bg-soft-purple: rgba(26, 188, 156, 0.14);
+
+  --primary-light: rgba(26, 188, 156, 0.16);
+  --primary-border: rgba(26, 188, 156, 0.36);
+  --secondary-light: rgba(52, 152, 219, 0.16);
+
+  --text-dark: #F8FAFC;
+  --text-body: #E2E8F0;
+  --text-neutral: #CBD5E1;
+  --text-muted: #94A3B8;
+
+  --border: #1E293B;
+  --border-strong: #334155;
+
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-hover: 0 14px 34px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .site-header,
+html[data-theme="dark"] .mobile-search-row {
+  background: #0F172A;
+  border-color: #1E293B;
+}
+
+html[data-theme="dark"] .brand-name {
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .clinical-dual-search,
+html[data-theme="dark"] .mobile-search-bar {
+  background: #1E293B;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .clinical-dual-search:focus-within,
+html[data-theme="dark"] .mobile-search-bar:focus-within {
+  background: #0F172A;
+  border-color: #1ABC9C;
+}
+
+html[data-theme="dark"] .dual-search-cat {
+  border-right-color: #334155;
+}
+
+html[data-theme="dark"] .dual-search-select,
+html[data-theme="dark"] .dual-search-input,
+html[data-theme="dark"] .mobile-search-bar input {
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .dual-search-select option {
+  background: #131C2E;
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .btn-header-settings,
+html[data-theme="dark"] .btn-icon-top {
+  background: #1E293B;
+  border-color: #334155;
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .btn-header-settings:hover,
+html[data-theme="dark"] .btn-header-settings.is-active {
+  background: rgba(26, 188, 156, 0.2);
+  border-color: #1ABC9C;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .icon-svg,
+html[data-theme="dark"] .icon-svg-sm {
+  stroke: #94A3B8;
+}
+
+html[data-theme="dark"] .line-style-bottom-bar {
+  background: rgba(15, 23, 42, 0.95);
+  border-top-color: #1E293B;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .b-tab-item {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .b-tab-item:hover {
+  background: #1E293B;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .b-tab-item.active {
+  background: rgba(26, 188, 156, 0.18);
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .b-tab-badge {
+  border-color: #0F172A;
+}
+
+html[data-theme="dark"] .section-banner,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .kpi-stat-card,
+html[data-theme="dark"] .finder-toggle-card,
+html[data-theme="dark"] .cat-pill,
+html[data-theme="dark"] .supp-card,
+html[data-theme="dark"] .managed-item-card,
+html[data-theme="dark"] .analysis-acc-card,
+html[data-theme="dark"] .modal-dialog {
+  background: #131C2E !important;
+  border-color: #1E293B !important;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .cat-pill.active {
+  border-color: #1ABC9C !important;
+  background: rgba(26, 188, 156, 0.14) !important;
+}
+
+html[data-theme="dark"] .cat-pill-label,
+html[data-theme="dark"] .supp-brand-title,
+html[data-theme="dark"] .metric-val,
+html[data-theme="dark"] .spec-tag,
+html[data-theme="dark"] .modal-header h3 {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .metric-val.highlight-daily,
+html[data-theme="dark"] .pill-count {
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .supp-visual-stage {
+  filter: brightness(0.92);
+}
+
+html[data-theme="dark"] .supp-visual-form {
+  color: #0F172A;
+}
+
+html[data-theme="dark"] .supp-price-metrics,
+html[data-theme="dark"] .pros-cons-box,
+html[data-theme="dark"] .goal-check-card,
+html[data-theme="dark"] .budget-card,
+html[data-theme="dark"] .preference-row,
+html[data-theme="dark"] .dosage-row,
+html[data-theme="dark"] .calendar-legend,
+html[data-theme="dark"] .result-summary-box,
+html[data-theme="dark"] .reminder-friend-banner,
+html[data-theme="dark"] .reminder-master-toggle,
+html[data-theme="dark"] .reminder-slot-item {
+  background: #0F172A !important;
+  border-color: #1E293B !important;
+  color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"] .pro-line {
+  color: #34D399 !important;
+}
+
+html[data-theme="dark"] .con-line {
+  color: #FDA4AF !important;
+}
+
+html[data-theme="dark"] .supp-spec-list {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .supp-actions-row,
+html[data-theme="dark"] .card-title-bar,
+html[data-theme="dark"] .form-step-block,
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer {
+  border-color: #1E293B !important;
+}
+
+html[data-theme="dark"] .form-input,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .form-textarea,
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .chip-sample,
+html[data-theme="dark"] .btn-outline,
+html[data-theme="dark"] .btn-logout-demo,
+html[data-theme="dark"] .btn-cal-arrow {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .btn-outline:hover,
+html[data-theme="dark"] .chip-sample:hover {
+  background: rgba(26, 188, 156, 0.18) !important;
+  border-color: #1ABC9C !important;
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .cal-day-cell {
+  background: #0F172A;
+  border-color: #1E293B;
+}
+
+html[data-theme="dark"] .cal-day-cell.empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+html[data-theme="dark"] .cal-day-cell.is-today {
+  background: rgba(52, 152, 219, 0.18);
+  border-color: #3498DB;
+}
+
+html[data-theme="dark"] .cal-day-cell.is-selected {
+  background: rgba(26, 188, 156, 0.2);
+  border-color: #1ABC9C;
+}
+
+html[data-theme="dark"] .pro-gate-card,
+html[data-theme="dark"] .pro-locked-card,
+html[data-theme="dark"] .vertex-scan-box {
+  background: linear-gradient(135deg, rgba(26, 188, 156, 0.14) 0%, rgba(52, 152, 219, 0.14) 100%) !important;
+  border-color: rgba(26, 188, 156, 0.35) !important;
+}
+
+html[data-theme="dark"] .pro-gate-card p,
+html[data-theme="dark"] .vertex-scan-desc {
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .vertex-scan-title-wrap,
+html[data-theme="dark"] .pro-gate-header h4 {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .pro-lock-overlay-btn-box {
+  background: rgba(15, 23, 42, 0.86) !important;
+}
+
+html[data-theme="dark"] .pro-lock-overlay-btn-box div {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .pro-lock-overlay-btn-box p {
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .clinical-footer {
+  background: #0F172A;
+  border-top-color: #1E293B;
+}
+
+html[data-theme="dark"] .clinical-footer-grid {
+  border-bottom-color: #1E293B;
+}
+
+html[data-theme="dark"] .footer-col-heading {
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .footer-brand-desc,
+html[data-theme="dark"] .footer-link-btn,
+html[data-theme="dark"] .clinical-legal-note {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .clinical-legal-note {
+  background: #131C2E;
+  border-color: #1E293B;
+}
+
+html[data-theme="dark"] .clinical-legal-note strong {
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .a4-preview-toolbar {
+  background: #0F172A;
+  color: #F8FAFC;
+  border-bottom-color: #1E293B;
+}
+
+/* 保護單頁 A4 紙本報告永遠維持標準純白臨床列印底色 */
+html[data-theme="dark"] .a4-sheet {
+  background: #FFFFFF !important;
+  color: #1C1C1C !important;
+}
+
 
 
 

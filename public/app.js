@@ -196,7 +196,53 @@ function readLoggedInUserStateFromLocal() {
 // ========================================================
 // 1. 初始化與資料載入
 // ========================================================
+function applyThemeMode(mode) {
+  const effective = mode === 'system'
+    ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : (mode === 'dark' ? 'dark' : 'light');
+
+  document.documentElement.setAttribute('data-theme', effective);
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute('content', effective === 'dark' ? '#0F172A' : '#FFFFFF');
+  }
+  document.querySelectorAll('#theme-selector-grid .theme-option-card').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.themeOpt === mode);
+  });
+}
+
+function initThemeMode() {
+  const saved = localStorage.getItem('purepick_theme_mode') || 'light';
+  state.themeMode = saved;
+  applyThemeMode(saved);
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) {
+      mq.addEventListener('change', () => {
+        if ((localStorage.getItem('purepick_theme_mode') || 'light') === 'system') {
+          applyThemeMode('system');
+        }
+      });
+    }
+  }
+}
+
+function setThemeMode(mode) {
+  const validMode = ['light', 'dark', 'system'].includes(mode) ? mode : 'light';
+  state.themeMode = validMode;
+  localStorage.setItem('purepick_theme_mode', validMode);
+  applyThemeMode(validMode);
+  const labels = {
+    light: '已切換為「明亮臨床模式」',
+    dark: '已切換為「深色護眼模式」',
+    system: '已設定為「跟隨系統自動切換」'
+  };
+  showToast(labels[validMode]);
+}
+window.setThemeMode = setThemeMode;
+
 document.addEventListener('DOMContentLoaded', async () => {
+  initThemeMode();
   checkIosPwaPrompt();
   const initialParams = new URLSearchParams(window.location.search);
   const requestedView = initialParams.get('view');
@@ -207,6 +253,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     switchView('view-calendar');
   } else if (requestedView === 'wishlist') {
     switchView('view-wishlist');
+  } else if (requestedView === 'settings') {
+    switchView('view-settings');
   }
 });
 
@@ -371,9 +419,11 @@ async function loadBootstrapData(skipLocalSync = false) {
       }
 
       updateNavBadges();
+      renderAuthUI();
       renderCatalog();
       renderWishlistView();
       renderCalendarView();
+      renderLineReminderCard();
     }
   } catch (err) {
     console.error('載入平台資料失敗:', err);
@@ -398,17 +448,48 @@ function updateNavBadges() {
   setTxt('analysis-purchased-count', `${pCount} 款服用中`);
 
   const demoBtn = document.getElementById('btn-toggle-demo');
+  const demoLabel = document.getElementById('btn-toggle-demo-label');
   if (demoBtn) {
     demoBtn.title = state.isDemoCleared ? '恢復預設範例' : '清空範例';
     demoBtn.setAttribute('aria-label', demoBtn.title);
     demoBtn.classList.toggle('active', state.isDemoCleared);
+    if (demoLabel) {
+      demoLabel.textContent = state.isDemoCleared ? '恢復預設示範案例' : '清空目前示範資料';
+    }
     if (state.currentUser) {
       demoBtn.style.display = 'none';
     }
   }
 }
 
+function renderSettingsView() {
+  renderAuthUI();
+  renderLineReminderCard();
+  applyThemeMode(localStorage.getItem('purepick_theme_mode') || 'light');
+}
+window.renderSettingsView = renderSettingsView;
+
+function toggleSettingsView() {
+  if (state.activeView === 'view-settings') {
+    closeSettingsView();
+  } else {
+    switchView('view-settings');
+  }
+}
+window.toggleSettingsView = toggleSettingsView;
+
+function closeSettingsView() {
+  const fallback = (state.previousView && state.previousView !== 'view-settings')
+    ? state.previousView
+    : 'view-finder';
+  switchView(fallback);
+}
+window.closeSettingsView = closeSettingsView;
+
 function switchView(viewId) {
+  if (state.activeView && state.activeView !== 'view-settings' && viewId === 'view-settings') {
+    state.previousView = state.activeView;
+  }
   state.activeView = viewId;
   document.querySelectorAll('.view-section').forEach(sec => {
     sec.classList.toggle('active', sec.id === viewId);
@@ -416,6 +497,10 @@ function switchView(viewId) {
   document.querySelectorAll('.b-tab-item[data-target]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.target === viewId);
   });
+  const headerSettingsBtn = document.getElementById('btn-header-settings');
+  if (headerSettingsBtn) {
+    headerSettingsBtn.classList.toggle('is-active', viewId === 'view-settings');
+  }
 
   if (typeof closeMobileDailyDrawer === 'function') {
     closeMobileDailyDrawer();
@@ -424,6 +509,8 @@ function switchView(viewId) {
     renderWishlistView();
   } else if (viewId === 'view-calendar') {
     renderCalendarView();
+  } else if (viewId === 'view-settings') {
+    renderSettingsView();
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -947,9 +1034,11 @@ async function moveWishlistToPurchased(supplementId) {
       state.wishlistAnalysis = json.data.wishlistAnalysis || null;
       saveLoggedInUserStateToLocal();
       updateNavBadges();
+      renderAuthUI();
       renderCatalog();
       renderWishlistView();
       renderCalendarView();
+      renderLineReminderCard();
       showToast('已轉入「已購買與服用日曆」！現在可在日曆上打卡服用狀態。');
     }
   } catch (err) {
@@ -1415,6 +1504,12 @@ function renderLineReminderCard() {
 
   if (iconBox) {
     iconBox.classList.toggle('acc-icon-safe', isLoggedIn && !!rs.enabled);
+  }
+  const calMiniStatus = document.getElementById('cal-reminder-mini-status');
+  if (calMiniStatus) {
+    calMiniStatus.textContent = (isLoggedIn && rs.enabled && activeSlots.length > 0)
+      ? `已開啟（${activeSlots.join(' / ')}）`
+      : '未開啟';
   }
   if (pill) {
     if (isLoggedIn && rs.enabled) {
@@ -2798,23 +2893,44 @@ async function initUserAuth() {
 }
 
 function renderAuthUI() {
+  const guestBox = document.getElementById('settings-guest-box');
   const loginBtn = document.getElementById('btn-line-login');
   const chip = document.getElementById('user-logged-in-chip');
   const nameEl = document.getElementById('user-display-name');
   const logoutDemoBtn = document.getElementById('btn-logout-demo');
   const toggleDemoBtn = document.getElementById('btn-toggle-demo');
+  const headerAvatar = document.getElementById('header-avatar-dot');
+  const headerLabel = document.getElementById('header-settings-label');
+  const settingsAvatar = document.getElementById('settings-avatar-circle');
+  const proBadge = document.getElementById('settings-pro-badge');
+
+  if (proBadge) {
+    proBadge.textContent = state.isPro ? 'PRO 專業版已開通' : '免費體驗版';
+  }
 
   if (state.currentUser) {
+    const dispName = String(state.currentUser.displayName || '會員').trim();
+    const initial = dispName.charAt(0).toUpperCase() || 'U';
+    if (guestBox) guestBox.style.display = 'none';
     if (loginBtn) loginBtn.style.display = 'none';
     if (toggleDemoBtn) toggleDemoBtn.style.display = 'none';
-    if (chip) chip.style.display = 'inline-flex';
-    if (nameEl) nameEl.textContent = state.currentUser.displayName;
+    if (chip) chip.style.display = 'flex';
+    if (nameEl) nameEl.textContent = dispName;
     if (logoutDemoBtn) logoutDemoBtn.style.display = 'inline-flex';
+    if (settingsAvatar) settingsAvatar.textContent = initial;
+    if (headerAvatar) {
+      headerAvatar.textContent = initial;
+      headerAvatar.style.display = 'inline-flex';
+    }
+    if (headerLabel) headerLabel.textContent = dispName.slice(0, 6);
   } else {
+    if (guestBox) guestBox.style.display = 'flex';
     if (loginBtn) loginBtn.style.display = 'inline-flex';
     if (toggleDemoBtn) toggleDemoBtn.style.display = 'inline-flex';
     if (chip) chip.style.display = 'none';
     if (logoutDemoBtn) logoutDemoBtn.style.display = 'none';
+    if (headerAvatar) headerAvatar.style.display = 'none';
+    if (headerLabel) headerLabel.textContent = '設定・登入';
   }
 }
 
@@ -3192,9 +3308,11 @@ async function importSharedProductByName(productText, sourceChannel = '手機分
       state.wishlistAnalysis = json.data.wishlistAnalysis || state.wishlistAnalysis;
       saveLoggedInUserStateToLocal();
       updateNavBadges();
+      renderAuthUI();
       renderCatalog();
       renderWishlistView();
       renderCalendarView();
+      renderLineReminderCard();
       switchView('view-calendar');
       showToast(json.message || '已成功加入已購買清單！');
     } else {

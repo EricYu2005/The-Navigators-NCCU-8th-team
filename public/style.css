@@ -6117,10 +6117,188 @@ html[data-theme="dark"] .a4-preview-toolbar {
   border-bottom-color: #1E293B;
 }
 
-/* 保護單頁 A4 紙本報告永遠維持標準純白臨床列印底色 */
+/* ==================== 深色模式全站文字高對比補齊（覆蓋行內深色字與次要區塊） ==================== */
+html[data-theme="dark"] .page-container h1,
+html[data-theme="dark"] .page-container h2,
+html[data-theme="dark"] .page-container h3,
+html[data-theme="dark"] .page-container h4,
+html[data-theme="dark"] .page-container h5,
+html[data-theme="dark"] .modal-dialog h3,
+html[data-theme="dark"] .modal-dialog h4,
+html[data-theme="dark"] .modal-dialog h5,
+html[data-theme="dark"] .modal-dialog label,
+html[data-theme="dark"] .modal-dialog strong,
+html[data-theme="dark"] .finder-toggle-text strong,
+html[data-theme="dark"] .acc-text-group strong,
+html[data-theme="dark"] .managed-item-card h4,
+html[data-theme="dark"] .daily-tracker-card h3,
+html[data-theme="dark"] .daily-tracker-card h4,
+html[data-theme="dark"] .weekly-summary-card h4,
+html[data-theme="dark"] .weekly-upgrade-title,
+html[data-theme="dark"] .ext-step-content strong,
+html[data-theme="dark"] .sub-plan-card h4,
+html[data-theme="dark"] .cal-day-num,
+html[data-theme="dark"] .modal-close {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .page-container p,
+html[data-theme="dark"] .modal-dialog p,
+html[data-theme="dark"] .modal-body span,
+html[data-theme="dark"] .finder-toggle-text span,
+html[data-theme="dark"] .acc-text-group span,
+html[data-theme="dark"] .acc-toggle-label,
+html[data-theme="dark"] .managed-item-card div,
+html[data-theme="dark"] .weekly-summary-body,
+html[data-theme="dark"] .weekly-upgrade-desc,
+html[data-theme="dark"] .dosage-row,
+html[data-theme="dark"] .dosage-row div,
+html[data-theme="dark"] .dosage-row span,
+html[data-theme="dark"] .reminder-login-gate p,
+html[data-theme="dark"] .footer-link-list span,
+html[data-theme="dark"] .checklist-item,
+html[data-theme="dark"] .purchased-cabinet-item {
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .finder-result-card {
+  background: linear-gradient(180deg, rgba(26, 188, 156, 0.16) 0%, #131C2E 140px) !important;
+  border-color: rgba(26, 188, 156, 0.4) !important;
+}
+
+html[data-theme="dark"] .finder-result-card div[style*="background:#F9FAFB"],
+html[data-theme="dark"] .finder-result-card div[style*="background: #F9FAFB"] {
+  background: #0F172A !important;
+  border-color: #1E293B !important;
+}
+
+html[data-theme="dark"] .finder-result-card strong[style*="color:#0E6251"] {
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .dont-waste-box {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #FDE68A !important;
+}
+
+html[data-theme="dark"] .kpi-stat-card.savings-highlight {
+  background: rgba(225, 29, 72, 0.16) !important;
+  border-color: rgba(251, 113, 133, 0.4) !important;
+}
+
+html[data-theme="dark"] .kpi-stat-card.savings-highlight .kpi-label,
+html[data-theme="dark"] .kpi-stat-card.savings-highlight .kpi-number {
+  color: #FDA4AF !important;
+}
+
+html[data-theme="dark"] .kpi-stat-card.optimized-highlight {
+  background: rgba(26, 188, 156, 0.16) !important;
+  border-color: rgba(26, 188, 156, 0.4) !important;
+}
+
+html[data-theme="dark"] .kpi-stat-card.optimized-highlight .kpi-label,
+html[data-theme="dark"] .kpi-stat-card.optimized-highlight .kpi-number {
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .redundancy-alert-box {
+  background: rgba(225, 29, 72, 0.14) !important;
+  border-color: rgba(251, 113, 133, 0.35) !important;
+}
+
+html[data-theme="dark"] .redundancy-title,
+html[data-theme="dark"] .redundancy-alert-box p {
+  color: #FFE4E6 !important;
+}
+
+html[data-theme="dark"] #wishlist-analysis-container div[style*="background:#fffbeb"],
+html[data-theme="dark"] #wishlist-analysis-container div[style*="background: #fffbeb"] {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #FDE68A !important;
+}
+
+html[data-theme="dark"] #wishlist-analysis-container div[style*="background:#f8fafc"],
+html[data-theme="dark"] #wishlist-analysis-container div[style*="background: #f8fafc"],
+html[data-theme="dark"] .weekly-upgrade-box,
+html[data-theme="dark"] .dynamic-feedback-card,
+html[data-theme="dark"] .sick-mode-box,
+html[data-theme="dark"] .checklist-item,
+html[data-theme="dark"] .purchased-cabinet-item,
+html[data-theme="dark"] .sub-plan-card,
+html[data-theme="dark"] .ext-step-item,
+html[data-theme="dark"] .rating-pill {
+  background: #0F172A !important;
+  border-color: #1E293B !important;
+  color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"] .mood-pill,
+html[data-theme="dark"] .mood-btn {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .mood-pill.active,
+html[data-theme="dark"] .mood-btn.active {
+  background: rgba(26, 188, 156, 0.22) !important;
+  border-color: #1ABC9C !important;
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .weekly-trend-pill {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"] .weekly-trend-pill.positive {
+  background: rgba(26, 188, 156, 0.2) !important;
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .a4-input-summary-pill,
+html[data-theme="dark"] .a4-preset-chip,
+html[data-theme="dark"] .pro-unlocked-banner {
+  background: rgba(26, 188, 156, 0.16) !important;
+  border-color: rgba(26, 188, 156, 0.38) !important;
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .mvp-gate-note {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #FDE68A !important;
+}
+
+html[data-theme="dark"] .modal-dialog div[style*="background:#f5f0ff"] {
+  background: rgba(26, 188, 156, 0.14) !important;
+  border-color: rgba(26, 188, 156, 0.35) !important;
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .supp-visual-stage .supp-visual-form,
+html[data-theme="dark"] .supp-visual-stage .supp-badge-bottomright {
+  color: #1C1C1C !important;
+}
+
+/* 保護單頁 A4 紙本報告永遠維持標準純白臨床列印底色與深炭黑文字 */
 html[data-theme="dark"] .a4-sheet {
   background: #FFFFFF !important;
   color: #1C1C1C !important;
+}
+
+html[data-theme="dark"] .a4-sheet h2,
+html[data-theme="dark"] .a4-sheet strong {
+  color: #1C1C1C !important;
+}
+
+html[data-theme="dark"] .a4-sheet .a4-card-caption,
+html[data-theme="dark"] .a4-sheet .a4-exec-box,
+html[data-theme="dark"] .a4-sheet .a4-subject-meta {
+  color: #374151 !important;
 }
 
 

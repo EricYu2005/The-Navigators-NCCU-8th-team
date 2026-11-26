@@ -6284,6 +6284,108 @@ html[data-theme="dark"] .supp-visual-stage .supp-badge-bottomright {
   color: #1C1C1C !important;
 }
 
+/* 日曆當日紀錄：服用清單商品名稱與份量在深色模式下的高對比 */
+.intake-item-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.intake-item-dose {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+html[data-theme="dark"] .intake-check-item {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .intake-check-item.checked {
+  background: rgba(26, 188, 156, 0.16) !important;
+  border-color: #1ABC9C !important;
+}
+
+html[data-theme="dark"] .intake-item-name {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .intake-item-dose {
+  color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] .timing-tag {
+  background: rgba(52, 152, 219, 0.18) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+  color: #BFDBFE !important;
+}
+
+html[data-theme="dark"] .btn-intake-remove {
+  background: transparent !important;
+  border-color: #475569 !important;
+  color: #CBD5E1 !important;
+}
+
+/* 方案說明彈窗：移除深色模式下刺眼的亮黃底色（反光問題） */
+html[data-theme="dark"] .sub-intro-text {
+  background: #131C2E !important;
+  border-color: #334155 !important;
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .sub-intro-text strong {
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .sub-plan-card.featured {
+  background: rgba(26, 188, 156, 0.1) !important;
+  border-color: rgba(26, 188, 156, 0.55) !important;
+}
+
+html[data-theme="dark"] .plan-badge {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"] .plan-badge.badge-pro {
+  background: #1ABC9C !important;
+  border-color: #1ABC9C !important;
+  color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .plan-price {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .plan-price span {
+  color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] .plan-features li,
+html[data-theme="dark"] .plan-features li strong {
+  color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"] .mvp-notice-card {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+
+html[data-theme="dark"] .mvp-notice-title,
+html[data-theme="dark"] .mvp-notice-title span {
+  color: #FCD34D !important;
+}
+
+html[data-theme="dark"] .mvp-notice-title .icon-svg-sm {
+  stroke: #FCD34D !important;
+}
+
+html[data-theme="dark"] .mvp-notice-text,
+html[data-theme="dark"] .mvp-notice-text strong {
+  color: #FDE68A !important;
+}
+
 /* 保護單頁 A4 紙本報告永遠維持標準純白臨床列印底色與深炭黑文字 */
 html[data-theme="dark"] .a4-sheet {
   background: #FFFFFF !important;

@@ -1632,11 +1632,6 @@ function renderWishlistView() {
   analysisContainer.innerHTML = `
     ${proGateBannerHtml}
 
-    <div class="verdict-banner">
-      <div style="font-weight:700; color:#0f172a; margin-bottom:0.25rem;">整體評估結論</div>
-      <div style="font-size:0.9rem; line-height:1.5; color:#1e293b;">${analysis.overallVerdict}</div>
-    </div>
-
     <div class="analysis-accordions-stack">
       ${alertsAccordionHtml}
       ${dosageAccordionHtml}
@@ -2493,8 +2488,8 @@ function renderDailyTrackerPanel() {
               onchange="toggleSupplementTaken(${item.id}, this.checked)"
             />
             <div>
-              <div style="font-size:0.9rem; font-weight:800; color:#0f172a;">${item.brand}｜${item.name}</div>
-              <div style="font-size:0.75rem; color:#64748b;">建議份量：每日 ${item.daily_units} 份（${item.dosage_form}）</div>
+              <div class="intake-item-name">${item.brand}｜${item.name}</div>
+              <div class="intake-item-dose">建議份量：每日 ${item.daily_units} 份（${item.dosage_form}）</div>
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">

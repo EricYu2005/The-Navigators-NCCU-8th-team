@@ -6301,6 +6301,563 @@ html[data-theme="dark"] .a4-sheet .a4-subject-meta {
   color: #374151 !important;
 }
 
+/* ========================================================
+   Win XP 致敬版：左側臨床小柴犬「選寶 Picky」與側邊搜尋精靈
+   ======================================================== */
+.shiba-side-dock {
+  position: fixed;
+  left: 18px;
+  bottom: 84px;
+  z-index: 1620;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: none;
+  transition: opacity 220ms var(--ease-clinical);
+}
+
+.shiba-side-dock.is-hidden {
+  display: none !important;
+}
+
+/* 切換至分析／日曆／設定頁時：小柴犬轉身往左側小跑步跑走退場 */
+.shiba-side-dock.is-running-away {
+  animation: shibaRunAwayLeft 380ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+
+.shiba-side-dock.is-running-away .shiba-svg {
+  transform: scaleX(-1);
+}
+
+.shiba-side-dock.is-running-away .paw-left {
+  animation: shibaPawTrot 110ms ease-in-out infinite alternate;
+}
+
+.shiba-side-dock.is-running-away .paw-right {
+  animation: shibaPawTrot 110ms ease-in-out 55ms infinite alternate;
+}
+
+/* 切回尋找頁時：小柴犬從左側小跑步回來坐好 */
+.shiba-side-dock.is-running-in {
+  animation: shibaRunInLeft 440ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.shiba-side-dock.is-running-in .paw-left {
+  animation: shibaPawTrot 120ms ease-in-out 3;
+}
+
+.shiba-side-dock.is-running-in .paw-right {
+  animation: shibaPawTrot 120ms ease-in-out 60ms 3;
+}
+
+@keyframes shibaRunAwayLeft {
+  0% { transform: translateX(0) translateY(0); opacity: 1; }
+  25% { transform: translateX(-14px) translateY(-6px); opacity: 1; }
+  55% { transform: translateX(-65px) translateY(0); opacity: 0.92; }
+  100% { transform: translateX(-210px) translateY(-4px); opacity: 0; }
+}
+
+@keyframes shibaRunInLeft {
+  0% { transform: translateX(-190px) translateY(-4px); opacity: 0; }
+  55% { transform: translateX(8px) translateY(-5px); opacity: 1; }
+  80% { transform: translateX(-3px) translateY(0); opacity: 1; }
+  100% { transform: translateX(0) translateY(0); opacity: 1; }
+}
+
+@keyframes shibaPawTrot {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}
+
+/* 左下角小對話框 */
+.shiba-dock-bubble {
+  pointer-events: auto;
+  position: relative;
+  max-width: 235px;
+  background: #FFFFFF;
+  border: 1.5px solid #B7EFE4;
+  border-radius: 14px 14px 14px 4px;
+  padding: 0.65rem 1.55rem 0.65rem 0.8rem;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  transition: transform 250ms var(--ease-clinical), box-shadow 250ms var(--ease-clinical);
+}
+
+.shiba-dock-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(26, 188, 156, 0.2);
+}
+
+.shiba-bubble-text strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #0E6251;
+  margin-bottom: 2px;
+}
+
+.shiba-bubble-text span {
+  display: block;
+  font-size: 0.73rem;
+  line-height: 1.38;
+  color: #374151;
+}
+
+.shiba-bubble-dismiss {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #9CA3AF;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.shiba-bubble-dismiss:hover {
+  color: #1C1C1C;
+  background: #F3F4F6;
+}
+
+/* 左下角小柴犬觸發按鈕 */
+.shiba-mascot-trigger {
+  pointer-events: auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transition: transform 280ms var(--ease-clinical);
+}
+
+.shiba-mascot-trigger:hover {
+  transform: translateY(-4px) scale(1.04);
+}
+
+.shiba-mascot-trigger .shiba-svg {
+  width: 92px;
+  height: 92px;
+  filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.16));
+  transition: transform 250ms ease;
+}
+
+.shiba-dock-pill {
+  margin-top: -8px;
+  background: linear-gradient(135deg, #1ABC9C 0%, #3498DB 100%);
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(26, 188, 156, 0.35);
+  border: 2px solid #FFFFFF;
+}
+
+/* ==================== 小柴犬 SVG 細緻生命力微動畫 ==================== */
+.shiba-tail {
+  transform-origin: 84px 84px;
+  animation: shibaTailWag 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes shibaTailWag {
+  0% { transform: rotate(-7deg); }
+  100% { transform: rotate(11deg); }
+}
+
+.shiba-eyes-normal {
+  transform-origin: 60px 48px;
+  animation: shibaBlink 4.2s infinite;
+}
+
+@keyframes shibaBlink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.08); }
+}
+
+.shiba-eyes-happy,
+.shiba-magnifier,
+.shiba-sparkles {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.shiba-head-group {
+  transform-origin: 60px 62px;
+  transition: transform 280ms var(--ease-clinical);
+}
+
+/* 狀態 1：listening（歪頭豎耳傾聽） */
+.mood-listening .shiba-head-group {
+  transform: rotate(-8deg) translateY(-1px);
+}
+
+.mood-listening .shiba-tail {
+  animation-duration: 0.75s;
+}
+
+/* 狀態 2：searching（經典 Win XP 舉放大鏡掃描翻找） */
+.mood-searching .shiba-magnifier {
+  opacity: 1;
+  transform-origin: 75px 75px;
+  animation: shibaMagnifierScan 0.55s ease-in-out infinite alternate;
+}
+
+.mood-searching .shiba-head-group {
+  animation: shibaSearchNod 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes shibaMagnifierScan {
+  0% { transform: translate(-14px, -6px) rotate(-12deg); }
+  100% { transform: translate(6px, 2px) rotate(10deg); }
+}
+
+@keyframes shibaSearchNod {
+  0% { transform: rotate(-4deg) translateX(-3px); }
+  100% { transform: rotate(5deg) translateX(3px); }
+}
+
+/* 狀態 3：happy（找到方案開心跳躍＋彎彎笑眼＋閃星） */
+.mood-happy .shiba-eyes-normal {
+  opacity: 0;
+}
+
+.mood-happy .shiba-eyes-happy,
+.mood-happy .shiba-sparkles {
+  opacity: 1;
+}
+
+.mood-happy .shiba-svg {
+  animation: shibaHappyBounce 0.55s ease-in-out 2;
+}
+
+@keyframes shibaHappyBounce {
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(-9px); }
+}
+
+/* ==================== Win XP 風格左側滑出搜尋精靈面板 ==================== */
+.shiba-wizard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2140;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(2px);
+}
+
+.shiba-wizard-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 390px;
+  max-width: 92vw;
+  z-index: 2150;
+  background: #FFFFFF;
+  border-right: 1px solid #E5E7EB;
+  box-shadow: 16px 0 45px rgba(15, 23, 42, 0.16);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-104%);
+  transition: transform 340ms var(--ease-clinical);
+}
+
+.shiba-wizard-sidebar.is-open {
+  transform: translateX(0);
+}
+
+.shiba-sidebar-stage {
+  padding: 0.95rem 1.15rem 0.85rem;
+  background: linear-gradient(155deg, #E8F8F5 0%, #EBF5FB 100%);
+  border-bottom: 1px solid #D1F2EB;
+  flex-shrink: 0;
+}
+
+.shiba-sidebar-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.shiba-sidebar-badge {
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #0E6251;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid #B7EFE4;
+}
+
+.shiba-sidebar-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  color: #374151;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shiba-sidebar-close:hover {
+  background: #FFFFFF;
+  color: #1C1C1C;
+}
+
+.shiba-stage-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.shiba-stage-avatar {
+  width: 82px;
+  height: 82px;
+  flex-shrink: 0;
+}
+
+.shiba-stage-avatar .shiba-svg {
+  width: 82px;
+  height: 82px;
+}
+
+.shiba-speech-cloud {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid #B7EFE4;
+  border-radius: 14px 14px 14px 4px;
+  padding: 0.65rem 0.8rem;
+  box-shadow: 0 4px 14px rgba(26, 188, 156, 0.1);
+}
+
+.shiba-speech-cloud p {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #1C1C1C;
+}
+
+.shiba-step-dots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.shiba-step-dot {
+  padding: 0.32rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid #B7EFE4;
+  background: rgba(255, 255, 255, 0.65);
+  color: #4B5563;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 220ms var(--ease-clinical);
+}
+
+.shiba-step-dot.active {
+  background: #1ABC9C;
+  border-color: #1ABC9C;
+  color: #FFFFFF;
+  box-shadow: 0 3px 10px rgba(26, 188, 156, 0.28);
+}
+
+.shiba-wizard-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.shiba-step-pane {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
+}
+
+.shiba-step-pane.active {
+  display: block;
+  animation: fadeIn 240ms var(--ease-clinical);
+}
+
+.shiba-pane-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #374151;
+  margin-bottom: 0.55rem;
+}
+
+.shiba-goal-list {
+  grid-template-columns: 1fr !important;
+  gap: 0.55rem !important;
+}
+
+.shiba-goal-list .goal-check-card {
+  padding: 0.65rem 0.8rem;
+}
+
+.shiba-budget-list {
+  grid-template-columns: 1fr !important;
+  gap: 0.55rem !important;
+  margin-bottom: 0 !important;
+}
+
+.shiba-budget-list .budget-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.shiba-budget-list .budget-card input[type="radio"] {
+  margin-bottom: 0;
+}
+
+.shiba-budget-list .budget-title,
+.shiba-budget-list .budget-desc {
+  display: block;
+}
+
+.shiba-pref-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.shiba-pref-item label {
+  display: block;
+  font-size: 0.83rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 0.35rem;
+}
+
+.shiba-wizard-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.15rem;
+  border-top: 1px solid #F3F4F6;
+  background: #F9FAFB;
+  flex-shrink: 0;
+}
+
+/* 手機窄螢幕：左下角小柴犬精巧不擋商品卡 */
+@media (max-width: 768px) {
+  .shiba-side-dock {
+    left: 10px;
+    bottom: 78px;
+  }
+  .shiba-dock-bubble {
+    display: none !important;
+  }
+  .shiba-mascot-trigger .shiba-svg {
+    width: 68px;
+    height: 68px;
+  }
+  .shiba-dock-pill {
+    font-size: 0.64rem;
+    padding: 2px 8px;
+  }
+}
+
+/* 深色模式小柴犬與側邊欄適配 */
+html[data-theme="dark"] .shiba-dock-bubble {
+  background: #131C2E;
+  border-color: rgba(26, 188, 156, 0.45);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .shiba-bubble-text strong {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .shiba-bubble-text span {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .shiba-dock-pill {
+  border-color: #0F172A;
+}
+
+html[data-theme="dark"] .shiba-wizard-sidebar {
+  background: #131C2E;
+  border-right-color: #1E293B;
+}
+
+html[data-theme="dark"] .shiba-sidebar-stage {
+  background: linear-gradient(155deg, rgba(26, 188, 156, 0.18) 0%, rgba(52, 152, 219, 0.16) 100%);
+  border-bottom-color: #1E293B;
+}
+
+html[data-theme="dark"] .shiba-sidebar-badge {
+  background: #0F172A;
+  color: #5EEAD4;
+  border-color: rgba(26, 188, 156, 0.4);
+}
+
+html[data-theme="dark"] .shiba-sidebar-close {
+  background: #0F172A;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .shiba-speech-cloud {
+  background: #0F172A;
+  border-color: rgba(26, 188, 156, 0.4);
+}
+
+html[data-theme="dark"] .shiba-speech-cloud p {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .shiba-step-dot {
+  background: #0F172A;
+  border-color: #334155;
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .shiba-step-dot.active {
+  background: #1ABC9C;
+  border-color: #1ABC9C;
+  color: #FFFFFF;
+}
+
+html[data-theme="dark"] .shiba-pane-label {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .shiba-wizard-footer {
+  background: #0F172A;
+  border-top-color: #1E293B;
+}
+
+@media print {
+  .shiba-side-dock,
+  .shiba-wizard-backdrop,
+  .shiba-wizard-sidebar {
+    display: none !important;
+  }
+}
+
 
 
 

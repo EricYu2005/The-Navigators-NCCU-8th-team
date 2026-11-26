@@ -11,6 +11,7 @@ const state = {
   wishlistAnalysis: null,
   finderResult: null,
   activeView: 'view-finder',
+  shibaStep: 1,
   catalogCategory: 'all',
   calendarYear: new Date().getFullYear(),
   calendarMonth: new Date().getMonth() + 1, // 1-12
@@ -486,9 +487,52 @@ function closeSettingsView() {
 }
 window.closeSettingsView = closeSettingsView;
 
+let shibaRunTimer = null;
+
+function handleShibaPresenceOnViewSwitch(prevView, nextView) {
+  const dock = document.getElementById('shiba-side-dock');
+  if (!dock) return;
+
+  if (shibaRunTimer) {
+    clearTimeout(shibaRunTimer);
+    shibaRunTimer = null;
+  }
+
+  // 從「尋找」切往「分析／日曆／設定」：收起側邊精靈並讓小柴犬轉身往左側小跑步退場
+  if (prevView === 'view-finder' && nextView !== 'view-finder') {
+    closeShibaWizard(true);
+    const bubbleText = document.getElementById('shiba-dock-bubble-text');
+    if (bubbleText) {
+      bubbleText.innerHTML = '<strong>先去旁邊等你，汪！</strong><span>需要找保健品隨時回「尋找」叫我喔！</span>';
+    }
+    dock.classList.remove('is-hidden', 'is-running-in');
+    dock.classList.add('is-running-away');
+    shibaRunTimer = setTimeout(() => {
+      dock.classList.remove('is-running-away');
+      dock.classList.add('is-hidden');
+    }, 370);
+  } else if (prevView !== 'view-finder' && nextView === 'view-finder') {
+    // 切回「尋找」頁：小柴犬從畫面左側輕快小跑步回來坐好
+    const bubbleText = document.getElementById('shiba-dock-bubble-text');
+    if (bubbleText) {
+      bubbleText.innerHTML = state.finderResult
+        ? '<strong>汪！我回來啦！</strong><span>點我可以隨時重新配對不同預算方案喔！</span>'
+        : '<strong>汪！我是選寶 Picky</strong><span>挑花眼了嗎？點我 3 步幫你找出不重複的高 CP 組合！</span>';
+    }
+    dock.classList.remove('is-hidden', 'is-running-away');
+    dock.classList.add('is-running-in');
+    shibaRunTimer = setTimeout(() => {
+      dock.classList.remove('is-running-in');
+    }, 450);
+  } else if (nextView !== 'view-finder') {
+    dock.classList.add('is-hidden');
+  }
+}
+
 function switchView(viewId) {
-  if (state.activeView && state.activeView !== 'view-settings' && viewId === 'view-settings') {
-    state.previousView = state.activeView;
+  const prevView = state.activeView;
+  if (prevView && prevView !== 'view-settings' && viewId === 'view-settings') {
+    state.previousView = prevView;
   }
   state.activeView = viewId;
   document.querySelectorAll('.view-section').forEach(sec => {
@@ -501,6 +545,8 @@ function switchView(viewId) {
   if (headerSettingsBtn) {
     headerSettingsBtn.classList.toggle('is-active', viewId === 'view-settings');
   }
+
+  handleShibaPresenceOnViewSwitch(prevView, viewId);
 
   if (typeof closeMobileDailyDrawer === 'function') {
     closeMobileDailyDrawer();
@@ -575,22 +621,125 @@ function fillFinderSample(sampleId) {
 }
 window.fillFinderSample = fillFinderSample;
 
+function setShibaWizardMood(mood, speechText) {
+  const stage = document.getElementById('shiba-sidebar-stage');
+  const dock = document.getElementById('shiba-side-dock');
+  const speechEl = document.getElementById('shiba-wizard-speech');
+  const moods = ['mood-idle', 'mood-listening', 'mood-searching', 'mood-happy'];
+
+  [stage, dock].forEach(el => {
+    if (!el) return;
+    moods.forEach(m => el.classList.remove(m));
+    el.classList.add(`mood-${mood}`);
+  });
+
+  if (speechEl && speechText) {
+    speechEl.textContent = speechText;
+  }
+}
+window.setShibaWizardMood = setShibaWizardMood;
+
+function dismissShibaDockBubble(e) {
+  if (e) e.stopPropagation();
+  const bubble = document.getElementById('shiba-dock-bubble');
+  if (bubble) bubble.style.display = 'none';
+}
+window.dismissShibaDockBubble = dismissShibaDockBubble;
+
+function goToShibaWizardStep(stepNum) {
+  const step = Math.min(3, Math.max(1, Number(stepNum) || 1));
+  state.shibaStep = step;
+
+  document.querySelectorAll('.shiba-step-pane').forEach(pane => {
+    pane.classList.toggle('active', Number(pane.dataset.stepPane) === step);
+  });
+  document.querySelectorAll('.shiba-step-dot').forEach(dot => {
+    dot.classList.toggle('active', Number(dot.dataset.wstep) === step);
+  });
+
+  const prevBtn = document.getElementById('btn-shiba-prev');
+  const nextBtn = document.getElementById('btn-shiba-next');
+  const submitBtn = document.getElementById('btn-run-finder');
+
+  if (prevBtn) prevBtn.style.display = step > 1 ? 'inline-flex' : 'none';
+  if (nextBtn) nextBtn.style.display = step < 3 ? 'inline-flex' : 'none';
+  if (submitBtn) submitBtn.style.display = step === 3 ? 'inline-flex' : 'none';
+
+  if (step === 1) {
+    setShibaWizardMood('idle', '汪！先勾選你最近最在意的保養重點（或直接點上方常見情境），我幫你鎖定有效成分！');
+  } else if (step === 2) {
+    setShibaWizardMood('listening', '收到！那每個月預算大概抓多少呢？放心，我不收廠商抽成，只挑高 CP 值的！');
+  } else if (step === 3) {
+    setShibaWizardMood('idle', '最後一步囉！確認一下飲食與劑型偏好，按下按鈕我就拿放大鏡幫你翻找！');
+  }
+}
+window.goToShibaWizardStep = goToShibaWizardStep;
+
+function onShibaGoalChange() {
+  const checked = Array.from(document.querySelectorAll('#goal-checkbox-grid input[name="goal"]:checked')).map(el => el.value);
+  const lines = {
+    eye: '汪！長時間盯螢幕眼睛辛苦了，游離型葉黃素跟黃金比例交給我比價！',
+    cardio: '外食族少吃深海魚對吧？高濃度 rTG 魚油我最熟了，汪！',
+    energy: '常熬夜加班下午斷電嗎？幫你鎖定足量 B 群，同時避開重複維他命！',
+    gut: '肚子脹氣不順暢真的很困擾，我會幫你找無多餘糖粉的足量益生菌！',
+    bone: '缺鈣淺眠或關節保養收到！幫你注意吸收率與睡前服用時段喔！',
+    beauty: '氣色澎潤保養記下來囉！幫你挑成分單純不交智商稅的好選擇！'
+  };
+  if (checked.length === 0) {
+    setShibaWizardMood('listening', '汪？至少勾選 1 個想改善的重點（或在下方寫下困擾），我才好幫你精準尋寶喔！');
+  } else {
+    const latest = checked[checked.length - 1];
+    setShibaWizardMood('listening', lines[latest] || `太好了！已記下 ${checked.length} 項保養目標，點右下角「下一步」選預算吧！`);
+  }
+}
+window.onShibaGoalChange = onShibaGoalChange;
+
+function onShibaBudgetChange(val) {
+  const map = {
+    under_500: '小資精省沒問題！500 元內也能挑到單項足量打底好物，汪！',
+    '500_1200': '實惠均衡區間！很適合挑 1～2 款最核心的高 CP 單品！',
+    '1200_2000': '這是最受歡迎的主流區間，足夠配出高濃度專利規格組合喔！',
+    '2000_3000': '預算很充裕！可以完整配齊 2～3 款頂規專利配方且不重複！',
+    above_3000: '全方位頂規保養收到！我依然會幫你嚴格把關不花冤枉錢，汪！'
+  };
+  setShibaWizardMood('listening', map[val] || '收到預算設定囉！點「下一步」做最後確認吧！');
+}
+window.onShibaBudgetChange = onShibaBudgetChange;
+
+function openShibaWizard(initialStep = 1) {
+  if (state.activeView !== 'view-finder') {
+    switchView('view-finder');
+  }
+  const sidebar = document.getElementById('shiba-wizard-sidebar');
+  const backdrop = document.getElementById('shiba-wizard-backdrop');
+  if (backdrop) backdrop.style.display = 'block';
+  if (sidebar) {
+    sidebar.classList.add('is-open');
+    sidebar.setAttribute('aria-hidden', 'false');
+  }
+  goToShibaWizardStep(initialStep);
+}
+window.openShibaWizard = openShibaWizard;
+
+function closeShibaWizard(silent = false) {
+  const sidebar = document.getElementById('shiba-wizard-sidebar');
+  const backdrop = document.getElementById('shiba-wizard-backdrop');
+  if (backdrop) backdrop.style.display = 'none';
+  if (sidebar) {
+    sidebar.classList.remove('is-open');
+    sidebar.setAttribute('aria-hidden', 'true');
+  }
+  if (!silent) {
+    setShibaWizardMood('idle');
+  }
+}
+window.closeShibaWizard = closeShibaWizard;
+
 function toggleFinderDrawer(forceOpen) {
-  const drawer = document.getElementById('finder-drawer');
-  const toggleBtn = document.getElementById('finder-toggle-btn');
-  const pillText = document.getElementById('finder-toggle-pill-text');
-  if (!drawer || !toggleBtn) return;
-
-  const willOpen = typeof forceOpen === 'boolean'
-    ? forceOpen
-    : !drawer.classList.contains('is-open');
-
-  drawer.classList.toggle('is-open', willOpen);
-  toggleBtn.classList.toggle('is-open', willOpen);
-  toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-  drawer.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
-  if (pillText) {
-    pillText.textContent = willOpen ? '收起表單' : '開啟表單';
+  if (forceOpen === false) {
+    closeShibaWizard();
+  } else {
+    openShibaWizard(1);
   }
 }
 window.toggleFinderDrawer = toggleFinderDrawer;
@@ -607,34 +756,46 @@ async function handleFinderSubmit(e) {
   const btn = document.getElementById('btn-run-finder');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '分析比對中...';
+    btn.textContent = '選寶正拿放大鏡翻找中...';
   }
+  setShibaWizardMood('searching', '汪汪！正在翻找 24 款市售成分表、幫你踢掉重複與溢價商品...');
 
   try {
-    const res = await fetch('/api/finder/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ freeText, goals, diet, formPref, budgetTier })
-    });
+    const [res] = await Promise.all([
+      fetch('/api/finder/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ freeText, goals, diet, formPref, budgetTier })
+      }),
+      new Promise(r => setTimeout(r, 780))
+    ]);
     const json = await res.json();
     if (json.success && json.data) {
       state.finderResult = json.data;
       renderFinderResult(json.data);
-      // 產出推薦方案後自動收合表單並平滑捲動至結果區，保持畫面簡潔
-      toggleFinderDrawer(false);
-      const area = document.getElementById('finder-result-area');
-      if (area) {
-        setTimeout(() => {
-          area.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 120);
+      const bundleCount = (json.data.recommendedBundle || []).length;
+      setShibaWizardMood('happy', `汪！找到囉！幫你挑出 ${bundleCount} 款不重複的高 CP 組合，快看畫面上的推薦結果！`);
+
+      const bubbleText = document.getElementById('shiba-dock-bubble-text');
+      if (bubbleText) {
+        bubbleText.innerHTML = `<strong>汪！幫你配好 ${bundleCount} 款方案囉！</strong><span>想換預算或重挑，隨時再點我！</span>`;
       }
+
+      setTimeout(() => {
+        closeShibaWizard(true);
+        const area = document.getElementById('finder-result-area');
+        if (area) {
+          area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 900);
     }
   } catch (err) {
+    setShibaWizardMood('idle', '嗚...剛剛網路好像抖了一下，請再按一次讓我重找！');
     showToast('分析發生錯誤，請稍後再試');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '制定我的方案';
+      btn.textContent = '汪！開始幫我翻找高 CP 方案';
     }
   }
 }
@@ -2338,30 +2499,30 @@ function applyHealthFeedbackToFinder() {
   const goal = window.__activeFeedbackGoal__ || '晶亮護眼';
   const customText = window.__activeFeedbackText__ || '';
 
-  // 切換至尋找分頁
+  // 切換至尋找分頁（小柴犬自動跑回）並開啟左側精靈
   switchView('view-finder');
+  openShibaWizard(1);
 
-  // 自動帶入需求
-  const textInput = document.getElementById('user-free-text');
+  const textInput = document.getElementById('finder-free-text');
   if (textInput && customText) {
     textInput.value = customText;
   }
 
-  // 點選對應的快速標籤
-  const quickTags = document.querySelectorAll('.quick-tag');
-  quickTags.forEach(t => {
-    if (t.dataset.val === goal) {
-      t.classList.add('active');
-    }
-  });
-
-  // 平滑滾動至尋找表單
-  const formCard = document.querySelector('.finder-form-card');
-  if (formCard) {
-    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const goalValueMap = {
+    '晶亮護眼': 'eye',
+    '精神體力': 'energy',
+    '消化排便': 'gut',
+    '全方位綜合': 'energy'
+  };
+  const targetVal = goalValueMap[goal];
+  if (targetVal) {
+    document.querySelectorAll('#goal-checkbox-grid input[name="goal"]').forEach(cb => {
+      cb.checked = cb.value === targetVal;
+    });
   }
 
-  showToast(`已將健康日誌狀態反饋至尋找表單（目標：${goal}）！`);
+  setShibaWizardMood('listening', `汪！看到你日曆上的「${goal}」紀錄了，我已經幫你把狀況帶進來囉，點下一步選預算吧！`);
+  showToast(`已將健康日誌狀態帶入選寶精靈（目標：${goal}）！`);
 }
 window.applyHealthFeedbackToFinder = applyHealthFeedbackToFinder;
 

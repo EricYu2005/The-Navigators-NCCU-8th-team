@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.7.1" />
+  <link rel="stylesheet" href="style.css?v=4.8.0" />
   <script>
     (function () {
       try {
@@ -117,189 +117,13 @@
       <div class="section-banner">
         <div>
           <h1>尋找適合您的保健品方案</h1>
+          <p>直接瀏覽下方透明比價庫，或點選左側「選寶小柴犬」陪您 3 步篩出不重複的高 CP 組合</p>
         </div>
-      </div>
-
-      <!-- 互動式需求表單收合入口按鈕（預設收起，點擊流暢動畫展開） -->
-      <button type="button" class="finder-toggle-card" id="finder-toggle-btn" aria-expanded="false" aria-controls="finder-drawer" onclick="toggleFinderDrawer()">
-        <div class="finder-toggle-left">
-          <div class="finder-toggle-icon-wrap">
-            <svg class="icon-svg" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          </div>
-          <div class="finder-toggle-text">
-            <strong>不知道怎麼挑？點此開啟專屬需求配對</strong>
-            <span>輸入作息困擾、保養目標與每月預算，幫您篩選跨品牌方案</span>
-          </div>
-        </div>
-        <div class="finder-toggle-right">
-          <span class="finder-toggle-pill" id="finder-toggle-pill-text">開啟表單</span>
-          <svg class="icon-svg-sm acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </button>
-
-      <!-- 互動式需求表單卡片（動畫展開容器） -->
-      <div class="finder-drawer" id="finder-drawer" aria-hidden="true">
-        <div class="finder-drawer-inner">
-          <div class="card finder-form-card">
-            <form id="finder-form" onsubmit="handleFinderSubmit(event)">
-          <!-- 步驟 1：自由文字輸入 -->
-          <div class="form-step-block">
-            <div class="step-header">
-              <span class="step-num">1</span>
-              <div>
-                <h3>用自己的話聊聊最近的身體狀況或作息困擾</h3>
-              </div>
-            </div>
-
-            <textarea
-              id="finder-free-text"
-              class="form-textarea"
-              rows="3"
-              placeholder="例如：我每天看電腦超過 10 小時眼睛很乾酸，三餐都吃外食很少吃魚跟青菜，最近趕報告常熬夜覺得精神很差、晚上睡眠也很淺..."
-            ></textarea>
-
-            <div class="sample-chips-row">
-              <span class="sample-label">快速帶入：</span>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(1)">看螢幕乾酸＋少吃魚</button>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(2)">常熬夜疲勞＋淺眠多夢</button>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(3)">排便不順脹氣＋無糖</button>
-              <button type="button" class="chip-sample" onclick="fillFinderSample(4)">長輩行動保養＋吞膠囊難</button>
-            </div>
-          </div>
-
-          <!-- 步驟 2：快速勾選保養目標 (灰線條圖示) -->
-          <div class="form-step-block">
-            <div class="step-header">
-              <span class="step-num">2</span>
-              <div>
-                <h3>勾選您最在意的保養重點（可複選）</h3>
-              </div>
-            </div>
-
-            <div class="goal-checkbox-grid" id="goal-checkbox-grid">
-              <label class="goal-check-card">
-                <input type="checkbox" name="goal" value="eye" />
-                <span class="goal-icon-box">
-                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                </span>
-                <div class="goal-text">
-                  <strong>晶亮護眼</strong>
-                  <span>長時間看電腦手機、乾澀疲勞</span>
-                </div>
-              </label>
-              <label class="goal-check-card">
-                <input type="checkbox" name="goal" value="cardio" checked />
-                <span class="goal-icon-box">
-                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                </span>
-                <div class="goal-text">
-                  <strong>外食循環與思緒</strong>
-                  <span>三餐外食少吃魚、油膩代謝</span>
-                </div>
-              </label>
-              <label class="goal-check-card">
-                <input type="checkbox" name="goal" value="energy" checked />
-                <span class="goal-icon-box">
-                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                </span>
-                <div class="goal-text">
-                  <strong>精神體力補給</strong>
-                  <span>常熬夜加班、下午容易疲倦</span>
-                </div>
-              </label>
-              <label class="goal-check-card">
-                <input type="checkbox" name="goal" value="gut" />
-                <span class="goal-icon-box">
-                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
-                </span>
-                <div class="goal-text">
-                  <strong>消化順暢與體質</strong>
-                  <span>排便不規律、容易脹氣或換季敏感</span>
-                </div>
-              </label>
-              <label class="goal-check-card">
-                <input type="checkbox" name="goal" value="bone" />
-                <span class="goal-icon-box">
-                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-                </span>
-                <div class="goal-text">
-                  <strong>骨骼行動與舒眠</strong>
-                  <span>少喝牛奶缺鈣、淺眠難入睡、關節保養</span>
-                </div>
-              </label>
-              <label class="goal-check-card">
-                <input type="checkbox" name="goal" value="beauty" />
-                <span class="goal-icon-box">
-                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
-                </span>
-                <div class="goal-text">
-                  <strong>氣色澎潤保養</strong>
-                  <span>日常基底美妍、彈力與氣色維持</span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- 步驟 3：每月預算區間與飲食偏好 -->
-          <div class="form-step-block">
-            <div class="step-header">
-              <span class="step-num">3</span>
-              <div>
-                <h3>設定每月預算區間與食用偏好</h3>
-              </div>
-            </div>
-
-            <div class="budget-radio-grid" id="budget-radio-grid">
-              <label class="budget-card">
-                <input type="radio" name="budgetTier" value="under_500" />
-                <span class="budget-title">NT$ 500 以下 / 月</span>
-                <span class="budget-desc">極致小資・單項基礎打底</span>
-              </label>
-              <label class="budget-card">
-                <input type="radio" name="budgetTier" value="500_1200" />
-                <span class="budget-title">NT$ 500 ~ 1,200 / 月</span>
-                <span class="budget-desc">實惠均衡・1~2 項核心保養</span>
-              </label>
-              <label class="budget-card">
-                <input type="radio" name="budgetTier" value="1200_2000" checked />
-                <span class="budget-title">NT$ 1,200 ~ 2,000 / 月</span>
-                <span class="budget-desc">主流足量・高濃度專利規格</span>
-              </label>
-              <label class="budget-card">
-                <input type="radio" name="budgetTier" value="2000_3000" />
-                <span class="budget-title">NT$ 2,000 ~ 3,000 / 月</span>
-                <span class="budget-desc">完整配搭・2~3 項高規足量</span>
-              </label>
-              <label class="budget-card">
-                <input type="radio" name="budgetTier" value="above_3000" />
-                <span class="budget-title">NT$ 3,000 以上 / 月</span>
-                <span class="budget-desc">頂規全方位・無預算上限</span>
-              </label>
-            </div>
-
-            <div class="preference-row">
-              <div class="pref-field">
-                <label for="finder-diet">飲食限制：</label>
-                <select id="finder-diet" class="form-select">
-                  <option value="all">一般飲食（葷素皆可）</option>
-                  <option value="vegan">素食可食</option>
-                </select>
-              </div>
-              <div class="pref-field">
-                <label for="finder-form-pref">劑型偏好：</label>
-                <select id="finder-form-pref" class="form-select">
-                  <option value="all">不限劑型（以效益最高優先）</option>
-                  <option value="small">偏好小顆膠囊／好吞錠劑</option>
-                  <option value="powder">不會吞膠囊（偏好粉包／液態飲）</option>
-                </select>
-              </div>
-              <button type="submit" class="btn btn-primary btn-lg" id="btn-run-finder">
-                制定我的方案
-              </button>
-            </div>
-          </div>
-            </form>
-          </div>
+        <div class="banner-btns">
+          <button type="button" class="btn btn-primary" onclick="openShibaWizard()">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24" style="stroke:#fff;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span>呼叫選寶精靈幫我挑</span>
+          </button>
         </div>
       </div>
 
@@ -1492,9 +1316,325 @@
     </div>
   </div>
 
+  <!-- ==================== Win XP 致敬版：左側臨床小柴犬「選寶 Picky」停靠區與側邊搜尋精靈 ==================== -->
+  <!-- 1. 左下角側邊停靠小柴犬（僅駐守於「尋找」頁，切往分析／日曆／設定頁時小跑步往左側跑走退場） -->
+  <div id="shiba-side-dock" class="shiba-side-dock mood-idle" aria-label="選寶小柴犬導購助手">
+    <div class="shiba-dock-bubble" id="shiba-dock-bubble">
+      <button type="button" class="shiba-bubble-dismiss" onclick="dismissShibaDockBubble(event)" title="收起對話框" aria-label="收起對話框">&times;</button>
+      <div class="shiba-bubble-text" id="shiba-dock-bubble-text" onclick="openShibaWizard()">
+        <strong>汪！我是選寶 Picky</strong>
+        <span>挑花眼了嗎？點我 3 步幫你找出不重複的高 CP 組合！</span>
+      </div>
+    </div>
+
+    <button type="button" class="shiba-mascot-trigger" onclick="openShibaWizard()" title="點我開啟 3 步驟保健品尋找精靈">
+      <svg class="shiba-svg" viewBox="0 0 120 120" aria-hidden="true">
+        <!-- 地面柔和投影 -->
+        <ellipse cx="60" cy="108" rx="34" ry="6" fill="rgba(15,23,42,0.12)" />
+        <!-- 蓬鬆捲尾巴 (搖動動畫) -->
+        <g class="shiba-tail">
+          <path d="M84 88 C104 82, 108 58, 92 54 C84 52, 80 62, 86 68" fill="#F59E0B" stroke="#B45309" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="91" cy="59" r="5.5" fill="#FFFBEB"/>
+        </g>
+        <!-- 身體與白肚毛 -->
+        <path d="M36 70 C32 86, 35 104, 60 104 C85 104, 88 86, 84 70 Z" fill="#F59E0B" stroke="#B45309" stroke-width="2.5"/>
+        <path d="M45 75 C44 88, 48 102, 60 102 C72 102, 76 88, 75 75 Z" fill="#FFFBEB"/>
+        <!-- Modern Clinical 薄荷青醫療領巾 + 十字徽章 -->
+        <path d="M39 70 Q60 84 81 70 L75 83 Q60 91 45 83 Z" fill="#1ABC9C" stroke="#0E6251" stroke-width="2"/>
+        <path d="M60 75 v6 M57 78 h6" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round"/>
+        <!-- 前腳肉球 (跑步動畫) -->
+        <ellipse class="shiba-paw paw-left" cx="47" cy="103" rx="8" ry="5.5" fill="#FFFBEB" stroke="#B45309" stroke-width="2.2"/>
+        <ellipse class="shiba-paw paw-right" cx="73" cy="103" rx="8" ry="5.5" fill="#FFFBEB" stroke="#B45309" stroke-width="2.2"/>
+        <!-- 柴犬頭部群組 (歪頭傾聽動畫) -->
+        <g class="shiba-head-group">
+          <!-- 尖立雙耳 -->
+          <polygon class="shiba-ear-left" points="32,42 25,15 49,26" fill="#F59E0B" stroke="#B45309" stroke-width="2.5" stroke-linejoin="round"/>
+          <polygon points="34,38 29,21 45,28" fill="#FDE68A"/>
+          <polygon class="shiba-ear-right" points="88,42 95,15 71,26" fill="#F59E0B" stroke="#B45309" stroke-width="2.5" stroke-linejoin="round"/>
+          <polygon points="86,38 91,21 75,28" fill="#FDE68A"/>
+          <!-- 圓潤臉龐與白臉頰 -->
+          <ellipse cx="60" cy="49" rx="31" ry="26" fill="#F59E0B" stroke="#B45309" stroke-width="2.5"/>
+          <path d="M33 52 C33 67, 46 74, 60 74 C74 74, 87 67, 87 52 C81 46, 72 48, 60 55 C48 48, 39 46, 33 52 Z" fill="#FFFBEB"/>
+          <!-- 經典柴犬豆豆白眉 -->
+          <ellipse cx="47" cy="38" rx="4.2" ry="2.6" fill="#FFFBEB"/>
+          <ellipse cx="73" cy="38" rx="4.2" ry="2.6" fill="#FFFBEB"/>
+          <!-- 一般眨眼雙眸 -->
+          <g class="shiba-eyes-normal">
+            <circle cx="46" cy="48" r="3.8" fill="#1C1C1C"/>
+            <circle cx="44.8" cy="46.6" r="1.3" fill="#FFFFFF"/>
+            <circle cx="74" cy="48" r="3.8" fill="#1C1C1C"/>
+            <circle cx="72.8" cy="46.6" r="1.3" fill="#FFFFFF"/>
+          </g>
+          <!-- 開心笑咪咪彎眼 -->
+          <g class="shiba-eyes-happy">
+            <path d="M41 49 Q46 43 51 49" fill="none" stroke="#1C1C1C" stroke-width="2.8" stroke-linecap="round"/>
+            <path d="M69 49 Q74 43 79 49" fill="none" stroke="#1C1C1C" stroke-width="2.8" stroke-linecap="round"/>
+          </g>
+          <!-- 腮紅 -->
+          <ellipse cx="38" cy="56" rx="4.5" ry="2.5" fill="#FDA4AF" opacity="0.65"/>
+          <ellipse cx="82" cy="56" rx="4.5" ry="2.5" fill="#FDA4AF" opacity="0.65"/>
+          <!-- 黑鼻子與微笑 w 嘴 -->
+          <ellipse cx="60" cy="55" rx="4.2" ry="3" fill="#1C1C1C"/>
+          <path d="M53 60 Q56.5 64.5 60 60 Q63.5 64.5 67 60" fill="none" stroke="#1C1C1C" stroke-width="2.3" stroke-linecap="round"/>
+          <path class="shiba-tongue" d="M57.5 62 Q60 69 62.5 62 Z" fill="#FB7185"/>
+        </g>
+        <!-- 搜尋狀態專用：放大鏡掃描動畫 -->
+        <g class="shiba-magnifier">
+          <circle cx="84" cy="68" r="12" fill="rgba(235,245,251,0.88)" stroke="#3498DB" stroke-width="3.2"/>
+          <line x1="92.5" y1="76.5" x2="103" y2="87" stroke="#1E293B" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <!-- 開心狀態專用：薄荷青閃耀星星 -->
+        <g class="shiba-sparkles">
+          <path d="M20 26 l2.5 5 5 2.5 -5 2.5 -2.5 5 -2.5 -5 -5 -2.5 5 -2.5 Z" fill="#1ABC9C"/>
+          <path d="M100 22 l2 4 4 2 -4 2 -2 4 -2 -4 -4 -2 4 -2 Z" fill="#3498DB"/>
+        </g>
+      </svg>
+      <span class="shiba-dock-pill">選寶幫你挑</span>
+    </button>
+  </div>
+
+  <!-- 2. 左側滑出式「Win XP 搜尋精靈側邊欄」遮罩與主面板 -->
+  <div id="shiba-wizard-backdrop" class="shiba-wizard-backdrop" style="display:none;" onclick="closeShibaWizard()"></div>
+
+  <aside id="shiba-wizard-sidebar" class="shiba-wizard-sidebar" aria-hidden="true" aria-label="選寶 3 步驟保健品配對精靈">
+    <!-- 頂部：小柴犬即時對話舞台 -->
+    <div class="shiba-sidebar-stage mood-idle" id="shiba-sidebar-stage">
+      <div class="shiba-sidebar-toprow">
+        <span class="shiba-sidebar-badge">PUREPICK CONCIERGE・選寶導購精靈</span>
+        <button type="button" class="shiba-sidebar-close" onclick="closeShibaWizard()" aria-label="收起側邊精靈">&times;</button>
+      </div>
+
+      <div class="shiba-stage-main">
+        <div class="shiba-stage-avatar">
+          <svg class="shiba-svg" viewBox="0 0 120 120" aria-hidden="true">
+            <ellipse cx="60" cy="108" rx="34" ry="6" fill="rgba(15,23,42,0.12)" />
+            <g class="shiba-tail">
+              <path d="M84 88 C104 82, 108 58, 92 54 C84 52, 80 62, 86 68" fill="#F59E0B" stroke="#B45309" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="91" cy="59" r="5.5" fill="#FFFBEB"/>
+            </g>
+            <path d="M36 70 C32 86, 35 104, 60 104 C85 104, 88 86, 84 70 Z" fill="#F59E0B" stroke="#B45309" stroke-width="2.5"/>
+            <path d="M45 75 C44 88, 48 102, 60 102 C72 102, 76 88, 75 75 Z" fill="#FFFBEB"/>
+            <path d="M39 70 Q60 84 81 70 L75 83 Q60 91 45 83 Z" fill="#1ABC9C" stroke="#0E6251" stroke-width="2"/>
+            <path d="M60 75 v6 M57 78 h6" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round"/>
+            <ellipse class="shiba-paw paw-left" cx="47" cy="103" rx="8" ry="5.5" fill="#FFFBEB" stroke="#B45309" stroke-width="2.2"/>
+            <ellipse class="shiba-paw paw-right" cx="73" cy="103" rx="8" ry="5.5" fill="#FFFBEB" stroke="#B45309" stroke-width="2.2"/>
+            <g class="shiba-head-group">
+              <polygon class="shiba-ear-left" points="32,42 25,15 49,26" fill="#F59E0B" stroke="#B45309" stroke-width="2.5" stroke-linejoin="round"/>
+              <polygon points="34,38 29,21 45,28" fill="#FDE68A"/>
+              <polygon class="shiba-ear-right" points="88,42 95,15 71,26" fill="#F59E0B" stroke="#B45309" stroke-width="2.5" stroke-linejoin="round"/>
+              <polygon points="86,38 91,21 75,28" fill="#FDE68A"/>
+              <ellipse cx="60" cy="49" rx="31" ry="26" fill="#F59E0B" stroke="#B45309" stroke-width="2.5"/>
+              <path d="M33 52 C33 67, 46 74, 60 74 C74 74, 87 67, 87 52 C81 46, 72 48, 60 55 C48 48, 39 46, 33 52 Z" fill="#FFFBEB"/>
+              <ellipse cx="47" cy="38" rx="4.2" ry="2.6" fill="#FFFBEB"/>
+              <ellipse cx="73" cy="38" rx="4.2" ry="2.6" fill="#FFFBEB"/>
+              <g class="shiba-eyes-normal">
+                <circle cx="46" cy="48" r="3.8" fill="#1C1C1C"/>
+                <circle cx="44.8" cy="46.6" r="1.3" fill="#FFFFFF"/>
+                <circle cx="74" cy="48" r="3.8" fill="#1C1C1C"/>
+                <circle cx="72.8" cy="46.6" r="1.3" fill="#FFFFFF"/>
+              </g>
+              <g class="shiba-eyes-happy">
+                <path d="M41 49 Q46 43 51 49" fill="none" stroke="#1C1C1C" stroke-width="2.8" stroke-linecap="round"/>
+                <path d="M69 49 Q74 43 79 49" fill="none" stroke="#1C1C1C" stroke-width="2.8" stroke-linecap="round"/>
+              </g>
+              <ellipse cx="38" cy="56" rx="4.5" ry="2.5" fill="#FDA4AF" opacity="0.65"/>
+              <ellipse cx="82" cy="56" rx="4.5" ry="2.5" fill="#FDA4AF" opacity="0.65"/>
+              <ellipse cx="60" cy="55" rx="4.2" ry="3" fill="#1C1C1C"/>
+              <path d="M53 60 Q56.5 64.5 60 60 Q63.5 64.5 67 60" fill="none" stroke="#1C1C1C" stroke-width="2.3" stroke-linecap="round"/>
+              <path class="shiba-tongue" d="M57.5 62 Q60 69 62.5 62 Z" fill="#FB7185"/>
+            </g>
+            <g class="shiba-magnifier">
+              <circle cx="84" cy="68" r="12" fill="rgba(235,245,251,0.88)" stroke="#3498DB" stroke-width="3.2"/>
+              <line x1="92.5" y1="76.5" x2="103" y2="87" stroke="#1E293B" stroke-width="4" stroke-linecap="round"/>
+            </g>
+            <g class="shiba-sparkles">
+              <path d="M20 26 l2.5 5 5 2.5 -5 2.5 -2.5 5 -2.5 -5 -5 -2.5 5 -2.5 Z" fill="#1ABC9C"/>
+              <path d="M100 22 l2 4 4 2 -4 2 -2 4 -2 -4 -4 -2 4 -2 Z" fill="#3498DB"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="shiba-speech-cloud">
+          <p id="shiba-wizard-speech">汪！告訴我你最近最在意的身體狀況，我幫你從市售產品裡挑出不重複、最划算的組合！</p>
+        </div>
+      </div>
+
+      <!-- 3 步驟進度條 -->
+      <div class="shiba-step-dots">
+        <button type="button" class="shiba-step-dot active" data-wstep="1" onclick="goToShibaWizardStep(1)">1. 保養困擾</button>
+        <button type="button" class="shiba-step-dot" data-wstep="2" onclick="goToShibaWizardStep(2)">2. 每月預算</button>
+        <button type="button" class="shiba-step-dot" data-wstep="3" onclick="goToShibaWizardStep(3)">3. 飲食習慣</button>
+      </div>
+    </div>
+
+    <!-- 中段可捲動表單（保留所有既有欄位 ID 與名稱） -->
+    <form id="finder-form" class="shiba-wizard-form" onsubmit="handleFinderSubmit(event)">
+      <!-- Step 1：保養目標與選填困擾 -->
+      <div class="shiba-step-pane active" data-step-pane="1">
+        <div class="shiba-pane-label">一鍵套用常見情境（直接看結果）：</div>
+        <div class="sample-chips-row" style="margin-top:0; margin-bottom:0.9rem;">
+          <button type="button" class="chip-sample" onclick="fillFinderSample(1)">盯螢幕乾酸＋少吃魚</button>
+          <button type="button" class="chip-sample" onclick="fillFinderSample(2)">常熬夜疲勞＋淺眠</button>
+          <button type="button" class="chip-sample" onclick="fillFinderSample(3)">排便不順＋無糖</button>
+          <button type="button" class="chip-sample" onclick="fillFinderSample(4)">長輩關節＋好吞</button>
+        </div>
+
+        <div class="shiba-pane-label">或勾選最在意的保養重點（可複選）：</div>
+        <div class="goal-checkbox-grid shiba-goal-list" id="goal-checkbox-grid">
+          <label class="goal-check-card">
+            <input type="checkbox" name="goal" value="eye" onchange="onShibaGoalChange()" />
+            <span class="goal-icon-box">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            <div class="goal-text">
+              <strong>晶亮護眼</strong>
+              <span>長時間看電腦手機、乾澀疲勞</span>
+            </div>
+          </label>
+          <label class="goal-check-card">
+            <input type="checkbox" name="goal" value="cardio" checked onchange="onShibaGoalChange()" />
+            <span class="goal-icon-box">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+            <div class="goal-text">
+              <strong>外食循環與思緒</strong>
+              <span>三餐外食少吃魚、油膩代謝</span>
+            </div>
+          </label>
+          <label class="goal-check-card">
+            <input type="checkbox" name="goal" value="energy" checked onchange="onShibaGoalChange()" />
+            <span class="goal-icon-box">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </span>
+            <div class="goal-text">
+              <strong>精神體力補給</strong>
+              <span>常熬夜加班、下午容易疲倦</span>
+            </div>
+          </label>
+          <label class="goal-check-card">
+            <input type="checkbox" name="goal" value="gut" onchange="onShibaGoalChange()" />
+            <span class="goal-icon-box">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </span>
+            <div class="goal-text">
+              <strong>消化順暢與體質</strong>
+              <span>排便不規律、容易脹氣或換季敏感</span>
+            </div>
+          </label>
+          <label class="goal-check-card">
+            <input type="checkbox" name="goal" value="bone" onchange="onShibaGoalChange()" />
+            <span class="goal-icon-box">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </span>
+            <div class="goal-text">
+              <strong>骨骼行動與舒眠</strong>
+              <span>少喝牛奶缺鈣、淺眠難入睡、關節保養</span>
+            </div>
+          </label>
+          <label class="goal-check-card">
+            <input type="checkbox" name="goal" value="beauty" onchange="onShibaGoalChange()" />
+            <span class="goal-icon-box">
+              <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
+            </span>
+            <div class="goal-text">
+              <strong>氣色澎潤保養</strong>
+              <span>日常基底美妍、彈力與氣色維持</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="shiba-pane-label" style="margin-top:0.9rem;">補充聊聊作息困擾（選填）：</div>
+        <textarea
+          id="finder-free-text"
+          class="form-textarea"
+          rows="2"
+          onfocus="setShibaWizardMood('listening', '汪！我正豎起耳朵聽，把你的作息寫下來吧！')"
+          placeholder="例如：每天盯螢幕10小時很乾酸，三餐外食少吃魚..."
+        ></textarea>
+      </div>
+
+      <!-- Step 2：每月預算區間 -->
+      <div class="shiba-step-pane" data-step-pane="2">
+        <div class="shiba-pane-label">選擇您舒服的每月保健預算：</div>
+        <div class="budget-radio-grid shiba-budget-list" id="budget-radio-grid">
+          <label class="budget-card">
+            <input type="radio" name="budgetTier" value="under_500" onchange="onShibaBudgetChange(this.value)" />
+            <div>
+              <span class="budget-title">NT$ 500 以下 / 月</span>
+              <span class="budget-desc">極致小資・單項基礎打底</span>
+            </div>
+          </label>
+          <label class="budget-card">
+            <input type="radio" name="budgetTier" value="500_1200" onchange="onShibaBudgetChange(this.value)" />
+            <div>
+              <span class="budget-title">NT$ 500 ~ 1,200 / 月</span>
+              <span class="budget-desc">實惠均衡・1~2 項核心保養</span>
+            </div>
+          </label>
+          <label class="budget-card">
+            <input type="radio" name="budgetTier" value="1200_2000" checked onchange="onShibaBudgetChange(this.value)" />
+            <div>
+              <span class="budget-title">NT$ 1,200 ~ 2,000 / 月</span>
+              <span class="budget-desc">主流足量・高濃度專利規格</span>
+            </div>
+          </label>
+          <label class="budget-card">
+            <input type="radio" name="budgetTier" value="2000_3000" onchange="onShibaBudgetChange(this.value)" />
+            <div>
+              <span class="budget-title">NT$ 2,000 ~ 3,000 / 月</span>
+              <span class="budget-desc">完整配搭・2~3 項高規足量</span>
+            </div>
+          </label>
+          <label class="budget-card">
+            <input type="radio" name="budgetTier" value="above_3000" onchange="onShibaBudgetChange(this.value)" />
+            <div>
+              <span class="budget-title">NT$ 3,000 以上 / 月</span>
+              <span class="budget-desc">頂規全方位・無預算上限</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Step 3：飲食與劑型偏好 -->
+      <div class="shiba-step-pane" data-step-pane="3">
+        <div class="shiba-pane-label">最後確認飲食與吞嚥習慣：</div>
+        <div class="shiba-pref-stack">
+          <div class="shiba-pref-item">
+            <label for="finder-diet">飲食限制</label>
+            <select id="finder-diet" class="form-select">
+              <option value="all">一般飲食（葷素皆可）</option>
+              <option value="vegan">全素／素食可食</option>
+            </select>
+          </div>
+          <div class="shiba-pref-item">
+            <label for="finder-form-pref">劑型偏好</label>
+            <select id="finder-form-pref" class="form-select">
+              <option value="all">不限劑型（以每元效益最高優先）</option>
+              <option value="small">偏好小顆膠囊／好吞錠劑</option>
+              <option value="powder">怕吞膠囊（偏好粉包／液態飲）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部步驟切換列 -->
+      <div class="shiba-wizard-footer">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-shiba-prev" style="display:none;" onclick="goToShibaWizardStep(state.shibaStep - 1)">
+          &larr; 上一步
+        </button>
+        <button type="button" class="btn btn-primary" id="btn-shiba-next" style="margin-left:auto;" onclick="goToShibaWizardStep(state.shibaStep + 1)">
+          下一步 &rarr;
+        </button>
+        <button type="submit" class="btn btn-primary" id="btn-run-finder" style="display:none; margin-left:auto; width:100%;">
+          汪！開始幫我翻找高 CP 方案
+        </button>
+      </div>
+    </form>
+  </aside>
+
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.7.0"></script>
+  <script src="app.js?v=4.8.0"></script>
 </body>
 </html>

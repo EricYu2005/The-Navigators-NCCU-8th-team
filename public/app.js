@@ -1522,7 +1522,7 @@ function renderWishlistView() {
       <p>免費版僅支援最多 2 款基礎成分比對。想要一次比對多款保健品、省下每年數千元重複購買的冤枉錢嗎？</p>
       <div class="mvp-gate-note">
         <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span><strong>政大創創專題研究說明</strong>：本專案目前為學術研究階段，<strong>免收費、免綁定 LINE 登入</strong>。${isUserEntitledToPro() ? '您已具備 Pro 資格，點擊即可一鍵恢復！' : '點擊下方開啟 SurveyCake 問卷（<strong>填完送出抽星巴克咖啡券</strong>），按下即刻開啟完整功能並清空示範案例！'}</span>
+        <span><strong>政大創創專題研究說明</strong>：本專案目前為學術研究階段，<strong>免收費、免綁定 LINE 登入</strong>。${isUserEntitledToPro() ? '您已具備 Pro 資格，點擊即可一鍵恢復！' : '點擊下方填寫回饋問卷，按下即刻開啟完整功能並清空示範案例！'}</span>
       </div>
       ${isUserEntitledToPro() ? `
         <button type="button" class="btn btn-primary" onclick="restoreProStatus()">
@@ -1530,7 +1530,7 @@ function renderWishlistView() {
         </button>
       ` : `
         <button type="button" class="btn btn-primary" onclick="openSurveyAndUnlockPro('wishlist_pro_gate')">
-          填寫問卷抽星巴克（立即開啟完整功能）
+          填寫問卷（立即開啟完整功能）
         </button>
       `}
     </div>
@@ -1541,7 +1541,7 @@ function renderWishlistView() {
         <span>您已享有完整的跨品項重複購買檢查、每日安全劑量把關與服用時段錯開提醒！</span>
       </div>
       <a href="${SURVEYCAKE_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline" style="white-space:nowrap;">
-        前往填寫問卷抽星巴克 &nearr;
+        前往填寫回饋問卷 &nearr;
       </a>
     </div>
   `;
@@ -1552,7 +1552,7 @@ function renderWishlistView() {
         ${title}
       </div>
       <p style="font-size:0.79rem; color:#4b5563; max-width:340px; margin-bottom:0.5rem;">
-        ${desc}${isUserEntitledToPro() ? '您已具備 Pro 資格，可一鍵直接恢復！' : '點擊開啟問卷抽星巴克，按下即開啟完整功能並清空範例！'}
+        ${desc}${isUserEntitledToPro() ? '您已具備 Pro 資格，可一鍵直接恢復！' : '點擊填寫回饋問卷，按下即開啟完整功能並清空範例！'}
       </p>
       ${isUserEntitledToPro() ? `
         <button type="button" class="btn btn-primary btn-sm" onclick="restoreProStatus()">
@@ -1560,7 +1560,7 @@ function renderWishlistView() {
         </button>
       ` : `
         <button type="button" class="btn btn-primary btn-sm" onclick="openSurveyAndUnlockPro('${lockSource}')">
-          填寫問卷抽星巴克（開啟完整功能）
+          填寫問卷（開啟完整功能）
         </button>
       `}
     </div>
@@ -2023,7 +2023,7 @@ function renderWeeklySummary() {
           </button>
         ` : `
           <button type="button" class="btn btn-primary btn-sm" onclick="openSurveyAndUnlockPro('weekly_summary_lock')">
-            填寫問卷抽星巴克（立即開啟完整功能）
+            填寫問卷（立即開啟完整功能）
           </button>
         `}
       </div>
@@ -2500,7 +2500,7 @@ function renderDailyTrackerPanel() {
           teaserBtn.textContent = '一鍵切換回 Pro 版（免重填立即恢復）';
           teaserBtn.onclick = () => restoreProStatus();
         } else {
-          teaserBtn.textContent = '填寫問卷抽星巴克（立即開啟完整功能）';
+          teaserBtn.textContent = '填寫問卷（立即開啟完整功能）';
           teaserBtn.onclick = () => openSurveyAndUnlockPro('daily_log_pro_lock');
         }
       }
@@ -3090,7 +3090,7 @@ function openSubscriptionModal() {
           完整 Pro 功能已開啟
         </div>
         <a href="${SURVEYCAKE_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block" style="text-align:center; text-decoration:none;">
-          前往填寫 SurveyCake 問卷（抽星巴克咖啡券） &nearr;
+          前往填寫回饋問卷 &nearr;
         </a>
         <button type="button" class="btn btn-sm btn-outline btn-block" onclick="toggleProStatusForDemo()">
           切換回免費版（展示未開通狀態）
@@ -3105,13 +3105,13 @@ function openSubscriptionModal() {
           一鍵切換回 Pro 版（免重填立即恢復）
         </button>
         <a href="${SURVEYCAKE_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline btn-block" style="text-align:center; text-decoration:none;">
-          前往填寫 SurveyCake 問卷（抽星巴克） &nearr;
+          前往填寫回饋問卷 &nearr;
         </a>
       `;
     } else {
       actionArea.innerHTML = `
         <button type="button" class="btn btn-primary btn-block" onclick="openSurveyAndUnlockPro('subscription_modal')">
-          填寫問卷抽星巴克（立即開啟完整功能）
+          填寫問卷（立即開啟完整功能）
         </button>
       `;
     }
@@ -3475,7 +3475,7 @@ async function openSurveyAndUnlockPro(source = 'general') {
   renderCatalog();
   renderWishlistView();
   renderCalendarView();
-  showToast('已開啟 SurveyCake 問卷（填完抽星巴克）！完整功能已開啟並清空示範案例！', { duration: 5000 });
+  showToast('已開啟回饋問卷！完整功能已同步開啟並清空示範案例，歡迎實際試用後填答！', { duration: 5000 });
 }
 window.openSurveyAndUnlockPro = openSurveyAndUnlockPro;
 

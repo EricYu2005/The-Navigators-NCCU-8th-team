@@ -1164,10 +1164,20 @@ body {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .category-filter-pills {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.45rem;
+    margin-bottom: 0.9rem;
+    padding: 2px 2px 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .category-filter-pills::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -1189,13 +1199,38 @@ body {
   text-align: center;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .cat-pill {
-    height: 92px;
+    height: 38px;
+    flex: 0 0 auto;
     flex-direction: row;
-    justify-content: flex-start;
-    padding: 0 0.85rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0 0.8rem 0 0.38rem;
+    border-radius: 999px;
+    box-shadow: none;
     text-align: left;
+  }
+
+  .cat-pill:hover {
+    transform: none;
+  }
+
+  .cat-pill-icon-circle {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .cat-pill-icon-circle svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .cat-pill-label {
+    font-size: 0.8rem !important;
+    white-space: nowrap;
+    display: block !important;
   }
 }
 
@@ -1544,6 +1579,249 @@ body {
   gap: 0.5rem;
   padding: 0.65rem 4px 2px 4px;
   border-top: 1px solid #F3F4F6;
+}
+
+/* 電腦版隱藏手機專屬精簡摘要與展開鈕 */
+.supp-mobile-summary,
+.supp-mobile-expand-btn {
+  display: none;
+}
+
+/* 手機版（<= 768px）方案 A：橫式精簡比價清單卡 ＋ 點擊原地展開詳情 */
+@media (max-width: 768px) {
+  .section-banner {
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .section-banner h1 {
+    font-size: 1.15rem;
+  }
+
+  .section-banner p {
+    font-size: 0.8rem;
+  }
+
+  .catalog-section-card {
+    padding: 0.95rem;
+  }
+
+  .catalog-header {
+    gap: 0.55rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .catalog-header h2 {
+    font-size: 1.05rem;
+  }
+
+  .catalog-controls {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    width: 100%;
+    gap: 0.45rem;
+  }
+
+  .catalog-controls .form-input,
+  .catalog-controls .form-select {
+    width: 100%;
+    height: 36px;
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .catalog-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .supp-card {
+    padding: 0.72rem 0.8rem;
+    border-radius: 0.85rem;
+  }
+
+  .supp-card:hover {
+    transform: none;
+  }
+
+  .supp-visual-stage {
+    display: none !important;
+  }
+
+  .supp-mobile-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.62rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .supp-mobile-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .supp-mobile-icon-box svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .supp-mobile-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .supp-mobile-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 0.69rem;
+    font-weight: 700;
+    color: #6B7280;
+    line-height: 1.2;
+  }
+
+  .supp-mobile-top-tag {
+    background: #1ABC9C;
+    color: #FFFFFF;
+    font-size: 0.64rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 999px;
+  }
+
+  .supp-mobile-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #1C1C1C;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .supp-mobile-ing {
+    font-size: 0.74rem;
+    color: #4B5563;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .supp-mobile-price-col {
+    flex-shrink: 0;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    padding-left: 0.2rem;
+  }
+
+  .supp-mobile-daily {
+    font-size: 0.98rem;
+    font-weight: 900;
+    color: #0E6251;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .supp-mobile-daily small {
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: 1px;
+  }
+
+  .supp-mobile-subprice {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #6B7280;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  /* 預設收合詳細規格與優缺點，點擊後才原地展開 */
+  .supp-body-pad {
+    display: none;
+  }
+
+  .supp-card.is-mobile-expanded .supp-body-pad {
+    display: block;
+    margin-top: 0.62rem;
+    padding: 0.62rem 0 0;
+    border-top: 1px dashed #E5E7EB;
+    animation: fadeIn 180ms var(--ease-clinical);
+  }
+
+  .supp-card.is-mobile-expanded .supp-sub-cat-row,
+  .supp-card.is-mobile-expanded .supp-brand-title {
+    display: none;
+  }
+
+  .supp-card.is-mobile-expanded .pros-cons-box {
+    margin-bottom: 0.2rem;
+  }
+
+  .supp-actions-row {
+    grid-template-columns: auto 1fr 1.08fr;
+    gap: 0.38rem;
+    padding: 0.5rem 0 0 0;
+    margin-top: 0.5rem;
+    align-items: center;
+  }
+
+  .supp-mobile-expand-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 32px;
+    padding: 0 0.55rem;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    background: #F9FAFB;
+    color: #4B5563;
+    font-family: inherit;
+    font-size: 0.73rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .supp-expand-chevron {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    fill: none;
+    transition: transform 200ms ease;
+  }
+
+  .supp-card.is-mobile-expanded .supp-expand-chevron {
+    transform: rotate(180deg);
+  }
+
+  .supp-actions-row .btn-sm {
+    height: 32px;
+    padding: 0 0.42rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
 }
 
 /* ==================== 功能二：【管理 A：有興趣清單與去冗分析】 ==================== */
@@ -6290,6 +6568,38 @@ html[data-theme="dark"] .modal-dialog div[style*="background:#f5f0ff"] {
 html[data-theme="dark"] .supp-visual-stage .supp-visual-form,
 html[data-theme="dark"] .supp-visual-stage .supp-badge-bottomright {
   color: #1C1C1C !important;
+}
+
+/* 手機版精簡比價卡片：深色模式高對比支援 */
+html[data-theme="dark"] .supp-mobile-title {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .supp-mobile-meta,
+html[data-theme="dark"] .supp-mobile-subprice {
+  color: #94A3B8 !important;
+}
+
+html[data-theme="dark"] .supp-mobile-ing {
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .supp-mobile-daily {
+  color: #5EEAD4 !important;
+}
+
+html[data-theme="dark"] .supp-mobile-icon-box {
+  filter: brightness(0.92);
+}
+
+html[data-theme="dark"] .supp-card.is-mobile-expanded .supp-body-pad {
+  border-top-color: #1E293B !important;
+}
+
+html[data-theme="dark"] .supp-mobile-expand-btn {
+  background: #0F172A !important;
+  border-color: #334155 !important;
+  color: #CBD5E1 !important;
 }
 
 /* 日曆當日紀錄：服用清單商品名稱與份量在深色模式下的高對比 */

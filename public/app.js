@@ -14,6 +14,7 @@ const state = {
   shibaStep: 1,
   shibaBalloonOpen: false,
   shibaBubbleDismissed: false,
+  expandedMobileCardIds: new Set(),
   catalogCategory: 'all',
   calendarYear: new Date().getFullYear(),
   calendarMonth: new Date().getMonth() + 1, // 1-12
@@ -1048,16 +1049,60 @@ function renderCatalog() {
 }
 window.renderCatalog = renderCatalog;
 
+function toggleMobileSuppCard(suppId, e) {
+  if (e) {
+    e.stopPropagation();
+  }
+  const id = Number(suppId);
+  const isNowExpanded = !state.expandedMobileCardIds.has(id);
+  if (isNowExpanded) {
+    state.expandedMobileCardIds.add(id);
+  } else {
+    state.expandedMobileCardIds.delete(id);
+  }
+  document.querySelectorAll(`.supp-card[data-supp-id="${id}"]`).forEach(card => {
+    card.classList.toggle('is-mobile-expanded', isNowExpanded);
+    const labelEl = card.querySelector('.supp-mobile-expand-label');
+    if (labelEl) {
+      labelEl.textContent = isNowExpanded ? '收起詳情' : '詳情・優缺點';
+    }
+  });
+}
+window.toggleMobileSuppCard = toggleMobileSuppCard;
+
 function renderSupplementCardHtml(item, isTopPick) {
   const inWishlist = state.wishlist.some(x => Number(x.id) === Number(item.id));
   const inPurchased = state.purchased.some(x => Number(x.id) === Number(item.id));
+  const isExpanded = state.expandedMobileCardIds.has(Number(item.id));
   const theme = getCategoryVisualTheme(item.category);
   const score = Math.round(Number(item.value_score || 84));
 
   return `
-    <div class="supp-card ${isTopPick ? 'top-recommended' : ''}">
+    <div class="supp-card ${isTopPick ? 'top-recommended' : ''} ${isExpanded ? 'is-mobile-expanded' : ''}" data-supp-id="${item.id}">
       <div>
-        <!-- 16:9 Clinical Visual Stage with Hover Gradient Overlay & Scale 1.05 -->
+        <!-- 手機版專屬（<=768px）：緊湊橫式比價摘要列，點擊可原地展開下方詳情 -->
+        <div class="supp-mobile-summary" onclick="toggleMobileSuppCard(${item.id}, event)">
+          <div class="supp-mobile-icon-box" style="background:${theme.bg};">
+            ${theme.svg}
+          </div>
+          <div class="supp-mobile-main">
+            <div class="supp-mobile-meta">
+              ${isTopPick ? '<span class="supp-mobile-top-tag">預算首選</span>' : ''}
+              <span>${escapeHtml(item.category)}</span>
+              <span>·</span>
+              <span>效益 ${score}分</span>
+              ${item.is_vegan ? '<span style="color:#10B981; font-weight:800;">· 全素</span>' : ''}
+            </div>
+            <h3 class="supp-mobile-title">${escapeHtml(item.brand)}｜${escapeHtml(item.name)}</h3>
+            <div class="supp-mobile-ing">${escapeHtml(item.active_summary)}</div>
+          </div>
+          <div class="supp-mobile-price-col">
+            <div class="supp-mobile-daily">NT$ ${Math.round(item.daily_cost)}<small>/日</small></div>
+            <div class="supp-mobile-subprice">月 $${item.monthly_cost} · ${item.days_supply}天</div>
+          </div>
+        </div>
+
+        <!-- 電腦版（>768px）：16:9 Clinical Visual Stage -->
         <div class="supp-visual-stage" style="background:${theme.bg};">
           <span class="supp-badge-topleft">
             ${isTopPick ? '預算首選・' : ''}綜合效益 ${score} 分
@@ -1109,7 +1154,7 @@ function renderSupplementCardHtml(item, isTopPick) {
             </div>
             <div class="spec-row">
               <span class="spec-tag">劑型用量：</span>
-              <span>${escapeHtml(item.dosage_form)}（每日 ${item.daily_units} 份）</span>
+              <span>${escapeHtml(item.dosage_form)}（每日 ${item.daily_units} 份・${escapeHtml(item.recommended_timing || '隨餐/飯後')}）</span>
             </div>
           </div>
 
@@ -1121,6 +1166,14 @@ function renderSupplementCardHtml(item, isTopPick) {
       </div>
 
       <div class="supp-actions-row">
+        <button
+          type="button"
+          class="supp-mobile-expand-btn"
+          onclick="toggleMobileSuppCard(${item.id}, event)"
+        >
+          <span class="supp-mobile-expand-label">${isExpanded ? '收起詳情' : '詳情・優缺點'}</span>
+          <svg class="supp-expand-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
         <button
           type="button"
           class="btn btn-sm ${inWishlist ? 'btn-primary' : 'btn-outline'}"

@@ -5960,8 +5960,7 @@ html[data-theme="dark"] .cat-pill.active {
 html[data-theme="dark"] .cat-pill-label,
 html[data-theme="dark"] .supp-brand-title,
 html[data-theme="dark"] .metric-val,
-html[data-theme="dark"] .spec-tag,
-html[data-theme="dark"] .modal-header h3 {
+html[data-theme="dark"] .spec-tag {
   color: #F8FAFC !important;
 }
 
@@ -6137,9 +6136,18 @@ html[data-theme="dark"] .weekly-summary-card h4,
 html[data-theme="dark"] .weekly-upgrade-title,
 html[data-theme="dark"] .ext-step-content strong,
 html[data-theme="dark"] .sub-plan-card h4,
-html[data-theme="dark"] .cal-day-num,
-html[data-theme="dark"] .modal-close {
+html[data-theme="dark"] .cal-day-num {
   color: #F8FAFC !important;
+}
+
+/* 彈窗標題列維持淺黃／淺色底，因此標題與關閉按鈕在暗色模式下保持深色高對比 */
+html[data-theme="dark"] .modal-dialog .modal-header h3,
+html[data-theme="dark"] .modal-dialog .modal-header .modal-close {
+  color: #1C1C1C !important;
+}
+
+html[data-theme="dark"] .modal-dialog .modal-header .icon-svg {
+  stroke: #1C1C1C !important;
 }
 
 html[data-theme="dark"] .page-container p,

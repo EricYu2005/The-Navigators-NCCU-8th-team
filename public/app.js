@@ -12,6 +12,8 @@ const state = {
   finderResult: null,
   activeView: 'view-finder',
   shibaStep: 1,
+  shibaBalloonOpen: false,
+  shibaBubbleDismissed: false,
   catalogCategory: 'all',
   calendarYear: new Date().getFullYear(),
   calendarMonth: new Date().getMonth() + 1, // 1-12
@@ -498,7 +500,7 @@ function handleShibaPresenceOnViewSwitch(prevView, nextView) {
     shibaRunTimer = null;
   }
 
-  // 從「尋找」切往「分析／日曆／設定」：收起側邊精靈並讓小柴犬轉身往左側小跑步退場
+  // 從「尋找」切往「分析／日曆／設定」：收起對話氣泡並讓小柴犬轉身往左側小跑步退場
   if (prevView === 'view-finder' && nextView !== 'view-finder') {
     closeShibaWizard(true);
     const bubbleText = document.getElementById('shiba-dock-bubble-text');
@@ -513,11 +515,15 @@ function handleShibaPresenceOnViewSwitch(prevView, nextView) {
     }, 370);
   } else if (prevView !== 'view-finder' && nextView === 'view-finder') {
     // 切回「尋找」頁：小柴犬從畫面左側輕快小跑步回來坐好
+    const bubble = document.getElementById('shiba-dock-bubble');
     const bubbleText = document.getElementById('shiba-dock-bubble-text');
     if (bubbleText) {
       bubbleText.innerHTML = state.finderResult
-        ? '<strong>汪！我回來啦！</strong><span>點我可以隨時重新配對不同預算方案喔！</span>'
-        : '<strong>汪！我是選寶 Picky</strong><span>挑花眼了嗎？點我 3 步幫你找出不重複的高 CP 組合！</span>';
+        ? '<strong>汪！我回來啦！</strong><span>點我可以隨時重新配對不同預算方案 &rarr;</span>'
+        : '<strong>汪！想找什麼保健品呢？</strong><span>點我對話，3 步幫你挑出不重複組合 &rarr;</span>';
+    }
+    if (bubble && !state.shibaBubbleDismissed && !state.shibaBalloonOpen) {
+      bubble.style.display = 'block';
     }
     dock.classList.remove('is-hidden', 'is-running-away');
     dock.classList.add('is-running-in');
@@ -613,25 +619,31 @@ function fillFinderSample(sampleId) {
 
   const dietEl = document.getElementById('finder-diet');
   if (dietEl) dietEl.value = s.diet;
+  document.querySelectorAll('input[name="shibaDietRadio"]').forEach(rb => {
+    rb.checked = rb.value === s.diet;
+  });
 
   const formEl = document.getElementById('finder-form-pref');
   if (formEl) formEl.value = s.form;
+  document.querySelectorAll('input[name="shibaFormRadio"]').forEach(rb => {
+    rb.checked = rb.value === s.form;
+  });
 
   handleFinderSubmit();
 }
 window.fillFinderSample = fillFinderSample;
 
+let shibaAutoStepTimer = null;
+
 function setShibaWizardMood(mood, speechText) {
-  const stage = document.getElementById('shiba-sidebar-stage');
   const dock = document.getElementById('shiba-side-dock');
   const speechEl = document.getElementById('shiba-wizard-speech');
   const moods = ['mood-idle', 'mood-listening', 'mood-searching', 'mood-happy'];
 
-  [stage, dock].forEach(el => {
-    if (!el) return;
-    moods.forEach(m => el.classList.remove(m));
-    el.classList.add(`mood-${mood}`);
-  });
+  if (dock) {
+    moods.forEach(m => dock.classList.remove(m));
+    dock.classList.add(`mood-${mood}`);
+  }
 
   if (speechEl && speechText) {
     speechEl.textContent = speechText;
@@ -641,10 +653,28 @@ window.setShibaWizardMood = setShibaWizardMood;
 
 function dismissShibaDockBubble(e) {
   if (e) e.stopPropagation();
+  state.shibaBubbleDismissed = true;
   const bubble = document.getElementById('shiba-dock-bubble');
   if (bubble) bubble.style.display = 'none';
 }
 window.dismissShibaDockBubble = dismissShibaDockBubble;
+
+function toggleShibaFreeText() {
+  const wrap = document.getElementById('shiba-freetext-wrap');
+  const label = document.getElementById('shiba-freetext-toggle-label');
+  if (!wrap) return;
+  const willShow = wrap.style.display === 'none';
+  wrap.style.display = willShow ? 'block' : 'none';
+  if (label) {
+    label.textContent = willShow ? '收起補充說明' : '用一句話自己補充狀況（選填）';
+  }
+  if (willShow) {
+    const ta = document.getElementById('finder-free-text');
+    if (ta) ta.focus();
+    setShibaWizardMood('listening', '汪！把你的生活習慣或困擾寫下來，我一併幫你考量！');
+  }
+}
+window.toggleShibaFreeText = toggleShibaFreeText;
 
 function goToShibaWizardStep(stepNum) {
   const step = Math.min(3, Math.max(1, Number(stepNum) || 1));
@@ -653,9 +683,11 @@ function goToShibaWizardStep(stepNum) {
   document.querySelectorAll('.shiba-step-pane').forEach(pane => {
     pane.classList.toggle('active', Number(pane.dataset.stepPane) === step);
   });
-  document.querySelectorAll('.shiba-step-dot').forEach(dot => {
-    dot.classList.toggle('active', Number(dot.dataset.wstep) === step);
-  });
+
+  const stepBadge = document.getElementById('shiba-step-indicator');
+  if (stepBadge) {
+    stepBadge.textContent = `${step} / 3`;
+  }
 
   const prevBtn = document.getElementById('btn-shiba-prev');
   const nextBtn = document.getElementById('btn-shiba-next');
@@ -666,11 +698,11 @@ function goToShibaWizardStep(stepNum) {
   if (submitBtn) submitBtn.style.display = step === 3 ? 'inline-flex' : 'none';
 
   if (step === 1) {
-    setShibaWizardMood('idle', '汪！先勾選你最近最在意的保養重點（或直接點上方常見情境），我幫你鎖定有效成分！');
+    setShibaWizardMood('idle', '汪！最近最想改善哪個狀況呢？（可複選）');
   } else if (step === 2) {
-    setShibaWizardMood('listening', '收到！那每個月預算大概抓多少呢？放心，我不收廠商抽成，只挑高 CP 值的！');
+    setShibaWizardMood('listening', '收到！每個月預算大概想控制在多少？');
   } else if (step === 3) {
-    setShibaWizardMood('idle', '最後一步囉！確認一下飲食與劑型偏好，按下按鈕我就拿放大鏡幫你翻找！');
+    setShibaWizardMood('idle', '最後確認！有特別的飲食或吞膠囊習慣嗎？');
   }
 }
 window.goToShibaWizardStep = goToShibaWizardStep;
@@ -678,62 +710,85 @@ window.goToShibaWizardStep = goToShibaWizardStep;
 function onShibaGoalChange() {
   const checked = Array.from(document.querySelectorAll('#goal-checkbox-grid input[name="goal"]:checked')).map(el => el.value);
   const lines = {
-    eye: '汪！長時間盯螢幕眼睛辛苦了，游離型葉黃素跟黃金比例交給我比價！',
-    cardio: '外食族少吃深海魚對吧？高濃度 rTG 魚油我最熟了，汪！',
-    energy: '常熬夜加班下午斷電嗎？幫你鎖定足量 B 群，同時避開重複維他命！',
-    gut: '肚子脹氣不順暢真的很困擾，我會幫你找無多餘糖粉的足量益生菌！',
-    bone: '缺鈣淺眠或關節保養收到！幫你注意吸收率與睡前服用時段喔！',
-    beauty: '氣色澎潤保養記下來囉！幫你挑成分單純不交智商稅的好選擇！'
+    eye: '盯螢幕眼睛乾酸嗎？游離型葉黃素交給我比價！',
+    cardio: '外食少吃魚對吧？幫你找高濃度划算魚油！',
+    energy: '常熬夜沒精神嗎？幫你挑足量 B 群且避開重複！',
+    gut: '排便不順脹氣收到！幫你挑無糖粉足量益生菌！',
+    bone: '想提升睡眠與補鈣嗎？幫你鎖定好吸收配方！',
+    beauty: '想養出好氣色收到！挑單純膠原不花冤枉錢！'
   };
   if (checked.length === 0) {
-    setShibaWizardMood('listening', '汪？至少勾選 1 個想改善的重點（或在下方寫下困擾），我才好幫你精準尋寶喔！');
+    setShibaWizardMood('listening', '汪？至少勾選 1 個狀況（或點下方補充說明）喔！');
   } else {
     const latest = checked[checked.length - 1];
-    setShibaWizardMood('listening', lines[latest] || `太好了！已記下 ${checked.length} 項保養目標，點右下角「下一步」選預算吧！`);
+    setShibaWizardMood('listening', lines[latest] || `已記下 ${checked.length} 項需求，點「下一步」選預算吧！`);
   }
 }
 window.onShibaGoalChange = onShibaGoalChange;
 
-function onShibaBudgetChange(val) {
-  const map = {
-    under_500: '小資精省沒問題！500 元內也能挑到單項足量打底好物，汪！',
-    '500_1200': '實惠均衡區間！很適合挑 1～2 款最核心的高 CP 單品！',
-    '1200_2000': '這是最受歡迎的主流區間，足夠配出高濃度專利規格組合喔！',
-    '2000_3000': '預算很充裕！可以完整配齊 2～3 款頂規專利配方且不重複！',
-    above_3000: '全方位頂規保養收到！我依然會幫你嚴格把關不花冤枉錢，汪！'
-  };
-  setShibaWizardMood('listening', map[val] || '收到預算設定囉！點「下一步」做最後確認吧！');
+function onShibaBudgetRowClick(val) {
+  document.querySelectorAll('#budget-radio-grid input[name="budgetTier"]').forEach(rb => {
+    rb.checked = rb.value === val;
+  });
+  setShibaWizardMood('listening', '好喔！預算記下來了，最後確認一下習慣！');
+  if (shibaAutoStepTimer) clearTimeout(shibaAutoStepTimer);
+  shibaAutoStepTimer = setTimeout(() => {
+    goToShibaWizardStep(3);
+  }, 170);
 }
-window.onShibaBudgetChange = onShibaBudgetChange;
+window.onShibaBudgetRowClick = onShibaBudgetRowClick;
+
+function syncShibaSelect(selectId, val) {
+  const el = document.getElementById(selectId);
+  if (el) el.value = val;
+  const tips = {
+    vegan: '收到！只幫你挑全素可食的配方，汪！',
+    powder: '怕吞膠囊沒問題！優先幫你找粉包與好入口劑型！',
+    small: '偏好小顆好吞記下來囉！按下按鈕我就出發翻找！'
+  };
+  setShibaWizardMood('listening', tips[val] || '設定好囉！按下「開始幫我找」我就拿放大鏡出發！');
+}
+window.syncShibaSelect = syncShibaSelect;
 
 function openShibaWizard(initialStep = 1) {
   if (state.activeView !== 'view-finder') {
     switchView('view-finder');
   }
-  const sidebar = document.getElementById('shiba-wizard-sidebar');
-  const backdrop = document.getElementById('shiba-wizard-backdrop');
-  if (backdrop) backdrop.style.display = 'block';
-  if (sidebar) {
-    sidebar.classList.add('is-open');
-    sidebar.setAttribute('aria-hidden', 'false');
+  const balloon = document.getElementById('shiba-speech-balloon');
+  const dockBubble = document.getElementById('shiba-dock-bubble');
+  if (dockBubble) dockBubble.style.display = 'none';
+  if (balloon) {
+    balloon.style.display = 'block';
   }
+  state.shibaBalloonOpen = true;
   goToShibaWizardStep(initialStep);
 }
 window.openShibaWizard = openShibaWizard;
 
 function closeShibaWizard(silent = false) {
-  const sidebar = document.getElementById('shiba-wizard-sidebar');
-  const backdrop = document.getElementById('shiba-wizard-backdrop');
-  if (backdrop) backdrop.style.display = 'none';
-  if (sidebar) {
-    sidebar.classList.remove('is-open');
-    sidebar.setAttribute('aria-hidden', 'true');
+  const balloon = document.getElementById('shiba-speech-balloon');
+  const dockBubble = document.getElementById('shiba-dock-bubble');
+  if (balloon) {
+    balloon.style.display = 'none';
+  }
+  state.shibaBalloonOpen = false;
+  if (dockBubble && !state.shibaBubbleDismissed && state.activeView === 'view-finder') {
+    dockBubble.style.display = 'block';
   }
   if (!silent) {
     setShibaWizardMood('idle');
   }
 }
 window.closeShibaWizard = closeShibaWizard;
+
+function toggleShibaBalloon() {
+  if (state.shibaBalloonOpen) {
+    closeShibaWizard();
+  } else {
+    openShibaWizard(1);
+  }
+}
+window.toggleShibaBalloon = toggleShibaBalloon;
 
 function toggleFinderDrawer(forceOpen) {
   if (forceOpen === false) {
@@ -756,9 +811,9 @@ async function handleFinderSubmit(e) {
   const btn = document.getElementById('btn-run-finder');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '選寶正拿放大鏡翻找中...';
+    btn.textContent = '翻找中...';
   }
-  setShibaWizardMood('searching', '汪汪！正在翻找 24 款市售成分表、幫你踢掉重複與溢價商品...');
+  setShibaWizardMood('searching', '汪汪！正在翻找 24 款成分表、幫你踢掉重複與溢價品...');
 
   try {
     const [res] = await Promise.all([
@@ -767,18 +822,19 @@ async function handleFinderSubmit(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freeText, goals, diet, formPref, budgetTier })
       }),
-      new Promise(r => setTimeout(r, 780))
+      new Promise(r => setTimeout(r, 750))
     ]);
     const json = await res.json();
     if (json.success && json.data) {
       state.finderResult = json.data;
       renderFinderResult(json.data);
       const bundleCount = (json.data.recommendedBundle || []).length;
-      setShibaWizardMood('happy', `汪！找到囉！幫你挑出 ${bundleCount} 款不重複的高 CP 組合，快看畫面上的推薦結果！`);
+      setShibaWizardMood('happy', `汪！找到囉！挑出 ${bundleCount} 款不重複高 CP 組合，快看畫面上的推薦結果！`);
 
+      state.shibaBubbleDismissed = false;
       const bubbleText = document.getElementById('shiba-dock-bubble-text');
       if (bubbleText) {
-        bubbleText.innerHTML = `<strong>汪！幫你配好 ${bundleCount} 款方案囉！</strong><span>想換預算或重挑，隨時再點我！</span>`;
+        bubbleText.innerHTML = `<strong>汪！配好 ${bundleCount} 款高 CP 組合囉！</strong><span>想換條件重挑，隨時再點我對話 &rarr;</span>`;
       }
 
       setTimeout(() => {
@@ -787,7 +843,7 @@ async function handleFinderSubmit(e) {
         if (area) {
           area.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      }, 900);
+      }, 850);
     }
   } catch (err) {
     setShibaWizardMood('idle', '嗚...剛剛網路好像抖了一下，請再按一次讓我重找！');
@@ -795,7 +851,7 @@ async function handleFinderSubmit(e) {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '汪！開始幫我翻找高 CP 方案';
+      btn.textContent = '開始幫我找';
     }
   }
 }

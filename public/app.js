@@ -293,7 +293,7 @@ async function loadBootstrapData(skipLocalSync = false) {
           const srvLogKeys = Object.keys(data.calendarLogs || {}).length;
           const locLogEntries = Object.entries(localState.calendarLogs || {}).filter(([, l]) => {
             if (!l) return false;
-            return (Array.isArray(l.takenIds) && l.takenIds.length > 0) || !!(l.energyLevel || l.digestionStatus || l.sleepEyeStatus || l.note || l.isSickMode);
+            return (Array.isArray(l.takenIds) && l.takenIds.length > 0) || !!(l.energyLevel || l.digestionStatus || l.sleepEyeStatus || l.eyeStatus || l.note || l.isSickMode);
           });
           const needListRestore = srvListEmpty && locHasLists;
           const needLogsRestore = srvLogKeys === 0 && locLogEntries.length > 0;
@@ -1974,6 +1974,7 @@ function renderWeeklySummary() {
   const totalPurchased = purchasedIds.size;
 
   let eyeDryCount = 0;
+  let poorSleepCount = 0;
   let fatigueCount = 0;
   let digestionBadCount = 0;
   let sickCount = 0;
@@ -1984,11 +1985,12 @@ function renderWeeklySummary() {
 
   past7Days.forEach(dateStr => {
     const log = state.calendarLogs[dateStr] || {};
-    if (log.sleepEyeStatus === '眼睛乾酸') eyeDryCount++;
+    if (log.eyeStatus === '眼睛乾酸' || log.sleepEyeStatus === '眼睛乾酸') eyeDryCount++;
+    if (log.sleepEyeStatus === '淺眠難睡') poorSleepCount++;
     if (log.energyLevel === '疲倦想睡') fatigueCount++;
     if (log.digestionStatus === '排便不順' || log.digestionStatus === '稍微脹氣') digestionBadCount++;
     if (log.isSickMode) sickCount++;
-    if (log.energyLevel === '精神飽滿' || log.sleepEyeStatus === '睡眠深沉' || log.sleepEyeStatus === '晶亮舒適') goodCount++;
+    if (log.energyLevel === '精神飽滿' || log.sleepEyeStatus === '睡眠深沉' || log.eyeStatus === '眼睛舒適' || log.sleepEyeStatus === '晶亮舒適') goodCount++;
     if (!log.isSickMode && Array.isArray(log.takenIds)) {
       const validTakenCount = new Set(log.takenIds.map(Number).filter(id => purchasedIds.has(id))).size;
       takenTotal += validTakenCount;
@@ -2010,6 +2012,8 @@ function renderWeeklySummary() {
     diagnosisType = 'sick';
   } else if (eyeDryCount >= 2) {
     diagnosisType = 'eye';
+  } else if (poorSleepCount >= 2) {
+    diagnosisType = 'sleep';
   } else if (fatigueCount >= 2) {
     diagnosisType = 'fatigue';
   } else if (digestionBadCount >= 2) {
@@ -2032,7 +2036,7 @@ function renderWeeklySummary() {
       <div class="weekly-upgrade-box">
         <div class="weekly-upgrade-title">
           <svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <span>本週配方進化建議：同品類 1-to-1 替換升級（改善眼睛乾澀）</span>
+          <span>本週配方進化建議：同品類 1-to-1 替換升級（改善眼睛乾酸）</span>
         </div>
         <p class="weekly-upgrade-desc">
           診斷分析：您本週眼睛乾酸頻繁。${hasEye ? '您目前服用的葉黃素多為基礎單方或低劑量，缺乏舒緩酸澀的輔助營養素。' : '您目前的保健品清單中尚未包含專門的護眼品項。'}
@@ -2040,7 +2044,33 @@ function renderWeeklySummary() {
         </p>
         <div class="weekly-upgrade-footer">
           <span class="weekly-price-impact">每日花費僅微調 +NT$ 6 元｜有效吸收率提升 80%</span>
-          <button type="button" class="btn btn-primary btn-sm" onclick="applyWeeklyUpgrade('晶亮護眼', '葉黃素')">
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyWeeklyUpgrade('葉黃素', '葉黃素')">
+            將此升級方案加入心願清單去冗試算
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (diagnosisType === 'sleep') {
+    contentHtml = `
+      <div class="weekly-trend-row">
+        <span class="weekly-trend-pill alert">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          睡眠淺眠高頻：過去 7 天累計 ${poorSleepCount} 日淺眠難睡
+        </span>
+        <span class="weekly-trend-pill">${weeklyCompliancePillText}</span>
+      </div>
+
+      <div class="weekly-upgrade-box">
+        <div class="weekly-upgrade-title">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>本週配方進化建議：睡前海藻鈣＋鎂放鬆配方評估</span>
+        </div>
+        <p class="weekly-upgrade-desc">
+          診斷分析：您本週多次記錄淺眠難睡。建議檢視晚間是否有攝取幫助神經肌肉放鬆的足量鎂與鈣質（並將提神 B 群移至早午餐後服用，避免影響入睡）。
+        </p>
+        <div class="weekly-upgrade-footer">
+          <span class="weekly-price-impact">睡前好吸收海藻鈣＋海洋鎂｜幫助放鬆入睡</span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyWeeklyUpgrade('鈣鎂D', '鈣')">
             將此升級方案加入心願清單去冗試算
           </button>
         </div>
@@ -2289,12 +2319,16 @@ function renderCalendarGrid() {
   const moodIconMap = {
     '精神飽滿': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
     '狀態平穩': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>',
-    '疲倦想睡': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/></svg>',
+    '疲倦想睡': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/></svg>',
     '排便順暢': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/></svg>',
-    '稍微脹氣': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
-    '排便不順': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="15" x2="16" y2="15"/></svg>',
+    '稍微脹氣': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>',
+    '排便不順': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
     '睡眠深沉': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+    '睡眠普通': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>',
+    '淺眠難睡': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
+    '眼睛舒適': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
     '晶亮舒適': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    '眼睛普通': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>',
     '眼睛乾酸': '<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg>'
   };
 
@@ -2324,6 +2358,7 @@ function renderCalendarGrid() {
       if (log.energyLevel && moodIconMap[log.energyLevel]) icons.push(moodIconMap[log.energyLevel]);
       if (log.digestionStatus && moodIconMap[log.digestionStatus]) icons.push(moodIconMap[log.digestionStatus]);
       if (log.sleepEyeStatus && moodIconMap[log.sleepEyeStatus]) icons.push(moodIconMap[log.sleepEyeStatus]);
+      if (log.eyeStatus && moodIconMap[log.eyeStatus]) icons.push(moodIconMap[log.eyeStatus]);
       if (log.note) icons.push('<svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>');
     }
 
@@ -2356,8 +2391,15 @@ function getOrCreateSelectedDateLog() {
       energyLevel: '',
       digestionStatus: '',
       sleepEyeStatus: '',
+      eyeStatus: '',
       note: ''
     };
+  } else {
+    const existing = state.calendarLogs[dateStr];
+    if (!existing.eyeStatus && (existing.sleepEyeStatus === '晶亮舒適' || existing.sleepEyeStatus === '眼睛舒適' || existing.sleepEyeStatus === '眼睛普通' || existing.sleepEyeStatus === '眼睛乾酸')) {
+      existing.eyeStatus = existing.sleepEyeStatus === '晶亮舒適' ? '眼睛舒適' : existing.sleepEyeStatus;
+      existing.sleepEyeStatus = '';
+    }
   }
   return state.calendarLogs[dateStr];
 }
@@ -2489,23 +2531,29 @@ function renderDailyTrackerPanel() {
       fbDesc.textContent = '偵測到今日記錄「重感冒/生病休養」。休養期間請多喝水休息；康復後建議前往尋找頁面重新比對好吸收的維生素 C 與維生素 D3 方案以提升保護力！';
       window.__activeFeedbackGoal__ = '全方位綜合';
       window.__activeFeedbackText__ = '近期有重感冒休養紀錄，想尋求康復後能鞏固防護力、好吸收且不與常備品重複的溫和打底方案。';
-    } else if (log.sleepEyeStatus === '眼睛乾酸') {
+    } else if (log.eyeStatus === '眼睛乾酸' || log.sleepEyeStatus === '眼睛乾酸') {
       feedbackCard.style.display = 'block';
-      fbTitle.textContent = '晶亮疲勞警訊：動態調整護眼配方';
-      fbDesc.textContent = '偵測到今日記錄「眼睛乾酸」。您目前的保健品組合可能缺乏足量游離型葉黃素 (10mg) 或高濃度花青素，建議重新評估抗藍光晶亮配比！';
-      window.__activeFeedbackGoal__ = '晶亮護眼';
+      fbTitle.textContent = '用眼疲勞提醒：動態調整護眼配方';
+      fbDesc.textContent = '偵測到今日記錄「眼睛乾酸」。您目前的保健品組合可能缺乏足量游離型葉黃素 (10mg) 或蝦紅素，建議重新評估護眼配比！';
+      window.__activeFeedbackGoal__ = '改善眼睛乾酸';
       window.__activeFeedbackText__ = '近期日誌記錄眼睛頻繁乾澀酸疲，希望比對高濃度游離型葉黃素、玉米黃素與花青素組合，並檢查是否與現有維他命重複。';
+    } else if (log.sleepEyeStatus === '淺眠難睡') {
+      feedbackCard.style.display = 'block';
+      fbTitle.textContent = '睡眠品質提醒：評估睡前放鬆與鈣鎂補充';
+      fbDesc.textContent = '偵測到今日記錄「淺眠難睡」。建議評估睡前好吸收海藻鈣與鎂配方，並避免在晚餐後服用高劑量提神 B 群！';
+      window.__activeFeedbackGoal__ = '提升睡眠與補鈣';
+      window.__activeFeedbackText__ = '近期日誌記錄晚上淺眠難睡，想找睡前能幫助放鬆好睡的鈣鎂配方，並確認與現有保健品不重複。';
     } else if (log.energyLevel === '疲倦想睡') {
       feedbackCard.style.display = 'block';
-      fbTitle.textContent = '體力透支警訊：動態補給評估';
+      fbTitle.textContent = '精神疲倦提醒：動態補給評估';
       fbDesc.textContent = '偵測到今日記錄「疲倦想睡」。建議檢視是否需要補充高單位緩釋型 B 群或牛磺酸，並透過去冗引擎避免與綜合維生素重複購買。';
-      window.__activeFeedbackGoal__ = '精神體力';
+      window.__activeFeedbackGoal__ = '補充精神體力';
       window.__activeFeedbackText__ = '近期日誌記錄常態疲倦想睡、工作壓力大，想尋找實惠長效的緩釋 B 群或體力補給，並避免重複過量。';
     } else if (log.digestionStatus === '排便不順' || log.digestionStatus === '稍微脹氣') {
       feedbackCard.style.display = 'block';
       fbTitle.textContent = '消化順暢度提醒：益生菌活菌數檢視';
-      fbDesc.textContent = '偵測到今日記錄「消化脹氣/排便不順」。建議重新評估具有耐酸專利且菌數達 300 億以上的複合益生菌配方！';
-      window.__activeFeedbackGoal__ = '消化排便';
+      fbDesc.textContent = '偵測到今日記錄「脹氣/排便不順」。建議重新評估具有耐酸專利且菌數達 300 億以上的複合益生菌配方！';
+      window.__activeFeedbackGoal__ = '幫助排便順暢';
       window.__activeFeedbackText__ = '近期日誌記錄排便不順與消化脹氣，想尋求真正有包埋專利、足量百億菌株且價格實惠的益生菌方案。';
     } else {
       feedbackCard.style.display = 'none';
@@ -2552,10 +2600,10 @@ async function toggleSickMode() {
 window.toggleSickMode = toggleSickMode;
 
 function applyHealthFeedbackToFinder() {
-  const goal = window.__activeFeedbackGoal__ || '晶亮護眼';
+  const goal = window.__activeFeedbackGoal__ || '改善眼睛乾酸';
   const customText = window.__activeFeedbackText__ || '';
 
-  // 切換至尋找分頁（小柴犬自動跑回）並開啟左側精靈
+  // 切換至尋找分頁（小柴犬自動跑回）並開啟對話氣泡框
   switchView('view-finder');
   openShibaWizard(1);
 
@@ -2565,8 +2613,12 @@ function applyHealthFeedbackToFinder() {
   }
 
   const goalValueMap = {
+    '改善眼睛乾酸': 'eye',
     '晶亮護眼': 'eye',
+    '提升睡眠與補鈣': 'bone',
+    '補充精神體力': 'energy',
     '精神體力': 'energy',
+    '幫助排便順暢': 'gut',
     '消化排便': 'gut',
     '全方位綜合': 'energy'
   };

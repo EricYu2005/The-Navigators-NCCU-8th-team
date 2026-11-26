@@ -95,12 +95,19 @@ async function getUserCalendarLogs(lineUserId = '') {
   for (const log of rawLogs) {
     let takenIds = [];
     try { takenIds = JSON.parse(log.taken_ids_json || '[]'); } catch (e) {}
+    let sleepVal = log.sleep_eye_status || '';
+    let eyeVal = log.eye_status || '';
+    if (!eyeVal && (sleepVal === '晶亮舒適' || sleepVal === '眼睛舒適' || sleepVal === '眼睛普通' || sleepVal === '眼睛乾酸')) {
+      eyeVal = sleepVal === '晶亮舒適' ? '眼睛舒適' : sleepVal;
+      sleepVal = '';
+    }
     calendarLogs[log.date_str] = {
       dateStr: log.date_str,
       takenIds,
       energyLevel: log.energy_level || '',
       digestionStatus: log.digestion_status || '',
-      sleepEyeStatus: log.sleep_eye_status || '',
+      sleepEyeStatus: sleepVal,
+      eyeStatus: eyeVal,
       note: log.note || '',
       isSickMode: !!log.is_sick_mode,
       updatedBy: log.updated_by || ''
@@ -847,12 +854,12 @@ app.post('/api/user-state/sync', async (req, res) => {
       for (const [dateStr, log] of Object.entries(calendarLogs)) {
         if (!dateStr || !log) continue;
         const cleanTaken = Array.isArray(log.takenIds) ? [...new Set(log.takenIds.map(resolveId).filter(Boolean))] : [];
-        const hasAnyContent = cleanTaken.length > 0 || !!(log.energyLevel || log.digestionStatus || log.sleepEyeStatus || log.note || log.isSickMode);
+        const hasAnyContent = cleanTaken.length > 0 || !!(log.energyLevel || log.digestionStatus || log.sleepEyeStatus || log.eyeStatus || log.note || log.isSickMode);
         if (!hasAnyContent) continue;
         await dbQuery.run(`
           INSERT INTO user_calendar_logs (
-            line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, eye_status, note, is_sick_mode, updated_by, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
           ON CONFLICT(line_user_id, date_str) DO NOTHING
         `, [
           uid,
@@ -861,6 +868,7 @@ app.post('/api/user-state/sync', async (req, res) => {
           log.energyLevel || '',
           log.digestionStatus || '',
           log.sleepEyeStatus || '',
+          log.eyeStatus || '',
           log.note || '',
           log.isSickMode ? 1 : 0,
           userName || '消費者'
@@ -980,7 +988,7 @@ app.post('/api/analysis/a4-report', async (req, res) => {
 // ========================================================
 app.post('/api/calendar/log', async (req, res) => {
   try {
-    const { dateStr, takenIds, energyLevel, digestionStatus, sleepEyeStatus, note, isSickMode, updatedBy, lineUserId } = req.body;
+    const { dateStr, takenIds, energyLevel, digestionStatus, sleepEyeStatus, eyeStatus, note, isSickMode, updatedBy, lineUserId } = req.body;
     if (!dateStr) {
       return res.status(400).json({ success: false, message: '缺少日期參數' });
     }
@@ -989,13 +997,14 @@ app.post('/api/calendar/log', async (req, res) => {
     const cleanTaken = Array.isArray(takenIds) ? [...new Set(takenIds.map(x => Number(x)).filter(Boolean))] : [];
 
     await dbQuery.run(`
-      INSERT INTO user_calendar_logs (line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO user_calendar_logs (line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, eye_status, note, is_sick_mode, updated_by, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(line_user_id, date_str) DO UPDATE SET
         taken_ids_json = excluded.taken_ids_json,
         energy_level = excluded.energy_level,
         digestion_status = excluded.digestion_status,
         sleep_eye_status = excluded.sleep_eye_status,
+        eye_status = excluded.eye_status,
         note = excluded.note,
         is_sick_mode = excluded.is_sick_mode,
         updated_by = excluded.updated_by,
@@ -1007,6 +1016,7 @@ app.post('/api/calendar/log', async (req, res) => {
       energyLevel || '',
       digestionStatus || '',
       sleepEyeStatus || '',
+      eyeStatus || '',
       note || '',
       isSickMode ? 1 : 0,
       updatedBy || '消費者'
@@ -1020,6 +1030,7 @@ app.post('/api/calendar/log', async (req, res) => {
         energyLevel: energyLevel || '',
         digestionStatus: digestionStatus || '',
         sleepEyeStatus: sleepEyeStatus || '',
+        eyeStatus: eyeStatus || '',
         note: note || '',
         isSickMode: !!isSickMode,
         updatedBy: updatedBy || '消費者'

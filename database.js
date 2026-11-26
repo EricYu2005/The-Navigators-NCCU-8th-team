@@ -652,7 +652,8 @@ function initDatabase() {
         taken_ids_json TEXT DEFAULT '[]', -- 當日已打勾服用的 supplement_id 陣列
         energy_level TEXT DEFAULT '', -- '精神飽滿' | '狀態平穩' | '疲倦想睡'
         digestion_status TEXT DEFAULT '', -- '排便順暢' | '稍微脹氣' | '排便不順'
-        sleep_eye_status TEXT DEFAULT '', -- '睡眠深沉' | '晶亮舒適' | '眼睛乾酸'
+        sleep_eye_status TEXT DEFAULT '', -- 睡眠品質：'睡眠深沉' | '睡眠普通' | '淺眠難睡'
+        eye_status TEXT DEFAULT '', -- 眼睛狀況：'眼睛舒適' | '眼睛普通' | '眼睛乾酸'
         note TEXT DEFAULT '',
         updated_by TEXT DEFAULT '示範使用者',
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -668,13 +669,21 @@ function initDatabase() {
         energy_level TEXT DEFAULT '',
         digestion_status TEXT DEFAULT '',
         sleep_eye_status TEXT DEFAULT '',
+        eye_status TEXT DEFAULT '',
         note TEXT DEFAULT '',
         is_sick_mode INTEGER DEFAULT 0,
         updated_by TEXT DEFAULT '示範使用者',
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(line_user_id, date_str)
       )
-    `);
+    `, () => {
+      db.run('ALTER TABLE calendar_logs ADD COLUMN eye_status TEXT DEFAULT ""', () => {});
+      db.run('ALTER TABLE user_calendar_logs ADD COLUMN eye_status TEXT DEFAULT ""', () => {
+        // 將舊版合併欄位中的眼睛紀錄自動遷移至獨立 eye_status 欄位
+        db.run("UPDATE user_calendar_logs SET eye_status = '眼睛舒適', sleep_eye_status = '' WHERE sleep_eye_status = '晶亮舒適' AND (eye_status IS NULL OR eye_status = '')", () => {});
+        db.run("UPDATE user_calendar_logs SET eye_status = '眼睛乾酸', sleep_eye_status = '' WHERE sleep_eye_status = '眼睛乾酸' AND (eye_status IS NULL OR eye_status = '')", () => {});
+      });
+    });
 
     // 5. 潛在消費者名單登記表 (Lead Capture / Waitlist 候補登記)
     db.run(`
@@ -791,20 +800,20 @@ function injectDemoRowsOnly(callback) {
     const todayDate = now.getDate();
 
     const sampleNotes = [
-      { offset: -7, taken: [1, 10, 16], energy: '狀態平穩', digestion: '排便順暢', sleep: '晶亮舒適', note: '按時吃完三款，下午工作精神還不錯' },
-      { offset: -6, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', note: '早上空腹吃益生菌很順暢' },
-      { offset: -5, taken: [1, 16], energy: '狀態平穩', digestion: '稍微脹氣', sleep: '晶亮舒適', note: '早上趕出門忘記吃益生菌，外食便當偏油' },
-      { offset: -4, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', note: '恢復規律補充，睡眠品質穩定' },
-      { offset: -3, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '晶亮舒適', note: '看電腦一整天，眼睛狀態比上週好' },
-      { offset: -2, taken: [10, 16], energy: '疲倦想睡', digestion: '排便順暢', sleep: '眼睛乾酸', note: '趕報告熬夜到兩點，晚餐後忘了吃魚油' },
-      { offset: -1, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', note: '今日三款全部準時打勾完成！' },
-      { offset: 0, taken: [10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '晶亮舒適', note: '早餐前已吃益生菌、午餐後已吃緩釋B群，待晚餐後吃魚油' }
+      { offset: -7, taken: [1, 10, 16], energy: '狀態平穩', digestion: '排便順暢', sleep: '睡眠普通', eye: '眼睛舒適', note: '按時吃完三款，下午工作精神還不錯' },
+      { offset: -6, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', eye: '眼睛舒適', note: '早上空腹吃益生菌很順暢' },
+      { offset: -5, taken: [1, 16], energy: '狀態平穩', digestion: '稍微脹氣', sleep: '睡眠普通', eye: '眼睛普通', note: '早上趕出門忘記吃益生菌，外食便當偏油' },
+      { offset: -4, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', eye: '眼睛舒適', note: '恢復規律補充，睡眠品質穩定' },
+      { offset: -3, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', eye: '眼睛舒適', note: '看電腦一整天，眼睛狀態比上週好' },
+      { offset: -2, taken: [10, 16], energy: '疲倦想睡', digestion: '排便順暢', sleep: '淺眠難睡', eye: '眼睛乾酸', note: '趕報告熬夜到兩點，晚餐後忘了吃魚油' },
+      { offset: -1, taken: [1, 10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', eye: '眼睛舒適', note: '今日三款全部準時打勾完成！' },
+      { offset: 0, taken: [10, 16], energy: '精神飽滿', digestion: '排便順暢', sleep: '睡眠深沉', eye: '眼睛舒適', note: '早餐前已吃益生菌、午餐後已吃緩釋B群，待晚餐後吃魚油' }
     ];
 
     const cStmt = db.prepare(`
       INSERT OR REPLACE INTO user_calendar_logs (
-        line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, note, is_sick_mode, updated_by
-      ) VALUES ('', ?, ?, ?, ?, ?, ?, 0, '官方示範帳號')
+        line_user_id, date_str, taken_ids_json, energy_level, digestion_status, sleep_eye_status, eye_status, note, is_sick_mode, updated_by
+      ) VALUES ('', ?, ?, ?, ?, ?, ?, ?, 0, '官方示範帳號')
     `);
 
     for (const item of sampleNotes) {
@@ -817,6 +826,7 @@ function injectDemoRowsOnly(callback) {
           item.energy,
           item.digestion,
           item.sleep,
+          item.eye,
           item.note
         ]);
       }

@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.8.1" />
+  <link rel="stylesheet" href="style.css?v=4.8.2" />
   <script>
     (function () {
       try {
@@ -355,7 +355,7 @@
                 <h4 style="margin:0; font-size:0.95rem; color:#1e1b4b;">身體狀態日誌與每週健康複盤</h4>
               </div>
               <p style="margin:0.4rem 0 0.75rem 0; font-size:0.83rem; color:#475569; line-height:1.45;">
-                免費版僅保留「服用打卡（確認有沒有吃）」。升級 Pro 方案（<strong>NT$ 99 / 月</strong>）即可每日記錄精神體力、消化排便、睡眠晶亮感受、重感冒停藥防護，並自動獲得每週痛點分析與配方升級建議！
+                免費版僅保留「服用打卡（確認有沒有吃）」。升級 Pro 方案（<strong>NT$ 99 / 月</strong>）即可每日記錄精神狀態、消化排便、睡眠品質與眼睛狀況，加上重感冒停藥防護，並自動獲得每週痛點分析與配方升級建議！
               </p>
               <button type="button" class="btn btn-primary btn-sm btn-block" onclick="openLeadModal('daily_log_pro_lock')">
                 填寫簡短回饋，免費開通 Pro 權限 (NT$ 99/月)
@@ -384,58 +384,76 @@
               <h4>身體狀態日誌</h4>
 
               <div class="mood-group">
-              <span class="mood-label">精神體力：</span>
-              <div class="mood-pills" data-field="energyLevel">
-                <button type="button" class="mood-pill" data-val="精神飽滿" onclick="selectDailyMood('energyLevel', '精神飽滿')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  <span>飽滿</span>
-                </button>
-                <button type="button" class="mood-pill" data-val="狀態平穩" onclick="selectDailyMood('energyLevel', '狀態平穩')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  <span>平穩</span>
-                </button>
-                <button type="button" class="mood-pill" data-val="疲倦想睡" onclick="selectDailyMood('energyLevel', '疲倦想睡')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-                  <span>疲倦</span>
-                </button>
+                <span class="mood-label">精神狀態：</span>
+                <div class="mood-pills" data-field="energyLevel">
+                  <button type="button" class="mood-pill" data-val="精神飽滿" onclick="selectDailyMood('energyLevel', '精神飽滿')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span>有精神</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="狀態平穩" onclick="selectDailyMood('energyLevel', '狀態平穩')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>普通</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="疲倦想睡" onclick="selectDailyMood('energyLevel', '疲倦想睡')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    <span>疲倦</span>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div class="mood-group">
-              <span class="mood-label">消化排便：</span>
-              <div class="mood-pills" data-field="digestionStatus">
-                <button type="button" class="mood-pill" data-val="排便順暢" onclick="selectDailyMood('digestionStatus', '排便順暢')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/></svg>
-                  <span>順暢</span>
-                </button>
-                <button type="button" class="mood-pill" data-val="稍微脹氣" onclick="selectDailyMood('digestionStatus', '稍微脹氣')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-                  <span>脹氣</span>
-                </button>
-                <button type="button" class="mood-pill" data-val="排便不順" onclick="selectDailyMood('digestionStatus', '排便不順')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                  <span>不順</span>
-                </button>
+              <div class="mood-group">
+                <span class="mood-label">消化排便：</span>
+                <div class="mood-pills" data-field="digestionStatus">
+                  <button type="button" class="mood-pill" data-val="排便順暢" onclick="selectDailyMood('digestionStatus', '排便順暢')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/></svg>
+                    <span>順暢</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="稍微脹氣" onclick="selectDailyMood('digestionStatus', '稍微脹氣')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                    <span>脹氣</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="排便不順" onclick="selectDailyMood('digestionStatus', '排便不順')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    <span>不順</span>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div class="mood-group">
-              <span class="mood-label">睡眠晶亮：</span>
-              <div class="mood-pills" data-field="sleepEyeStatus">
-                <button type="button" class="mood-pill" data-val="睡眠深沉" onclick="selectDailyMood('sleepEyeStatus', '睡眠深沉')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-                  <span>深沉</span>
-                </button>
-                <button type="button" class="mood-pill" data-val="晶亮舒適" onclick="selectDailyMood('sleepEyeStatus', '晶亮舒適')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <span>舒適</span>
-                </button>
-                <button type="button" class="mood-pill" data-val="眼睛乾酸" onclick="selectDailyMood('sleepEyeStatus', '眼睛乾酸')">
-                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
-                  <span>乾酸</span>
-                </button>
+              <div class="mood-group">
+                <span class="mood-label">睡眠品質：</span>
+                <div class="mood-pills" data-field="sleepEyeStatus">
+                  <button type="button" class="mood-pill" data-val="睡眠深沉" onclick="selectDailyMood('sleepEyeStatus', '睡眠深沉')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                    <span>好睡</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="睡眠普通" onclick="selectDailyMood('sleepEyeStatus', '睡眠普通')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>普通</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="淺眠難睡" onclick="selectDailyMood('sleepEyeStatus', '淺眠難睡')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>淺眠</span>
+                  </button>
+                </div>
               </div>
-            </div>
+
+              <div class="mood-group">
+                <span class="mood-label">眼睛狀況：</span>
+                <div class="mood-pills" data-field="eyeStatus">
+                  <button type="button" class="mood-pill" data-val="眼睛舒適" onclick="selectDailyMood('eyeStatus', '眼睛舒適')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>舒適</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="眼睛普通" onclick="selectDailyMood('eyeStatus', '眼睛普通')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>普通</span>
+                  </button>
+                  <button type="button" class="mood-pill" data-val="眼睛乾酸" onclick="selectDailyMood('eyeStatus', '眼睛乾酸')">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                    <span>乾酸</span>
+                  </button>
+                </div>
+              </div>
 
             <div class="daily-note-box">
               <label for="daily-note-input">隨手筆記：</label>
@@ -458,7 +476,7 @@
               </div>
               <h4 id="feedback-title" style="margin:0.4rem 0 0.25rem 0; font-size:0.92rem; color:#1e1b4b;">根據近期健康紀錄建議</h4>
               <p id="feedback-desc" style="font-size:0.8rem; color:#475569; margin:0 0 0.65rem 0; line-height:1.45;">
-                偵測到您近期頻繁記錄「眼睛乾酸」與「精神疲倦」，目前保健品組合可能缺乏足量晶亮或B群防護！
+                偵測到您近期頻繁記錄「眼睛乾酸」與「精神疲倦」，目前保健品組合可能缺乏足量葉黃素或 B 群補充！
               </p>
               <button type="button" class="btn btn-primary btn-sm btn-block" onclick="applyHealthFeedbackToFinder()">
                 帶入身體現況至「尋找」重新評估配方
@@ -1547,6 +1565,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.8.1"></script>
+  <script src="app.js?v=4.8.2"></script>
 </body>
 </html>

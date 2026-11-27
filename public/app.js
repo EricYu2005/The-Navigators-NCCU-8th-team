@@ -5,6 +5,11 @@
 
 const SURVEYCAKE_URL = 'https://www.surveycake.com/s/8rpwQ';
 
+// 研究驗證期間：一打開網站就開放全部功能（免填表、免登入）。
+// 「方案」頁面只用來說明我們預計推出的收費方案，頁面最底下是填寫問卷按鈕。
+// 若日後要恢復「填問卷才開通 Pro」的流程，把這裡改成 false 即可。
+const ALL_FEATURES_OPEN = true;
+
 const state = {
   supplements: [],
   wishlist: [],
@@ -23,7 +28,9 @@ const state = {
   selectedDateStr: formatDateStr(new Date()),
   currentUser: null,
   isDemoCleared: false,
-  isPro: localStorage.getItem('purepick_pro') === 'true',
+  _isPro: localStorage.getItem('purepick_pro') === 'true',
+  get isPro() { return ALL_FEATURES_OPEN || this._isPro; },
+  set isPro(value) { this._isPro = !!value; },
   hasProEntitlement: localStorage.getItem('purepick_pro_entitled') === 'true',
   userLead: null,
   analysisAccordions: {
@@ -80,6 +87,7 @@ function getOrCreateGuestWorkspaceId() {
 }
 
 function isUserEntitledToPro() {
+  if (ALL_FEATURES_OPEN) return true;
   if (localStorage.getItem('purepick_survey_unlocked') === 'true') return true;
   const uid = getRealLineUserId();
   if (!uid) return false;
@@ -1537,7 +1545,7 @@ function renderWishlistView() {
   ` : `
     <div class="pro-unlocked-banner" style="display:flex; align-items:center; justify-content:space-between; gap:0.65rem; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-        <span class="pro-unlocked-badge">PRO 方案已開通</span>
+        <span class="pro-unlocked-badge">${ALL_FEATURES_OPEN ? '全功能開放中' : 'PRO 方案已開通'}</span>
         <span>您已享有完整的跨品項重複購買檢查、每日安全劑量把關與服用時段錯開提醒！</span>
       </div>
       <a href="${SURVEYCAKE_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline" style="white-space:nowrap;">
@@ -3082,7 +3090,8 @@ window.handleAddSupplementSubmit = handleAddSupplementSubmit;
 
 function openSubscriptionModal() {
   const modal = document.getElementById('subscription-modal');
-  const actionArea = document.getElementById('sub-pro-action-area');
+  // 全功能開放期間，方案頁只做說明，底部固定顯示填寫問卷按鈕（寫在 index.html）
+  const actionArea = ALL_FEATURES_OPEN ? null : document.getElementById('sub-pro-action-area');
   if (actionArea) {
     if (state.isPro) {
       actionArea.innerHTML = `
@@ -3272,7 +3281,7 @@ function renderAuthUI() {
   const proBadge = document.getElementById('settings-pro-badge');
 
   if (proBadge) {
-    proBadge.textContent = state.isPro ? 'PRO 專業版已開通' : '免費體驗版';
+    proBadge.textContent = ALL_FEATURES_OPEN ? '全功能免費開放中' : state.isPro ? 'PRO 專業版已開通' : '免費體驗版';
   }
 
   if (state.currentUser) {

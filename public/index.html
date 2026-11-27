@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css?v=4.8.7" />
+  <link rel="stylesheet" href="style.css?v=4.8.8" />
   <script>
     (function () {
       try {
@@ -672,7 +672,7 @@
             <button type="button" class="settings-list-row" onclick="openSubscriptionModal()">
               <div class="settings-row-left">
                 <strong>免費體驗版 vs. Pro 精明消費者方案比較</strong>
-                <span>填寫匿名回饋問卷，免登入立即開啟完整功能</span>
+                <span>目前全功能免費開放，查看我們預計推出的方案</span>
               </div>
               <span class="settings-row-chevron">&rsaquo;</span>
             </button>
@@ -912,13 +912,25 @@
   <div id="subscription-modal" class="modal-backdrop" style="display:none;">
     <div class="modal-dialog modal-lg">
       <div class="modal-header">
-        <h3>好選保健 消費者訂閱方案</h3>
+        <h3>好選保健 預計推出的訂閱方案</h3>
         <button type="button" class="modal-close" onclick="closeSubscriptionModal()">&times;</button>
       </div>
       <div class="modal-body">
         <p class="sub-intro-text">
-          市面上多數保健品推薦文章由品牌廠商贊助置入，只會勸您「越買越多」。好選保健透過消費者小額訂閱維持獨立營運，<strong>幫您砍掉多買的一罐重複保健品，省下的錢就超過一整年的訂閱費</strong>。
+          市面上多數保健品推薦文章由品牌廠商贊助置入，只會勸您「越買越多」。好選保健預計透過消費者小額訂閱維持獨立營運，<strong>幫您砍掉多買的一罐重複保健品，省下的錢就超過一整年的訂閱費</strong>。
         </p>
+
+        <!-- 課程專題驗證說明框 -->
+        <div class="mvp-notice-card" style="margin-bottom:0.9rem;">
+          <div class="mvp-notice-title">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>政大創創課程研究說明（目前全功能免費開放）</span>
+          </div>
+          <p class="mvp-notice-text">
+            本平台為政大創創入門專題研究模型，現階段<strong>不收取任何費用、免登入即可使用全部功能</strong>。以下為我們<strong>預計</strong>推出的方案內容，歡迎填寫最下方的問卷告訴我們您的想法！
+          </p>
+        </div>
+
         <div class="sub-plans-grid">
           <div class="sub-plan-card">
             <div class="plan-badge">免費體驗版</div>
@@ -929,7 +941,6 @@
               <li>基礎有興趣清單管理（最多 3 款比對）</li>
               <li>基礎每日服用確認打卡（有吃打勾）</li>
             </ul>
-            <button type="button" class="btn btn-outline btn-block" onclick="closeSubscriptionModal()">目前使用中</button>
           </div>
           <div class="sub-plan-card featured" id="sub-plan-pro-card">
             <div class="plan-badge badge-pro">精明消費者訂閱版 (Pro)</div>
@@ -942,24 +953,16 @@
               <li><strong>生病重感冒停藥備忘與每週健康總結推薦</strong></li>
               <li><strong>服用時段錯開提醒與專屬評估報告</strong></li>
             </ul>
-
-            <!-- 課程專題驗證說明框 -->
-            <div class="mvp-notice-card">
-              <div class="mvp-notice-title">
-                <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <span>政大創創課程研究說明（不收取真實費用）</span>
-              </div>
-              <p class="mvp-notice-text">
-                本平台為政大創創入門專題研究模型，現階段<strong>不收取任何真實費用、亦無須綁定 LINE 登入</strong>。點擊下方按鈕將開啟匿名回饋問卷，同時立即為您<strong>開啟完整 Pro 功能並清空示範案例</strong>！
-              </p>
-            </div>
-
-            <div id="sub-pro-action-area" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.75rem;">
-              <button type="button" class="btn btn-primary btn-block" onclick="openSurveyAndUnlockPro('subscription_modal')">
-                填寫問卷（立即開啟完整功能）
-              </button>
-            </div>
+            <div id="sub-pro-action-area" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
           </div>
+        </div>
+
+        <!-- 方案頁底部：填寫問卷 -->
+        <div style="margin-top:1rem; display:flex; flex-direction:column; gap:0.4rem; align-items:stretch;">
+          <a href="https://www.surveycake.com/s/8rpwQ" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block" style="text-align:center; text-decoration:none;">
+            填寫回饋問卷 &nearr;
+          </a>
+          <p style="margin:0; font-size:0.78rem; color:var(--text-muted); text-align:center;">問卷會在新分頁開啟，填完關掉即可回來繼續使用</p>
         </div>
       </div>
     </div>
@@ -1565,6 +1568,6 @@
   <!-- 全域輕量提示 Toast -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js?v=4.8.7"></script>
+  <script src="app.js?v=4.8.8"></script>
 </body>
 </html>
